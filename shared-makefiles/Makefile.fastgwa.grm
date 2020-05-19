@@ -1,0 +1,33 @@
+include /home/palmercd/Development/Makefile_utilities/Makefile.qsub_handling
+.DELETE_ON_ERROR:
+.SECONDARY:
+.SECONDEXPANSION:
+GCTA := /home/palmercd/Development/gcta_1.93.0beta/gcta64
+N_SPLITS := 3
+SPLIT_SEQ := 1 2 3
+INPUT_DIR := /CGF/GWAS/Scans/PLCO/builds/1/cleaned-chips-by-ancestry
+OUTPUT_DIR := /CGF/GWAS/Scans/PLCO/builds/1/analysis-requests/fastgwa-grm
+VALID_INPUTS := $(shell find $(INPUT_DIR) -maxdepth 2 -iname "*step3.pruning.bed" -print)
+VALID_OUTPUTS := $(foreach input,$(VALID_INPUTS),$(subst .step3.pruning.bed,-sp.grm.sp.success,$(subst $(INPUT_DIR),$(OUTPUT_DIR),$(input))))
+N_THREADS := 2
+
+.PHONY: all $(sort $(foreach output,$(VALID_OUTPUTS),$(dir $(output))))
+all: $(VALID_OUTPUTS)
+
+%-sp.grm.sp.success: %.grm.bin | $$(dir $$@)
+	$(call qsub_handler,$(subst .success,,$@),$(GCTA) --grm $(subst .grm.bin,,$<) --make-bK-sparse 0.05 --out $(subst .grm.sp.success,,$@))
+
+$(subst -sp.grm.sp.success,.grm.bin,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.bin,,$$@).part_$$(N_SPLITS)_%.grm.bin.success,$$(SPLIT_SEQ)) | $$(dir $$@)
+	cat $(subst .success,,$^) > $@
+	cat $(subst .grm.bin.success,.grm.N.bin,$^) > $(subst .grm.bin,.grm.N.bin,$@)
+	cat $(subst .grm.bin.success,.grm.id,$^) > $(subst .grm.bin,.grm.id,$@)
+
+$(foreach output,$(VALID_OUTPUTS),$(patsubst %,$(subst -sp.grm.sp.success,,$(output)).part_$(N_SPLITS)_%.grm.bin.success,$(SPLIT_SEQ))): $$(word 1,$$(subst $$(OUTPUT_DIR),$$(INPUT_DIR),$$(subst .part_$$(N_SPLITS), ,$$@))).step6.bed | $$(dir $$@)
+	$(call qsub_handler,$(subst .success,,$@),$(GCTA) --bfile $(subst .bed,,$<) --make-grm-part $(N_SPLITS) $(word 2,$(subst .part_$(N_SPLITS)_, ,$(subst .grm.bin.success,,$@))) --thread-num $(N_THREADS) --out $(word 1,$(subst .part_$(N_SPLITS)_, ,$(subst .grm.bin.success,,$@))))
+
+
+%.step6.bed: %.step3.pruning.bed %.step3.pruning.prune.in %.step4.het.remove
+	plink --bfile $(subst .bed,,$<) --extract $(word 2,$^) --remove $(lastword $^) --make-bed --out $(subst .bed,,$@)
+
+$(sort $(foreach output,$(VALID_OUTPUTS),$(dir $(output)))):
+	mkdir -p $@

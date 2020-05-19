@@ -1,0 +1,21 @@
+include /home/palmercd/Development/Makefile_utilities/Makefile.qsub_handling
+
+.PHONY: all
+.DELETE_ON_ERROR:
+.SECONDARY:
+.SECONDEXPANSION:
+
+ALL_BOLT_ANALYSES := $(shell find /CGF/GWAS/Scans/PLCO/builds/1/analysis-requests/results -name "*.boltlmm.tsv" -print | awk '/height/')
+ALL_QUERIES := $(foreach analysis,$(ALL_BOLT_ANALYSES),$(subst .boltlmm.tsv,,$(subst BOLTLMM/,comparisons/,$(analysis))))
+$(info $(ALL_QUERIES))
+.PHONY: $(ALL_QUERIES)
+comparison_rscript := shared-source/compare_bolt_fastgwa.R
+all: $(ALL_QUERIES)
+
+$(ALL_QUERIES): $$(addsuffix .bolt-versus-fastgwa.jpg,$$@)
+
+%.jpg: $(comparison_rscript) | $$(dir $$@)
+	Rscript $< $@
+
+$(sort $(dir $(ALL_QUERIES))):
+	mkdir -p $@

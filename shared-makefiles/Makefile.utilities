@@ -1,0 +1,11 @@
+define extract_ancestry =
+
+endef
+
+define extract_chip =
+
+endef
+
+define extract_method =
+
+endef

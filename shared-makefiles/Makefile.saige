@@ -1,0 +1,142 @@
+## overall workflow for SAIGE analyses
+
+## 1) determine which analyses need to be run
+
+## 2) determine which datasets need to be run for each analysis
+
+## 3) for each dataset:
+
+##    - run SAIGE round 1 with null phenotype model
+##    - run SAIGE round 2 with round 1 results and actual genotypes
+##    - need to wrap this in qsubs; address duration cutoff issues
+
+include /home/palmercd/Development/Makefile_utilities/Makefile.qsub_handling
+
+GENOTYPE_DIR := /CGF/GWAS/Scans/PLCO/builds/1/cleaned-chips-by-ancestry
+IMPUTED_DIR := ../bgen-format
+PROJECT_NAMES := GSA Oncoarray OmniX Omni25
+CHRS := $(shell seq 1 22)
+
+PHENOTYPE_FILENAME := phenotypes/v5/gsa_qx_v5.with_na.augmented.18may2020.tsv
+
+RESULTS_DIR := results
+
+MINIMUM_VALID_SUBJECT_COUNT := 1001
+
+CONFIG_DIR := config
+ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
+ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell shared-source/construct_output_filenames.bash $(config) saige)))
+#ANALYSIS_RESULTS_SAIGE_Omni := $(filter %.OmniX.saige %.Omni25.saige %.Omni5.saige,$(ANALYSIS_RESULTS_SAIGE))
+#ANALYSIS_RESULTS_SAIGE_Oncoarray := $(filter %.CGR.saige %.external.saige,$(ANALYSIS_RESULTS_SAIGE))
+#ANALYSIS_RESULTS_SAIGE_GSA := $(filter-out $(ANALYSIS_RESULTS_SAIGE_Omni) $(ANALYSIS_RESULTS_SAIGE_Oncoarray),$(ANALYSIS_RESULTS_SAIGE))
+
+SAIGE_ROUND_1_SCRIPT := shared-makefiles/saige_round1.R
+SAIGE_ROUND_1_RELATEDNESS_CUTOFF := 0.05
+SAIGE_ROUND_2_SCRIPT := shared-makefiles/saige_round2.R
+PLINK := plink
+
+.SECONDEXPANSION:
+.SECONDARY:
+.DELETE_ON_ERROR:
+.PHONY: all $(ANALYSIS_RESULTS_SAIGE)
+all: $(ANALYSIS_RESULTS_SAIGE) | $(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(subst //,/,$(dir $(result))))
+
+define check_model_matrix
+"$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(MINIMUM_VALID_SUBJECT_COUNT)"
+endef
+
+$(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz,$$@) | $$(subst //,/,$$(dir $$@))
+
+%.tsv.gz: %.tsv
+	if [[ $(call check_model_matrix,$(subst .saige.tsv.gz,,$@).saige.model_matrix) ]] ; then \
+	gzip -c $< > $@ ; \
+	fi
+
+$(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(subst .saige.tsv,,$$@).saige.model_matrix | $$(subst //,/,$$(dir $$@))
+	if [[ $(call check_model_matrix,$(lastword $^)) ]] ; then \
+	cat $(subst .success,.txt,$(filter-out %.model_matrix,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$6"\tNA\t"$$11"\t"$$12"\t"$$14"\t"$$10}' > $@ ; \
+	fi
+
+
+$(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(patsubst %,$(subst .saige,,$(result)).chr%.saige.success,$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).saige.round1.success $$(word 1,$$(subst .chr, ,$$@)).saige.model_matrix $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$(word 2,$$(subst ., ,$$(notdir $$@)))))/$$(lastword $$(subst /, ,$$(word 1,$$(subst /SAIGE, ,$$@))))/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$(word 2,$$(subst ., ,$$(notdir $$@)))))/$$(lastword $$(subst /, ,$$(word 1,$$(subst /SAIGE, ,$$@))))/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen.bgi $$(dir $$@)$$(lastword $$(subst ., ,$$(word 1,$$(subst .chr, ,$$@)))).saige.samples | $$(subst //,/,$$(dir $$@))
+	if [[ $(call check_model_matrix,$(word 2,$^)) ]] ; then \
+	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_2_SCRIPT) $(word 3,$^) $(word 4,$^) $(subst .success,.rda,$<) $(subst .success,.varianceRatio.txt,$<) $(subst .success,.varianceRatio.txt_relatednessCutoff_$(SAIGE_ROUND_1_RELATEDNESS_CUTOFF)_1000_randomMarkersUsed.sparseSigma.mtx,$<) $(word 5,$^) $(subst .success,,$@) chr$(lastword $(subst .chr, ,$(subst .saige.success,,$@)))) ; \
+	else \
+	touch $@ ; \
+	fi
+
+%.saige.samples: $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$(lastword $$(subst ., ,$$(subst .saige.samples,,$$(notdir $$@))))))/$$(lastword $$(subst /, ,$$(firstword $$(subst /SAIGE/, ,$$@))))/chr22-filtered-noNAs.sample | $$(subst //,/,$$(dir $$@))
+	awk 'NR > 2 {print $$1}' $< > $@
+
+define get_analysis_prefix
+$(subst .saige,,$(subst .model_matrix,,$(subst .round1,,$(subst .success,,$(notdir $(1))))))
+endef
+
+define get_phenotype
+$(shell shared-source/construct_phenotype.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+endef
+
+define get_covariates
+$(shell shared-source/construct_covariates.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+endef
+
+define get_covariates_from_model_matrix
+$(shell awk 'NR == 1' $(1) | cut -f 1-3 --complement | sed 's/ /,/g; s/\t/,/g')
+endef
+
+%.saige.round1.success: $$(firstword $$(subst .saige.round1.success,,$$@)).saige-chip.GRCh38-resorted-nochr0.bed.success %.saige.model_matrix | $$(subst //,/,$$(dir $$@))
+	if [[ $(call check_model_matrix,$(lastword $^)) ]] ; then \
+	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed.success,,$<) $(word 2,$^) $(call get_phenotype,$@) $(call get_covariates_from_model_matrix,$(word 2,$^)) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst .success,,$@)) ; \
+	else \
+	touch $@ ; \
+	fi
+
+%.saige.model_matrix: $$(shell echo "$$(call get_analysis_prefix,$$@)" | sed 's/\./\t/g' | grep -lwf - $(CONFIG_DIR)/*) $$(subst .model_matrix,.samples,$$@) | $$(subst //,/,$$(dir $$@))
+	Rscript shared-source/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .saige.model_matrix,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $@
+
+$(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
+	mkdir -p $@
+
+
+
+
+
+
+%.saige-chip.GRCh38-resorted-nochr0.bed.success: %.saige-chip.GRCh38-resorted.bed.success %.saige-chip.GRCh38-resorted.chr0.exclude
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK) --bfile $(subst .bed.success,,$<) --exclude $(word 2,$^) --make-bed --out $(subst .bed.success,,$@))
+
+%.saige-chip.GRCh38-resorted.chr0.exclude: %.saige-chip.GRCh38-resorted.bed.success
+	awk '$$1 == 0 {print $$2}' $(subst .bed.success,.bim,$<) > $@
+
+%.saige-chip.GRCh38-resorted.bed.success: %.saige-chip.GRCh38.bed
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK) --bfile $(subst .bed,,$<) --allow-extra-chr 0 --make-bed --out $(subst .bed.success,,$@))
+
+%.saige-chip.GRCh38.bed: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output
+	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/chr// ; s/:/\t/ ; s/-/\t/' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2"\t"$$8"\t"$$9}' > $(subst .bed,.bim,$@)
+	cp $(subst .bed.success,.fam,$<) $(subst .bed,.fam,$@)
+	cp $(subst .success,,$<) $@
+
+%.saige-chip.lift-failures-excluded.bed.success: %.saige-chip.bed.success %.saige-chip.liftover-output
+	awk '! /^#/' $(subst liftover-output,liftover-failure,$(word 2,$^)) | sed 's/chr// ; s/-/\t/' | awk '{print $$1}' > $(subst .bed.success,.exclude,$@)
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK) --bfile $(subst .bed.success,,$<) --exclude $(subst .bed.success,.exclude,$@) --make-bed --out $(subst .bed.success,,$@))
+
+%.saige-chip.liftover-output: %.saige-chip.liftover-input
+	/home/palmercd/Development/stage/bin/liftOver -positions $< /home/palmercd/Development/stage/share/liftover_chains/hg19ToHg38.over.chain.gz $@ $(subst liftover-output,liftover-failure,$@)
+
+%.saige-chip.liftover-input: %.saige-chip.bed.success
+	awk '{print "chr"$$1":"$$4"-"$$4}' $(subst .bed.success,.bim,$<) > $@
+
+%.saige-chip.bed.success: ../cleaned-chips-by-ancestry/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).nohet.autosomes.bed %.saige.samples.plink-format ../cleaned-chips-by-ancestry/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).step2.pruning.prune.in ../cleaned-chips-by-ancestry/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).step3.pruning.prune.out
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK) --bfile $(subst .bed,,$<) --keep $(word 2,$^) --extract $(word 3,$^) --exclude $(word 4,$^) --make-bed --out $(subst .bed.success,,$@))
+
+%.saige.samples.plink-format: %.saige.samples
+	awk '{print $$1"\t"$$1}' $< > $@
+
+#$(patsubst %,PLCO_%.saige.samples,$(PROJECT_NAMES)): ../raw-mis-final-subjects/$$(lastword $$(subst PLCO_, ,$$(subst .saige.samples,,$$@)))/chr22.dose.vcf.gz
+#%.saige.samples: ../raw-mis-final-subjects/$$(subst .saige.samples,,$$(notdir $$@))/chr22.dose.vcf.gz
+#	gunzip -c $< | head -100 | awk '/^#CHROM/' | cut -f 1-9 --complement | sed 's/\t/\n/g' > $@
+
+#%.nohet.autosomes.bed: $$(GENOTYPE_DIR)/$$(lastword $$(subst /, ,$$(firstword $$(subst SAIGE/, ,$$@))))/$$(lastword $$(subst ., ,$$(subst .nohet.autosomes.bed,,$$(notdir $$@)))).step1.maf.geno.hwe.bed #| $$(subst //,/,$$(dir $$@))
+#	ln -fs $< $@
+#	ln -fs $(subst .bed,.bim,$<) $(subst .bed,.bim,$@)
+#	awk '{print $$1"_"$$1"\t"$$2"_"$$2"\t"$$3"\t"$$4"\t"$$5"\t"$$6}' $(subst .bed,.fam,$<) > $(subst .bed,.fam,$@)
