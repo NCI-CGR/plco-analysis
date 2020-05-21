@@ -1,0 +1,97 @@
+include $(PROJECT_BASE_DIR)/Makefile.config
+
+.PHONY: all all_chips
+.SECONDARY:
+.SECONDEXPANSION:
+.DELETE_ON_ERROR:
+all: all_chips
+
+FINAL_CHIP_DATA := $(CHIP_FREEZE_INPUT_DIR)
+
+define ancestry_extract
+sed 's/ /_/g' $(ANCESTRY_OUTPUT_DIR)/PLCO_$(2).graf_estimates.txt | awk '/\t$(1)$$/ {print $$1}' | sort | uniq | cat - $(FINAL_CHIP_DATA)/PLCO_$(2).fam | awk '{print $$1}' | sed 's/_//g' | sort | uniq -d
+endef
+
+VALID_STUDIES := $(foreach STUDY,$(STUDIES),$(shell if [[ $$($(call ancestry_extract,$(POPULATION_NAME),$(STUDY)) | wc -l) -gt $(SAMPLE_SIZE_MIN) ]] ; then echo "$(STUDY)" ; fi))
+
+LARGE_STUDIES := $(foreach STUDY,$(STUDIES),$(shell if [[ $$($(call ancestry_extract,$(POPULATION_NAME),$(STUDY)) | wc -l) -gt $(SAMPLE_SIZE_LARGE) ]] ; then echo "$(STUDY)" ; fi))
+
+SMALL_STUDIES := $(filter-out $(LARGE_STUDIES),$(VALID_STUDIES))
+
+LARGE_STUDY_SUFFIXES := $(patsubst %,.genome.%.gz,$(shell seq 1 $(GENOME_GZ_JOB_SPLIT)))
+
+all_chips: $(patsubst %,%.step5.ibs-normal.genome.gz,$(SMALL_STUDIES)) $(patsubst %,%.step5.ibs-split.genome.gz,$(LARGE_STUDIES)) $(patsubst %,%.nohet.autosomes.bed,$(VALID_STUDIES)) $(patsubst %,%.graf_relatedness.txt,$(VALID_STUDIES))
+
+%.graf_relatedness.txt: %.fpg
+	-$(GRAF) -geno $< -out $@
+
+%.fpg: %.rsids.bed
+	-$(GRAF) -exfp $(subst .bed,,$<) -out $@ -type 4
+
+%.rsids.bed: %.nohet.autosomes.bed GRAF.extract GRAF.update_names
+	$(PLINK) --bfile $(subst .bed,,$<) --extract $(word 2,$^) --update-name $(word 3,$^) --make-bed --out $(subst .bed,,$@)
+
+GRAF.extract: $(GRAF_1KG_VARIANT_BIMFILE)
+	awk '{print $$2}' $< > $@
+
+GRAF.update_names: $(GRAF_1KG_VARIANT_BIMFILE)
+	awk '{print $$1":"$$4"\t"$$2}' $< > $@
+
+
+
+
+
+
+%.nohet.autosomes.bed: %.step1.maf.geno.hwe.bed %.step4.het.remove
+	$(PLINK) --bfile $(subst .bed,,$<) --remove $(word 2,$^) --autosome --make-bed --out $(subst .bed,,$@)
+
+%.ancestry.keep: $$(subst .graf_estimates.txt,_$$(subst .ancestry.keep,,$$@).graf_estimates.txt,$$(GRAF_ANCESTRY))
+	$(call ancestry_extract,$(POPULATION_NAME),$(subst .ancestry.keep,,$@)) | awk -F"\t" '{print $$1"\t"$$1}' > $@
+
+%.step0.ancestry.bed: $(FINAL_CHIP_DATA)/PLCO_%.bed %.ancestry.keep
+	$(PLINK) --bfile $(subst .bed,,$<) --keep $(word 2,$^) --make-bed --out $(subst .bed,,$@)
+
+%.step1.maf.geno.hwe.bed: %.step0.ancestry.bed
+	$(PLINK) --bfile $(subst .bed,,$<) --maf 0.01 --geno 0.02 --hwe 0.001 --make-bed --out $(subst .bed,,$@)
+
+%.step2.pruning.prune.in: %.step1.maf.geno.hwe.bed
+	$(PLINK) --bfile $(subst .bed,,$<) --indep 50 5 2 --out $(subst .prune.in,,$@)
+
+%.step2.pruning.bed: %.step1.maf.geno.hwe.bed $$(subst .bed,.prune.in,$$@)
+	$(PLINK) --bfile $(subst .bed,,$<) --extract $(word 2,$^) --make-bed --out $(subst .bed,,$@)
+
+%.step3.pruning.prune.in: %.step2.pruning.bed
+	$(PLINK) --bfile $(subst .bed,,$<) --indep-pairwise 50 5 0.2 --out $(subst .prune.in,,$@)
+
+%.step3.pruning.bed: %.step2.pruning.bed $$(subst .bed,.prune.in,$$@)
+	$(PLINK) --bfile $(subst .bed,,$<) --extract $(word 2,$^) --make-bed --out $(subst .bed,,$@)
+
+%.step4.het: %.step3.pruning.bed
+	$(PLINK) --bfile $(subst .bed,,$<) --het --out $(subst .het,,$@)
+
+%.step4.het.remove: $$(subst .remove,,$$@)
+	awk 'NR > 1 && sqrt($$6^2) > sqrt($(HET_F_MAX)^2) {print $$1"\t"$$1}' $< > $@ 
+
+GSA.step5.ibs-split.genome.%.gz: $$(word 1,$$(subst .step5, ,$$@)).step3.pruning.bed $$(word 1,$$(subst .step5, ,$$@)).step4.het.remove
+	$(PLINK) --bfile $(subst .bed,,$<) --remove $(word 2,$^) --genome gz --min $(PIHAT_MIN) --parallel $(word 2,$(subst .genome., ,$(subst .gz,,$@))) $(GENOME_GZ_JOB_SPLIT) --out $(word 1,$(subst .ibs-split, ,$@)).ibs-split
+
+Oncoarray.step5.ibs-split.genome.%.gz: $$(word 1,$$(subst .step5, ,$$@)).step3.pruning.bed $$(word 1,$$(subst .step5, ,$$@)).step4.het.remove
+	$(PLINK) --bfile $(subst .bed,,$<) --remove $(word 2,$^) --genome gz --min $(PIHAT_MIN) --parallel $(word 2,$(subst .genome., ,$(subst .gz,,$@))) $(GENOME_GZ_JOB_SPLIT) --out $(word 1,$(subst .ibs-split, ,$@)).ibs-split
+
+OmniX.step5.ibs-split.genome.%.gz: $$(word 1,$$(subst .step5, ,$$@)).step3.pruning.bed $$(word 1,$$(subst .step5, ,$$@)).step4.het.remove
+	$(PLINK) --bfile $(subst .bed,,$<) --remove $(word 2,$^) --genome gz --min $(PIHAT_MIN) --parallel $(word 2,$(subst .genome., ,$(subst .gz,,$@))) $(GENOME_GZ_JOB_SPLIT) --out $(word 1,$(subst .ibs-split, ,$@)).ibs-split
+
+Omni25.step5.ibs-split.genome.%.gz: $$(word 1,$$(subst .step5, ,$$@)).step3.pruning.bed $$(word 1,$$(subst .step5, ,$$@)).step4.het.remove
+	$(PLINK) --bfile $(subst .bed,,$<) --remove $(word 2,$^) --genome gz --min $(PIHAT_MIN) --parallel $(word 2,$(subst .genome., ,$(subst .gz,,$@))) $(GENOME_GZ_JOB_SPLIT) --out $(word 1,$(subst .ibs-split, ,$@)).ibs-split
+
+Omni5.step5.ibs-split.genome.%.gz: $$(word 1,$$(subst .step5, ,$$@)).step3.pruning.bed $$(word 1,$$(subst .step5, ,$$@)).step4.het.remove
+	$(PLINK) --bfile $(subst .bed,,$<) --remove $(word 2,$^) --genome gz --min $(PIHAT_MIN) --parallel $(word 2,$(subst .genome., ,$(subst .gz,,$@))) $(GENOME_GZ_JOB_SPLIT) --out $(word 1,$(subst .ibs-split, ,$@)).ibs-split
+
+$(patsubst %,%.step5.ibs-split.genome.gz,$(LARGE_STUDIES)): $$(patsubst %,$$(subst .gz,,$$@).%.gz,$$(shell seq 1 $(GENOME_GZ_JOB_SPLIT)))
+	gunzip -c $^ | gzip -c > $@
+
+%.step5.ibs-normal.genome.gz: %.step3.pruning.bed %.step4.het.remove
+	$(PLINK) --bfile $(subst .bed,,$<) --remove $(word 2,$^) --genome gz --min $(PIHAT_MIN) --out $(subst .genome.gz,,$@)
+
+#%.king.unrelated_toberemoved.txt: %.step3.pruning.bed
+#	../../king/king -b $< --unrelated --degree 3 --prefix $(subst unrelated_toberemoved.txt,,$@)

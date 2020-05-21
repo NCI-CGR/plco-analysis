@@ -1,0 +1,34 @@
+RESOLVED_SUBJECT_LIST := $(call resolve,$(UNIQUE_SUBJECT_LIST))
+
+FILTERED_IMPUTED_DIR := $(call resolve,$(FILTERED_IMPUTED_INPUT_DIR))
+
+VALID_ANCESTRIES := $(subst /,,$(foreach candidate,$(sort $(dir $(shell find $(FILTERED_IMPUTED_DIR)/$(PROJECT_CODE) -name "*dose.vcf.gz" -print))),$(lastword $(subst $(PROJECT_CODE)/, ,$(candidate)))))
+
+ALL_TARGETS := $(foreach ancestry,$(VALID_ANCESTRIES),$(patsubst %,$(ancestry)/chr%-filtered.bgen.success,$(CHRS)) $(patsubst %,$(ancestry)/chr%-filtered-noNAs.sample,$(CHRS)) $(patsubst %,$(ancestry)/chr%-filtered.bgen.bgi,$(CHRS)))
+
+.DELETE_ON_ERROR:
+.SECONDARY:
+.SECONDEXPANSION:
+.PHONY: all $(addsuffix /,$(VALID_ANCESTRIES))
+all: $(ALL_TARGETS)
+
+$(filter %-noNAs.sample,$(ALL_TARGETS)): $$(subst -noNAs.sample,.sample,$$@) | $$(dir $$@)
+	sed 's/NA$$/0/' $< > $@
+
+$(subst -noNAs.sample,.sample,$(filter %.sample,$(ALL_TARGETS))): $$(subst .sample,.bgen.success,$$@) | $$(dir $$@) ;
+
+$(filter %.bgen.success,$(ALL_TARGETS)): $$(subst .bgen.success,.pgen.success,$$@) $(firstword $(subst /, ,$(PROJECT_CODE))).unique.prioritized.keep | $$(dir $$@)
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK2) --memory 16000 --pfile $(subst .pgen.success,,$<) --keep $(word 2,$^) --recode bgen-1.2 bits=8 --out $(subst .bgen.success,,$@))
+
+$(subst .bgen.success,.pgen.success,$(filter %.bgen.success,$(ALL_TARGETS))): $$(FILTERED_IMPUTED_DIR)/$$(PROJECT_CODE)/$$(subst .pgen.success,.dose.vcf.gz,$$@) | $$(dir $$@)
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK2) --memory 16000 --vcf $< dosage=HDS --id-delim _ --make-pgen erase-phase --out $(subst .pgen.success,,$@))
+
+%.bgi: %.success
+	$(BGENIX) -g $(subst .success,,$<) -index -clobber
+
+$(addsuffix /,$(VALID_ANCESTRIES)):
+	mkdir -p $@
+
+%.unique.prioritized.keep: $(RESOLVED_SUBJECT_LIST)
+	awk -F"\t" '$$NF ~ /$(subst .unique.prioritized.keep,,$@)/ {print $$1"\t"$$1}' $< > $@
+
