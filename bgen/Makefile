@@ -10,7 +10,7 @@ $(UNIQUE_PLATFORMS): $$@/Makefile
 	$(MAKE) -C $@
 
 $(addsuffix /Makefile,$(UNIQUE_PLATFORMS)): | $$(dir $$@)
-	echo -e "PROJECT_CODE := $(subst /Makefile,,$@)\n.DELETE_ON_ERROR:\ninclude ../Makefile.bgen_format" > $@
+	echo -e "PROJECT_CODE := $(subst /Makefile,,$@)\n.DELETE_ON_ERROR:\ninclude $(PROJECT_BASE_DIR)/Makefile.bgen_format" > $@
 
 $(addsuffix /,$(UNIQUE_PLATFORMS)):
 	mkdir -p $@
