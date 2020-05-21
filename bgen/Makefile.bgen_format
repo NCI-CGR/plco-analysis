@@ -1,6 +1,7 @@
-RESOLVED_SUBJECT_LIST := $(call resolve,$(UNIQUE_SUBJECT_LIST))
+include $(PROJECT_BASE_DIR)/Makefile.config
+RESOLVED_SUBJECT_LIST := $(UNIQUE_SUBJECT_LIST)
 
-FILTERED_IMPUTED_DIR := $(call resolve,$(FILTERED_IMPUTED_INPUT_DIR))
+FILTERED_IMPUTED_DIR := $(FILTERED_IMPUTED_INPUT_DIR)
 
 VALID_ANCESTRIES := $(subst /,,$(foreach candidate,$(sort $(dir $(shell find $(FILTERED_IMPUTED_DIR)/$(PROJECT_CODE) -name "*dose.vcf.gz" -print))),$(lastword $(subst $(PROJECT_CODE)/, ,$(candidate)))))
 
@@ -12,10 +13,8 @@ ALL_TARGETS := $(foreach ancestry,$(VALID_ANCESTRIES),$(patsubst %,$(ancestry)/c
 .PHONY: all $(addsuffix /,$(VALID_ANCESTRIES))
 all: $(ALL_TARGETS)
 
-$(filter %-noNAs.sample,$(ALL_TARGETS)): $$(subst -noNAs.sample,.sample,$$@) | $$(dir $$@)
-	sed 's/NA$$/0/' $< > $@
-
-$(subst -noNAs.sample,.sample,$(filter %.sample,$(ALL_TARGETS))): $$(subst .sample,.bgen.success,$$@) | $$(dir $$@) ;
+$(filter %-noNAs.sample,$(ALL_TARGETS)): $$(subst -noNAs.sample,.bgen.success,$$@) | $$(dir $$@)
+	sed 's/NA$$/0/' $(subst .bgen.success,.sample,$<) > $@
 
 $(filter %.bgen.success,$(ALL_TARGETS)): $$(subst .bgen.success,.pgen.success,$$@) $(firstword $(subst /, ,$(PROJECT_CODE))).unique.prioritized.keep | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK2) --memory 16000 --pfile $(subst .pgen.success,,$<) --keep $(word 2,$^) --recode bgen-1.2 bits=8 --out $(subst .bgen.success,,$@))

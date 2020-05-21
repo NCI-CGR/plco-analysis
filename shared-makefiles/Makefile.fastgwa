@@ -1,40 +1,15 @@
-## overall workflow for FASTGWA analyses
+## Cameron Palmer, 19 May 2020
+## Run fastGWA
 
-## 1) determine which analyses need to be run
+GENOTYPE_DIR := $(CLEANED_CHIP_INPUT_DIR)
+IMPUTED_DIR := $(BGEN_OUTPUT_DIR)
 
-## 2) determine which datasets need to be run for each analysis
-
-## 3) for each dataset:
-
-##    - run FASTGWA round 1 for dense GRM estimation
-##    - run FASTGWA round 2 for sparse GRM estimation
-##    - run FASTGWA round 3 with sparse GRM and actual genotypes
-##    - need to wrap this in qsubs; address duration cutoff issues
-
-include /home/palmercd/Development/Makefile_utilities/Makefile.qsub_handling
-
-GENOTYPE_DIR := /CGF/GWAS/Scans/PLCO/builds/1/cleaned-chips-by-ancestry
-IMPUTED_DIR := ../raw-by-ancestry
-#../filtered-dosage-data
-PROJECT_NAMES := GSA Oncoarray OmniX Omni25 Omni5
-CHRS := $(shell seq 1 22)
-
-PHENOTYPE_FILENAME := phenotypes/v5/gsa_qx_v5.with_na.augmented.18may2020.tsv
-
-RESULTS_DIR := results
-CONFIG_DIR := config
+RESULTS_DIR := $(RESULT_OUTPUT_DIR)
+CONFIG_DIR := $(CONFIG_INPUT_DIR)
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
-$(info $(ANALYSIS_CONFIGS))
 ANALYSIS_RESULTS_FASTGWA := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell shared-source/construct_output_filenames.bash $(config) fastgwa)))
-$(info $(ANALYSIS_RESULTS_FASTGWA))
-## results/output-prefix/ancestry/FASTGWA/output-prefix.chip.fastgwa
 
-## becomes results/output-prefix/ancestry/FASTGWAS/output-prefix.chip.chr##.fastgwa.success
-#ANALYSIS_RESULTS_FASTGWA_Omni := $(filter %.OmniX.fastgwa %.Omni25.fastgwa %.Omni5.fastgwa,$(ANALYSIS_RESULTS_FASTGWA))
-#ANALYSIS_RESULTS_FASTGWA_Oncoarray := $(filter %.CGR.fastgwa %.external.fastgwa,$(ANALYSIS_RESULTS_FASTGWA))
-#ANALYSIS_RESULTS_FASTGWA_GSA := $(filter-out $(ANALYSIS_RESULTS_FASTGWA_Omni) $(ANALYSIS_RESULTS_FASTGWA_Oncoarray),$(ANALYSIS_RESULTS_FASTGWA))
-
-FASTGWA_EXECUTABLE := /home/palmercd/Development/gcta_1.93.1beta/gcta64
+MINIMUM_VALID_SUBJECT_COUNT := $(FASTGWA_MINIMUM_VALID_SUBJECT_COUNT)
 
 .SECONDEXPANSION:
 .SECONDARY:
@@ -44,40 +19,59 @@ all: $(ANALYSIS_RESULTS_FASTGWA) | $(dir $(ANALYSIS_RESULTS_FASTGWA))
 
 $(ANALYSIS_RESULTS_FASTGWA): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
-
-
-MINIMUM_VALID_SUBJECT_COUNT := 2000
 define check_model_matrix
 "$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(MINIMUM_VALID_SUBJECT_COUNT)"
 endef
 
-
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.tsv.gz
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.tsv
 %.tsv.gz: %.tsv
-	if [[ $(call check_model_matrix,$(subst .fastgwa.tsv.gz,,$@).fastgwa.model_matrix) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .fastgwa.tsv.gz,.fastgwa.model_matrix,$@)) ]] ; then \
 	gzip -c $< > $@ ; \
 	fi
 
-$(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $$(patsubst %,$$(subst .fastgwa.tsv,,$$@).chr%.fastgwa.success,$$(CHRS)) $$(subst .fastgwa.tsv,,$$@).fastgwa.model_matrix.success | $$(dir $$@)
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.tsv
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.fastgwa.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.model_matrix.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+$(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $$(patsubst %,$$(subst .fastgwa.tsv,,$$@).chr%.fastgwa.success,$$(CHRS)) $$(subst .fastgwa.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
 	cat $(filter-out %.model_matrix.success,$(subst .fastgwa.success,.fastGWA,$^)) | awk '! /CHR/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$3"\t"$$2"\t"$$4"\t"$$5"\tNA\t"$$8"\t"$$9"\t"$$10"\t"$$6}' > $@ ; \
 	fi
 
-## needs: grm file (fastgwa-grm/ancestry/chip-sp.grm is prefix, chip-sp.grm.sp is trackable file)
-##        bgen file (just bfile for now)
-##        phenotype file (unknown format)
-##        qcovar file (unknown format)
-##        covar file (unknown format)
-$(foreach result,$(ANALYSIS_RESULTS_FASTGWA),$(patsubst %,$(subst .fastgwa,,$(result)).chr%.fastgwa.success,$(CHRS))): fastgwa-grm/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(word 1,$$(subst .chr, ,$$@))))))-sp.grm.sp ../bgen-format/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(word 1,$$(subst .chr, ,$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$@))))))))/$$(word 3,$$(subst /, ,$$@))/$$(lastword $$(subst ., ,$$(subst .fastgwa.success,,$$@)))-filtered.bgen ../bgen-format/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(word 1,$$(subst .chr, ,$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$@))))))))/$$(word 3,$$(subst /, ,$$@))/$$(lastword $$(subst ., ,$$(subst .fastgwa.success,,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).fastgwa.phenotype $$(word 1,$$(subst .chr, ,$$@)).fastgwa.covariates $$(word 1,$$(subst .chr, ,$$@)).fastgwa.model_matrix.success
+
+define extract_chip =
+$(firstword $(subst _,$(2),$(lastword $(subst ., ,$(word 1,$(subst .chr, ,$(1)))))))
+endef
+
+define extract_ancestry =
+$(word 3,$(subst /, ,$(1)))
+endef
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.fastgwa.success
+##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}-sp.grm.sp
+##            bgen/{CHIP}/{ANCESTRY}/chr{CHR}-filtered.bgen
+##            bgen/{CHIP}/{ANCESTRY}/chr{CHR}-filtered-noNAs.sample
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.phenotype
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.covariates
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.model_matrix.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+$(foreach result,$(ANALYSIS_RESULTS_FASTGWA),$(patsubst %,$(subst .fastgwa,,$(result)).chr%.fastgwa.success,$(CHRS))): fastgwa-grm/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@, )-sp.grm.sp ../bgen-format/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst .chr, chr,$$(subst .fastgwa.success,,$$@)))-filtered.bgen ../bgen-format/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst .chr, chr,$$(subst .fastgwa.success,,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).fastgwa.phenotype $$(word 1,$$(subst .chr, ,$$@)).fastgwa.covariates $$(word 1,$$(subst .chr, ,$$@)).fastgwa.model_matrix.success
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
-	$(call qsub_handler_specify_queue_time,$(subst .success,,$@),echo \"Linux version:\" > $@.system.info && uname -a >> $@.system.info && echo \"LD version:\" >> $@.system.info && ldd --version >> $@.system.info && echo \"CPU:\" >> $@.system.info && cat /proc/cpuinfo | head -n 33 >> $@.system.info && echo \"system info:\" >> $@.system.info && cat /etc/*-release /etc/*-release-* >> $@.system.info && $(FASTGWA_EXECUTABLE) --bgen $(word 2,$^) --sample $(word 3,$^) --fastGWA-mlm --grm-sparse $(subst -sp.grm.sp,-sp,$<) --pheno $(word 4,$^) --qcovar $(word 5,$^) --threads 4 --out $(subst .fastgwa.success,,$@) > $(subst .success,.log,$@),all.q,1:00:00) ; \
+	$(call qsub_handler_specify_queue_time,$(subst .success,,$@),$(GCTA) --bgen $(word 2,$^) --sample $(word 3,$^) --fastGWA-mlm --grm-sparse $(subst -sp.grm.sp,-sp,$<) --pheno $(word 4,$^) --qcovar $(word 5,$^) --threads 4 --out $(subst .fastgwa.success,,$@) > $(subst .success,.log,$@),all.q,1:00:00) ; \
 	else \
 	touch $@ ; \
 	fi
 
-
-
-%.fastgwa.samples: $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$(word 2,$$(subst ., ,$$(notdir $$@)))))/$$(lastword $$(subst /, ,$$(subst FASTGWA,,$$(dir $$@))))/chr22.dose.vcf.gz | $$(dir $$@)
-	gunzip -c $< | head -100 | awk '/^#CHROM/' | cut -f 1-9 --complement | sed 's/\t/\n/g' > $@
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.samples
+##    input:  bgen/{CHIP}/{ANCESTRY}/chr22-filtered-noNAs.sample
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+%.fastgwa.samples: $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/chr22-filtered-noNAs.sample | $$(dir $$@)
+	awk 'NR > 2 {print $$1"_"$$1}' $< > $@
 
 define get_analysis_prefix
 $(subst .fastgwa,,$(subst .model_matrix.success,,$(subst .round1,,$(subst .success,,$(notdir $(1))))))
@@ -95,13 +89,21 @@ define get_covariates_from_model_matrix
 $(shell awk 'NR == 1' $(1) | cut -f 1-3 --complement | sed 's/ /,/g; s/\t/,/g')
 endef
 
-%.fastgwa.phenotype: %.fastgwa.model_matrix.success
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.phenotype
+##    input:  results/{PHENOTYPE}/{ANCESTYR}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.model_matrix.success
+%.fastgwa.phenotype: %.fastgwa.model_matrix.success | $$(dir $$@)
 	cut -f 1-3 $(subst .success,,$<) > $@
 
-## note that this assumes SAIGE processing of categoricals into binary dummies and eliminates the correct use of ordinals
-%.fastgwa.covariates: %.fastgwa.model_matrix.success
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.covariates
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.model_matrix.success
+%.fastgwa.covariates: %.fastgwa.model_matrix.success | $$(dir $$@)
 	cut -f 3 --complement $(subst .success,,$<) > $@
 
+## patterns:
+##    output: results/{PHENOTYPE}
+##    input:  
 %.fastgwa.model_matrix.success: $$(shell echo "$$(call get_analysis_prefix,$$@)" | sed 's/\./\t/g' | grep -lwf - $$(CONFIG_DIR)/*) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript shared-source/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .fastgwa.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 

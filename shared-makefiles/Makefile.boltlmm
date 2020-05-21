@@ -52,7 +52,7 @@ endef
 
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $$(patsubst %,$$(subst .boltlmm.tsv,,$$@).chr%.boltlmm.success,$$(CHRS)) $$(subst .boltlmm.tsv,,$$@).boltlmm.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
-	cat $(filter-out %.model_matrix.success,$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\tNA\t"$$9"\t"$$10"\t"$$11"\tNA"}' > $@ ; \
+	cat $(filter-out %.model_matrix.success,$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\tNA\t"$$9"\t"$$10"\t"$$11"\tNA"}' > $@ ; \
 	fi
 
 .PHONY: dangerous-clean
