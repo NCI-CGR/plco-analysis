@@ -1,10 +1,19 @@
+## Cameron Palmer, 21 May 2020
+## Shared pipeline for each platform in turn, pulled in through an include from a dummy makefile controller.
+## Note that this means that this is executed from within the {CHIP} directory, and output paths don't include that
+## Ancestry is stored in "PROJECT_CODE"
 include $(PROJECT_BASE_DIR)/Makefile.config
+
 RESOLVED_SUBJECT_LIST := $(UNIQUE_SUBJECT_LIST)
 
 FILTERED_IMPUTED_DIR := $(FILTERED_IMPUTED_INPUT_DIR)
 
+## input filtered imputed files are only created for platform/ancestry combinations with (by default) at least 100 subjects.
+## instead of reconstructing that information from scratch, search the likely directories for dose.vcf.gz files; if they exist,
+## that platform/ancestry combination is valid and needs processing
 VALID_ANCESTRIES := $(subst /,,$(foreach candidate,$(sort $(dir $(shell find $(FILTERED_IMPUTED_DIR)/$(PROJECT_CODE) -name "*dose.vcf.gz" -print))),$(lastword $(subst $(PROJECT_CODE)/, ,$(candidate)))))
 
+## all targets are: for each autosome, a bgen file, a bgen index (bgi) file, and a sample file with a foolish modification due to software weirdness
 ALL_TARGETS := $(foreach ancestry,$(VALID_ANCESTRIES),$(patsubst %,$(ancestry)/chr%-filtered.bgen.success,$(CHRS)) $(patsubst %,$(ancestry)/chr%-filtered-noNAs.sample,$(CHRS)) $(patsubst %,$(ancestry)/chr%-filtered.bgen.bgi,$(CHRS)))
 
 .DELETE_ON_ERROR:
@@ -13,21 +22,52 @@ ALL_TARGETS := $(foreach ancestry,$(VALID_ANCESTRIES),$(patsubst %,$(ancestry)/c
 .PHONY: all $(addsuffix /,$(VALID_ANCESTRIES))
 all: $(ALL_TARGETS)
 
+## patterns:
+##    output: {ANCESTRY}/chr{CHR}-filtered-noNAs.sample
+##    input:  {ANCESTRY}/chr{CHR}-filtered.bgen.succcess (really .sample)
+##    input:  {ANCESTRY}/
+## Notes: this only exists because plink-format .sample output emits "NA"s when downstream applications expect "0" missing codes.
+## .bgen.success is the tracker, but the real input is the .sample file.
 $(filter %-noNAs.sample,$(ALL_TARGETS)): $$(subst -noNAs.sample,.bgen.success,$$@) | $$(dir $$@)
 	sed 's/NA$$/0/' $(subst .bgen.success,.sample,$<) > $@
 
+## patterns:
+##    output: {ANCESTRY}/chr{CHR}-filtered.bgen.success
+##    input:  {ANCESTRY}/chr{CHR}-filtered.pgen.success
+##    input:  {ANCESTRY}.unique.prioritized.keep
+##    input:  {ANCESTRY}/
+## Notes: read pgen files with haplotype dosages into plink, emit bgen 1.2 dosages.
 $(filter %.bgen.success,$(ALL_TARGETS)): $$(subst .bgen.success,.pgen.success,$$@) $(firstword $(subst /, ,$(PROJECT_CODE))).unique.prioritized.keep | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK2) --memory 16000 --pfile $(subst .pgen.success,,$<) --keep $(word 2,$^) --recode bgen-1.2 bits=8 --out $(subst .bgen.success,,$@))
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK2) --pfile $(subst .pgen.success,,$<) --keep $(word 2,$^) --recode bgen-1.2 bits=8 --out $(subst .bgen.success,,$@))
 
+## patterns:
+##    output: {ANCESTRY}/chr{CHR}-filtered.pgen.success
+##    input:  {INPUT_FILTERED_DOSAGE_DATA}/{CHIP}/{ANCESTRY}/chr{CHR}-filtered.dose.vcf.gz
+##    input:  {ANCESTRY}/
+## Notes: read post-imputation-QC by-ancestry data for an autosome, remove the phase (BOLT requirement), write to pgen while saving haplotype dosages
+## this has already been handled upstream, but note that this step would remove genotype probabilities. also note that this has to be a separate
+## step from the bgen write step because erase-phase is apparently specific to --make-pgen
 $(subst .bgen.success,.pgen.success,$(filter %.bgen.success,$(ALL_TARGETS))): $$(FILTERED_IMPUTED_DIR)/$$(PROJECT_CODE)/$$(subst .pgen.success,.dose.vcf.gz,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK2) --memory 16000 --vcf $< dosage=HDS --id-delim _ --make-pgen erase-phase --out $(subst .pgen.success,,$@))
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK2) --vcf $< dosage=HDS --id-delim _ --make-pgen erase-phase --out $(subst .pgen.success,,$@))
 
+## patterns:
+##    output: {ANCESTRY}/chr{CHR}-filtered.bgen.bgi
+##    input:  {ANCESTRY}/chr{CHR}-filtered.bgen.success
+## Notes: use bgenix to index the bgen file for use with downstream applications. -clobber required for pipeline reruns.
 %.bgi: %.success
 	$(BGENIX) -g $(subst .success,,$<) -index -clobber
 
+## patterns:
+##    output: {ANCESTRY}/
+## Notes: if needed, make the ancestry output directory
 $(addsuffix /,$(VALID_ANCESTRIES)):
 	mkdir -p $@
 
+## patterns:
+##    output: {ANCESTRY}.prioritized.keep
+##    input:  {FINAL_NONREDUNDANT_SUBJECT_LIST}
+## Notes: this step was previously handled differently, but now there is an apparently canonical list of nonredundant subjects by platform
+## created by a collaborator. so in this case, just use that list directly.
 %.unique.prioritized.keep: $(RESOLVED_SUBJECT_LIST)
 	awk -F"\t" '$$NF ~ /$(subst .unique.prioritized.keep,,$@)/ {print $$1"\t"$$1}' $< > $@
 
