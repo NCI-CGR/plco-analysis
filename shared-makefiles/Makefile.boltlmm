@@ -1,145 +1,243 @@
-## overall workflow for BOLT-LMM analyses
+## Cameron Palmer, 22 May 2020
+## workflow for BOLT-LMM analyses
 
-## 1) determine which analyses need to be run
+GENOTYPE_DIR := $(CLEANED_CHIP_INPUT_DIR)
+IMPUTED_DIR := $(BGEN_OUTPUT_DIR)
 
-## 2) determine which datasets need to be run for each analysis
-
-## 3) for each dataset:
-
-## BOLT-LMM is one-shot as long as the bgen files have been precomputed; this is also required for fastgwa so hooray for that i guess
-## need to resolve ancestry/ld file pairing
-##    - need to wrap this in qsubs; address duration cutoff issues
-
-include /home/palmercd/Development/Makefile_utilities/Makefile.qsub_handling
-
-GENOTYPE_DIR := /CGF/GWAS/Scans/PLCO/builds/1/cleaned-chips-by-ancestry
-IMPUTED_DIR := ../bgen-format
-PROJECT_NAMES := GSA Oncoarray OmniX Omni25
-CHRS := $(shell seq 1 22)
-PLINK := plink --memory 16000
-PHENOTYPE_FILENAME := phenotypes/v5/gsa_qx_v5.with_na.augmented.18may2020.tsv
-
-RESULTS_DIR := results
-CONFIG_DIR := config
+RESULTS_DIR := $(RESULT_OUTPUT_DIR)
+CONFIG_DIR := $(CONFIG_INPUT_DIR)
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
-$(info $(ANALYSIS_CONFIGS))
+## construct analysis targets for all config entries that request BOLT
 ANALYSIS_RESULTS_BOLTLMM := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell shared-source/construct_output_filenames.bash $(config) boltlmm)))
-$(info $(ANALYSIS_RESULTS_BOLTLMM))
-## results/output-prefix/ancestry/BOLTLMM/output-prefix.chip.boltlmm
-
-BOLTLMM_EXECUTABLE := /home/palmercd/Development/BOLT-LMM_v2.3.4/bolt
 
 .SECONDEXPANSION:
 .SECONDARY:
 .DELETE_ON_ERROR:
 .PHONY: all $(ANALYSIS_RESULTS_BOLTLMM)
-all: $(ANALYSIS_RESULTS_BOLTLMM) | $(dir $(ANALYSIS_RESULTS_BOLTLMM))
+all: $(ANALYSIS_RESULTS_BOLTLMM) | $(sort $(dir $(ANALYSIS_RESULTS_BOLTLMM)))
 
 $(ANALYSIS_RESULTS_BOLTLMM): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
-MINIMUM_VALID_SUBJECT_COUNT := 3000
+## empirical approximate minimum subject count, specific to BOLTLMM
+MINIMUM_VALID_SUBJECT_COUNT := $(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)
+
 define check_model_matrix
 "$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(MINIMUM_VALID_SUBJECT_COUNT)"
 endef
 
-
-
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.tsv.gz
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.tsv
+## Notes: gzip the genome-wide BOLTLMM results
 %.tsv.gz: %.tsv
 	if [[ $(call check_model_matrix,$(subst .boltlmm.tsv.gz,,$@).boltlmm.model_matrix) ]] ; then \
 	gzip -c $< > $@ ; \
 	fi
 
-
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.tsv
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.boltlmm.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: combine results from per-chromosome BOLTLMM runs into a single genome-wide file, suitable for meta-analysis.
+## the model matrix is only required here to enforce a preflight sample size check.
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $$(patsubst %,$$(subst .boltlmm.tsv,,$$@).chr%.boltlmm.success,$$(CHRS)) $$(subst .boltlmm.tsv,,$$@).boltlmm.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
 	cat $(filter-out %.model_matrix.success,$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\tNA\t"$$9"\t"$$10"\t"$$11"\tNA"}' > $@ ; \
 	fi
 
+## phony clean target to eliminate all BOLT analysis directories
 .PHONY: dangerous-clean
 dangerous-clean:
 	rm -Rf $(sort $(dir $(ANALYSIS_RESULTS_BOLTLMM)))
+
+
+## utility function to grab {CHIP} out of results/{PHENOTYPE}/{ANCESTYR}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.{whatever}
+define extract_chip =
+$(firstword $(subst _,$(2),$(lastword $(subst ., ,$(word 1,$(subst .chr, ,$(subst GSA_,GSA/,$(1))))))))
+endef
+
+## utility function to grab {ANCESTRY} out of results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.{whatever}
+define extract_ancestry =
+$(word 3,$(subst /, ,$(1)))
+endef
 
 ## needs: bgen file (just bfile for now)
 ##        phenotype file (unknown format)
 ##        qcovar file (unknown format)
 ##        ldScores file (from ldsc, based on 1000 Genomes superpops for the moment)
 ##        covar file (unknown format)
-$(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(result)).chr%.boltlmm.success,$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).bolt-chip.GRCh38-resorted-nochr0.bed.success ../bgen-format/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(word 1,$$(subst .chr, ,$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$@))))))))/$$(word 3,$$(subst /, ,$$@))/$$(lastword $$(subst ., ,$$(subst .boltlmm.success,,$$@)))-filtered.bgen ../bgen-format/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(word 1,$$(subst .chr, ,$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$@))))))))/$$(word 3,$$(subst /, ,$$@))/$$(lastword $$(subst ., ,$$(subst .boltlmm.success,,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).boltlmm.phenotype $$(word 1,$$(subst .chr, ,$$@)).boltlmm.covariates $$(shell shared-source/resolve_bolt_ldscore.bash $$(word 3,$$(subst /, ,$$@))) $$(word 1,$$(subst .chr, ,$$@)).boltlmm.model_matrix.success
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.boltlmm.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted-nochr0.bed.success
+##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr{CHR}-filtered.bgen
+##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr{CHR}-filtered-noNAs.sample
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.phenotype
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.covariates
+##    input:  {LDSCORE_FILES}/LDSCORE.1000G_{SUPERCONTINENT}l2.ldscore-reformatted.gz
+## Notes: run primary BOLT-LMM analysis by chromosome. requires genotype data directly aligned with LDSCORE information,
+## so based on the particularities of the PLCO analysis, the chip data need to be lifted to GRCh38 first. bgen files
+## must be v1.2 based on current BOLT (2.3.4) requirements for fast processing. Model matrix is used for on the fly minimum
+## sample size enforcement.
+$(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(result)).chr%.boltlmm.success,$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).bolt-chip.GRCh38-resorted-nochr0.bed.success $$(IMPUTED_DIR)/$$(call extract_chip,$$@)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst ., ,$$(subst .boltlmm.success,,$$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst ., ,$$(subst .boltlmm.success,,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).boltlmm.phenotype $$(word 1,$$(subst .chr, ,$$@)).boltlmm.covariates $$(shell shared-source/resolve_bolt_ldscore.bash $$(call extract_ancestry,$$@)) $$(word 1,$$(subst .chr, ,$$@)).boltlmm.model_matrix.success
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
 	$(call qsub_handler,$(subst .success,,$@),$(BOLTLMM_EXECUTABLE) --bfile $(subst .bed.success,,$(word 1,$^)) --bgenFile $(word 2,$^) --sampleFile $(word 3,$^) --lmm --LDscoresFile=$(subst .gz,-reformatted.gz,$(word 6,$^)) --statsFile=$(subst .boltlmm.success,.chip_results.boltlmm,$@) --statsFileBgenSnps=$(subst .success,,$@) --phenoFile $(word 4,$^) --phenoCol $(shell head -1 $(word 4,$^) | cut -f 3) --covarFile $(word 5,$^) --qCovarCol $(shell head -1 $(word 5,$^) | cut -f 1-2 --complement | sed 's/\t/ --qCovarCol /g') --LDscoresMatchBp --geneticMapFile /home/palmercd/Development/BOLT-LMM_v2.3.4/tables/genetic_map_hg19_withX.txt.gz > $(subst .success,.log,$@) 2>&1) ; \
 	else \
 	touch $@ ; \
 	fi
 
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted-nochr0.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip-GRCh38-resorted-chr0.exclude
+## Notes: remove "0" chromosome annotations for compatibility with BOLT
 %.bolt-chip.GRCh38-resorted-nochr0.bed.success: %.bolt-chip.GRCh38-resorted.bed.success %.bolt-chip.GRCh38-resorted.chr0.exclude
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK) --bfile $(subst .bed.success,,$<) --exclude $(word 2,$^) --make-bed --out $(subst .bed.success,,$@))
 
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted.chr0.exclude
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted.bed.success (really bim)
+## Notes: get a plink-format exclude file for variants with unlocalized chromosome
 %.bolt-chip.GRCh38-resorted.chr0.exclude: %.bolt-chip.GRCh38-resorted.bed.success
 	awk '$$1 == 0 {print $$2}' $(subst .bed.success,.bim,$<) > $@
 
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38.bed
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip-GRCh38.bim
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38.fam
+## Notes: liftover likely breaks order of variants in the genome; quickest solution is just to reload and rewrite everything with plink.
 %.bolt-chip.GRCh38-resorted.bed.success: %.bolt-chip.GRCh38.bed %.bolt-chip.GRCh38.bim %.bolt-chip.GRCh38.fam
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK) --bed $< --bim $(word 2,$^) --fam $(word 3,$^) --allow-extra-chr 0 --make-bed --out $(subst .bed.success,,$@))
 
-%.boltlmm.samples: $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$(word 2,$$(subst ., ,$$(notdir $$@)))))/$$(lastword $$(subst /, ,$$(subst BOLTLMM,,$$(dir $$@))))/chr22-filtered-noNAs.sample | $$(dir $$@)
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.samples
+##    input:  {IMPUTED_DATA}/{CHIP}/{ANCESTRY}/chr22-filtered-noNAs.sample
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: final subject list for actual imputed data. used for compatibility with SAIGE shared code. some applications
+## to ensure synchronization between chip and imputed data are no longer necessary in final PLCO dataset
+%.boltlmm.samples: $$(IMPUTED_DIR)/$$(subst GSA_,GSA/$$(word 2,$$(subst ., ,$$(notdir $$@))))/$$(lastword $$(subst /, ,$$(subst BOLTLMM,,$$(dir $$@))))/chr22-filtered-noNAs.sample | $$(dir $$@)
 	awk 'NR > 2 {print $$1"_"$$1}' $< > $@
 
-
-
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38.bed
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.lift-failures-excluded.bed.success
+## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
+## imputed data in GRCh38. so it's just a hack liftover intermediate step.
 %.bolt-chip.GRCh38.bed: %.bolt-chip.lift-failures-excluded.bed.success
 	cp $(subst .success,,$<) $@
 
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38.bim
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.lift-failures-excluded.bed.success (really bim)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-output
+## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
+## imputed data in GRCh38. hack liftover data by taking liftover output and manually swapping in new position data over old.
 %.bolt-chip.GRCh38.bim: %.bolt-chip.lift-failures-excluded.bed.success %.bolt-chip.liftover-output
 	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/chr// ; s/:/\t/ ; s/-/\t/' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2"\t"$$8"\t"$$9}' > $@
 
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38.fam
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.lift-failures-excluded.bed.success (really fam)
+## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
+## imputed data in GRCh38. so it's just a hack liftover intermediate step.
 %.bolt-chip.GRCh38.fam: %.bolt-chip.lift-failures-excluded.bed.success
 	cp $(subst .bed.success,.fam,$<) $@
 
-%.bolt-chip.lift-failures-excluded.bed.success: %.bolt-chip.bed.success %.bolt-chip.liftover-output
-	awk '! /^#/' $(subst liftover-output,liftover-failure,$(word 2,$^)) | sed 's/chr// ; s/-/\t/' | awk '{print $$1}' > $(subst .bed.success,.exclude,$@)
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK) --bfile $(subst .bed.success,,$<) --exclude $(subst .bed.success,.exclude,$@) --make-bed --out $(subst .bed.success,,$@))
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.lift-failures-excluded.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover.exclude
+## Notes: first step to updating plink file with GRCh38 lifted positions: remove variants that failed lift, in order
+%.bolt-chip.lift-failures-excluded.bed.success: %.bolt-chip.bed.success %.bolt-chip.liftover.exclude
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK) --bfile $(subst .bed.success,,$<) --exclude $(word 2,$^) --make-bed --out $(subst .bed.success,,$@))
 
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover.exclude
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-output (really liftover-failure)
+## Notes: convert failed lifts into a plink-format exclude file
+%.bolt-chip.liftover.exclude: %.bolt-chip.liftover-output
+	awk '! /^#/' $(subst liftover-output,liftover-failure,$<) | sed 's/chr// ; s/-/\t/' | awk '{print $$1}' > $@
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-output
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-input
+## Notes: run liftover, chips are in hg19 and imputed data are in GRCh38
 %.bolt-chip.liftover-output: %.bolt-chip.liftover-input
-	/home/palmercd/Development/stage/bin/liftOver -positions $< /home/palmercd/Development/stage/share/liftover_chains/hg19ToHg38.over.chain.gz $@ $(subst liftover-output,liftover-failure,$@)
+	$(LIFTOVER_EXECUTABLE) -positions $< $(LIFTOVER_19_TO_38) $@ $(subst liftover-output,liftover-failure,$@)
 
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-input
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.bed.success
+## Notes: 
 %.bolt-chip.liftover-input: %.bolt-chip.bed.success
 	awk '{print "chr"$$1":"$$4"-"$$4}' $(subst .bed.success,.bim,$<) > $@
 
+## patterns:
+##    output:
+##    input:
+## Notes:
 %.bolt-chip.bed.success: ../cleaned-chips-by-ancestry/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .bolt-chip.bed.success,,$$@))))).nohet.autosomes.bed %.boltlmm.samples.plink-format ../cleaned-chips-by-ancestry/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .bolt-chip.bed.success,,$$@))))).step2.pruning.prune.in ../cleaned-chips-by-ancestry/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .bolt-chip.bed.success,,$$@))))).step3.pruning.prune.out
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK) --bfile $(subst .bed,,$<) --keep $(word 2,$^) --extract $(word 3,$^) --exclude $(word 4,$^) --make-bed --out $(subst .bed.success,,$@))
 
+## patterns:
+##    output:
+##    input:
+## Notes:
 %.boltlmm.samples.plink-format: %.boltlmm.samples
 	awk '{print $$1}' $< | sed 's/_/\t/g' > $@
 
-
+##
 define get_analysis_prefix
-$(subst .boltlmm,,$(subst .model_matrix.success,,$(subst .round1,,$(subst .success,,$(notdir $(1))))))
+$(subst .boltlmm,,$(subst .model_matrix,,$(subst .round1,,$(subst .success,,$(notdir $(1))))))
 endef
 
+##
 define get_phenotype
 $(shell shared-source/construct_phenotype.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
 endef
 
+##
 define get_covariates
 $(shell shared-source/construct_covariates.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
 endef
 
+##
 define get_covariates_from_model_matrix
 $(shell awk 'NR == 1' $(1) | cut -f 1-3 --complement | sed 's/ /,/g; s/\t/,/g')
 endef
 
+## patterns:
+##    output:
+##    input:
+## Notes:
 %.boltlmm.phenotype: %.boltlmm.model_matrix.success
 	cut -f 1-3 $(subst .success,,$<) > $@
 
 ## note that this assumes SAIGE processing of categoricals into binary dummies and eliminates the correct use of ordinals
+## patterns:
+##    output:
+##    input:
+## Notes:
 %.boltlmm.covariates: %.boltlmm.model_matrix.success
 	cut -f 3 --complement $(subst .success,,$<) > $@
 
+## patterns:
+##    output:
+##    input:
+## Notes:
 %.boltlmm.model_matrix.success: $$(shell echo "$$(call get_analysis_prefix,$$@)" | sed 's/\./\t/g' | grep -lwf - $(CONFIG_DIR)/*) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript shared-source/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
+## patterns:
+##    output:
 $(sort $(dir $(ANALYSIS_RESULTS_BOLTLMM))):
 	mkdir -p $@
 
+## patterns:
+##    output:
+##    input:
+## Notes:
 %.bed: $$(GENOTYPE_DIR)/$$(lastword $$(subst /, ,$$(firstword $$(subst BOLTLMM/, ,$$@))))/$$(lastword $$(subst PLCO_, ,$$(subst .bed,,$$@))).step6.bed
 	ln -fs $< $@
 	ln -fs $(subst .bed,.bim,$<) $(subst .bed,.bim,$@)

@@ -7,8 +7,9 @@ IMPUTED_DIR := $(BGEN_OUTPUT_DIR)
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
+## construct analysis targets for all config entries that request fastGWA
 ANALYSIS_RESULTS_FASTGWA := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell shared-source/construct_output_filenames.bash $(config) fastgwa)))
-
+## empirical approximate minimum subject count, specific to fastGWA
 MINIMUM_VALID_SUBJECT_COUNT := $(FASTGWA_MINIMUM_VALID_SUBJECT_COUNT)
 
 .SECONDEXPANSION:
@@ -26,7 +27,7 @@ endef
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.tsv.gz
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.tsv
-## Notes: gzip the genome-wide fastGWA result.
+## Notes: gzip the genome-wide fastGWA results.
 %.tsv.gz: %.tsv
 	if [[ $(call check_model_matrix,$(subst .fastgwa.tsv.gz,.fastgwa.model_matrix,$@)) ]] ; then \
 	gzip -c $< > $@ ; \

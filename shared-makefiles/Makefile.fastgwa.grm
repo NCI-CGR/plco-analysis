@@ -21,6 +21,7 @@ all: $(VALID_OUTPUTS)
 ## patterns:
 ##    output: fastgwa-grm/{ANCESTRY}/{CHIP}-sp.grm.sp
 ##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.grm.bin
+## Notes: round 2, make an existing GRM sparse
 %-sp.grm.sp.success: %.grm.bin | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),$(GCTA) --grm $(subst .grm.bin,,$<) --make-bK-sparse 0.05 --out $(subst .grm.sp.success,,$@))
 
@@ -28,24 +29,28 @@ all: $(VALID_OUTPUTS)
 ## patterns:
 ##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.grm.N.bin
 ##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.part_{TOTALPARTS}_{CURRENTPART}.grm.bin.success
+## Notes: merge .grm.N.bin files from round 1
 $(subst -sp.grm.sp.success,.grm.N.bin,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.bin,,$$@).part_$$(N_SPLITS)_%.grm.bin.success,$$(SPLIT_SEQ)) | $$(dir $$@)
 	cat $(subst .grm.bin.success,.grm.N.bin,$^) > $@
 
 ## patterns:
 ##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.grm.id
 ##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.part_{TOTALPARTS}_{CURRENTPART}.grm.bin.success
+## Notes: merge .grm.id files from round 1
 $(subst -sp.grm.sp.success,.grm.bin,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.bin,,$$@).part_$$(N_SPLITS)_%.grm.bin.success,$$(SPLIT_SEQ)) | $$(dir $$@)
 	cat $(subst .grm.bin.success,.grm.id,$^) > $@
 
 ## patterns:
 ##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.grm.bin
 ##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.part_{TOTALPARTS}_{CURRENTPART}.grm.bin.success
+## Notes: merge .grm.bin files from round 1
 $(subst -sp.grm.sp.success,.grm.bin,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.bin,,$$@).part_$$(N_SPLITS)_%.grm.bin.success,$$(SPLIT_SEQ)) | $$(dir $$@)
 	cat $(subst .success,,$^) > $@
 
 ## patterns:
 ##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.part_{TOTALPARTS}_{CURRENTPART}.grm.bin.success
 ##    input:  cleaned-chips/{ANCESTRY}/{CHIP}.step6.bed
+## Notes: round 1, break dataset into chunks and create GRMs within chunks
 $(foreach output,$(VALID_OUTPUTS),$(patsubst %,$(subst -sp.grm.sp.success,,$(output)).part_$(N_SPLITS)_%.grm.bin.success,$(SPLIT_SEQ))): $$(word 1,$$(subst $$(OUTPUT_DIR),$$(INPUT_DIR),$$(subst .part_$$(N_SPLITS), ,$$@))).step6.bed | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),$(GCTA) --bfile $(subst .bed,,$<) --make-grm-part $(N_SPLITS) $(word 2,$(subst .part_$(N_SPLITS)_, ,$(subst .grm.bin.success,,$@))) --thread-num $(N_THREADS) --out $(word 1,$(subst .part_$(N_SPLITS)_, ,$(subst .grm.bin.success,,$@))))
 
