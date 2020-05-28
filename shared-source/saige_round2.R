@@ -1,6 +1,7 @@
 require(SAIGE)
 
 cargs <- commandArgs(trailingOnly = TRUE)
+stopifnot(length(cargs) == 8)
 bgen.filename <- cargs[1]
 bgi.filename <- cargs[2]
 rda.filename <- cargs[3]

@@ -1,5 +1,6 @@
 require(SAIGE)
 cargs <- commandArgs(trailingOnly = TRUE)
+stopifnot(length(cargs) == 6)
 plink.prefix <- cargs[1]
 model.matrix <- cargs[2]
 phenotype <- cargs[3]
