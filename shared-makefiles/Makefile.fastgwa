@@ -8,7 +8,7 @@ RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
 ## construct analysis targets for all config entries that request fastGWA
-ANALYSIS_RESULTS_FASTGWA := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell shared-source/construct_output_filenames.bash $(config) fastgwa)))
+ANALYSIS_RESULTS_FASTGWA := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) fastgwa)))
 ## empirical approximate minimum subject count, specific to fastGWA
 MINIMUM_VALID_SUBJECT_COUNT := $(FASTGWA_MINIMUM_VALID_SUBJECT_COUNT)
 
@@ -89,12 +89,12 @@ endef
 
 ## utility function to just grab the name of a phenotype from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_phenotype
-$(shell shared-source/construct_phenotype.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
 endef
 
 ## utility function to just grab comma-delimited covariates from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_covariates
-$(shell shared-source/construct_covariates.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_covariates.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
 endef
 
 ## utility function to just grab comma-delimited covariates from a model matrix
@@ -124,7 +124,7 @@ endef
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster.
 %.fastgwa.model_matrix.success: $$(shell echo "$$(call get_analysis_prefix,$$@)" | sed 's/\./\t/g' | grep -lwf - $$(CONFIG_DIR)/*) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript shared-source/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .fastgwa.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
+	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .fastgwa.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/

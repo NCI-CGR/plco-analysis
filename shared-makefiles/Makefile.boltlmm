@@ -8,7 +8,7 @@ RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
 ## construct analysis targets for all config entries that request BOLT
-ANALYSIS_RESULTS_BOLTLMM := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell shared-source/construct_output_filenames.bash $(config) boltlmm)))
+ANALYSIS_RESULTS_BOLTLMM := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) boltlmm)))
 
 .SECONDEXPANSION:
 .SECONDARY:
@@ -79,7 +79,7 @@ endef
 ## so based on the particularities of the PLCO analysis, the chip data need to be lifted to GRCh38 first. bgen files
 ## must be v1.2 based on current BOLT (2.3.4) requirements for fast processing. Model matrix is used for on the fly minimum
 ## sample size enforcement.
-$(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(result)).chr%.boltlmm.success,$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).bolt-chip.GRCh38-resorted-nochr0.bed.success $$(IMPUTED_DIR)/$$(call extract_chip,$$@)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst ., ,$$(subst .boltlmm.success,,$$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst ., ,$$(subst .boltlmm.success,,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).boltlmm.phenotype $$(word 1,$$(subst .chr, ,$$@)).boltlmm.covariates $$(shell shared-source/resolve_bolt_ldscore.bash $$(call extract_ancestry,$$@)) $$(word 1,$$(subst .chr, ,$$@)).boltlmm.model_matrix.success
+$(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(result)).chr%.boltlmm.success,$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).bolt-chip.GRCh38-resorted-nochr0.bed.success $$(IMPUTED_DIR)/$$(call extract_chip,$$@)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst ., ,$$(subst .boltlmm.success,,$$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst ., ,$$(subst .boltlmm.success,,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).boltlmm.phenotype $$(word 1,$$(subst .chr, ,$$@)).boltlmm.covariates $$(shell $(SHARED_SOURCE)/resolve_bolt_ldscore.bash $$(call extract_ancestry,$$@)) $$(word 1,$$(subst .chr, ,$$@)).boltlmm.model_matrix.success
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
 	$(call qsub_handler,$(subst .success,,$@),$(BOLTLMM_EXECUTABLE) --bfile $(subst .bed.success,,$(word 1,$^)) --bgenFile $(word 2,$^) --sampleFile $(word 3,$^) --lmm --LDscoresFile=$(subst .gz,-reformatted.gz,$(word 6,$^)) --statsFile=$(subst .boltlmm.success,.chip_results.boltlmm,$@) --statsFileBgenSnps=$(subst .success,,$@) --phenoFile $(word 4,$^) --phenoCol $(shell head -1 $(word 4,$^) | cut -f 3) --covarFile $(word 5,$^) --qCovarCol $(shell head -1 $(word 5,$^) | cut -f 1-2 --complement | sed 's/\t/ --qCovarCol /g') --LDscoresMatchBp --geneticMapFile /home/palmercd/Development/BOLT-LMM_v2.3.4/tables/genetic_map_hg19_withX.txt.gz > $(subst .success,.log,$@) 2>&1) ; \
 	else \
@@ -197,12 +197,12 @@ endef
 
 ## utility function to just grab the name of a phenotype from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_phenotype
-$(shell shared-source/construct_phenotype.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
 endef
 
 ## utility function to just grab comma-delimited covariates from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_covariates
-$(shell shared-source/construct_covariates.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_covariates.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
 endef
 
 ## utility function to just grab comma-delimited covariates from a model matrix
@@ -233,7 +233,7 @@ endef
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster.
 %.boltlmm.model_matrix.success: $$(shell echo "$$(call get_analysis_prefix,$$@)" | sed 's/\./\t/g' | grep -lwf - $(CONFIG_DIR)/*) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript shared-source/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
+	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/

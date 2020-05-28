@@ -7,7 +7,7 @@ RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
-ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell shared-source/construct_output_filenames.bash $(config) saige)))
+ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) saige)))
 
 ## empirical approximate minimum subject count (+1), specific to SAIGE
 MINIMUM_VALID_SUBJECT_COUNT := $(SAIGE_MINIMUM_VALID_SUBJECT_COUNT)
@@ -50,11 +50,11 @@ $(subst .saige,,$(subst .model_matrix,,$(subst .round1,,$(subst .success,,$(notd
 endef
 
 define get_phenotype
-$(shell shared-source/construct_phenotype.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
 endef
 
 define get_covariates
-$(shell shared-source/construct_covariates.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_covariates.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
 endef
 
 define get_covariates_from_model_matrix
@@ -69,7 +69,7 @@ endef
 	fi
 
 %.saige.model_matrix: $$(shell echo "$$(call get_analysis_prefix,$$@)" | sed 's/\./\t/g' | grep -lwf - $(CONFIG_DIR)/*) $$(subst .model_matrix,.samples,$$@) | $$(subst //,/,$$(dir $$@))
-	Rscript shared-source/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .saige.model_matrix,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $@
+	Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .saige.model_matrix,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $@
 
 $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 	mkdir -p $@
