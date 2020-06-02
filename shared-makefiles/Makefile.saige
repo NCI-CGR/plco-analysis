@@ -1,96 +1,125 @@
 ## Cameron Palmer, 28 May 2020
 ## workflow for SAIGE analyses
 
-GENOTYPE_DIR := $(CLEANED_CHIP_INPUT_DIR)
+GENOTYPE_DIR := $(CLEANED_CHIP_OUTPUT_DIR)
+$(info $(GENOTYPE_DIR))
 IMPUTED_DIR := $(BGEN_OUTPUT_DIR)
+$(info $(IMPUTED_DIR))
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
-
+$(info $(RESULTS_DIR))
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
+$(info $(CONFIG_DIR))
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
-ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) saige)))
-
+$(info $(ANALYSIS_CONFIGS))
 ## empirical approximate minimum subject count (+1), specific to SAIGE
 MINIMUM_VALID_SUBJECT_COUNT := $(SAIGE_MINIMUM_VALID_SUBJECT_COUNT)
+
+ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) saige $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR))))
+
 
 .SECONDEXPANSION:
 .SECONDARY:
 .DELETE_ON_ERROR:
-.PHONY: all $(ANALYSIS_RESULTS_SAIGE)
-all: $(ANALYSIS_RESULTS_SAIGE) | $(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(subst //,/,$(dir $(result))))
+.PHONY: all $(ANALYSIS_RESULTS_SAIGE) $(sort $(dir $(ANALYSIS_RESULTS_SAIGE)))
+all: $(ANALYSIS_RESULTS_SAIGE)
 
 define check_model_matrix
 "$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(MINIMUM_VALID_SUBJECT_COUNT)"
 endef
 
-$(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz,$$@) | $$(subst //,/,$$(dir $$@))
+$(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
 ## patterns:
-##    output:
-##    input:  
-%.tsv.gz: %.tsv
-	if [[ $(call check_model_matrix,$(subst .saige.tsv.gz,,$@).saige.model_matrix) ]] ; then \
+##    output: results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv.gz
+##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv
+##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/
+## Notes: compress combined saige output file.
+## the model matrix is only required here to enforce a preflight sample size check.
+%.tsv.gz: %.tsv %.model_matrix.success | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst .success,$(lastword $^))) ]] ; then \
 	gzip -c $< > $@ ; \
 	fi
 
 ## patterns:
-##    output:
-##    input:
-$(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(subst .saige.tsv,,$$@).saige.model_matrix | $$(subst //,/,$$(dir $$@))
-	if [[ $(call check_model_matrix,$(lastword $^)) ]] ; then \
-	cat $(subst .success,.txt,$(filter-out %.model_matrix,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$6"\tNA\t"$$11"\t"$$12"\t"$$14"\t"$$10}' > $@ ; \
+##    output: results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv
+##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.saige.success
+##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.saige.model_matrix.success
+## Notes: combine results from each autosome into a single genome-wide result
+$(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(subst .saige.tsv,,$$@).saige.model_matrix.success | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	cat $(subst .success,.txt,$(filter-out %.model_matrix.success,$^)) | awk '! /CHR POS rsid/' | awk -F" " 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$6"\tNA\t"$$11"\t"$$12"\t"$$14"\t"$$10}' > $@ ; \
 	fi
 
+
+## utility function to grab {CHIP} out of results/{PHENOTYPE}/{ANCESTYR}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.{whatever}
+define extract_chip =
+$(firstword $(subst _,$(2),$(lastword $(subst ., ,$(word 1,$(subst .chr, ,$(subst GSA_,GSA/,$(1))))))))
+endef
+
+## utility function to grab {ANCESTRY} out of results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.{whatever}
+define extract_ancestry =
+$(word 3,$(subst /, ,$(1)))
+endef
+
+
 ## patterns:
-##    output:
-##    input:
-$(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(patsubst %,$(subst .saige,,$(result)).chr%.saige.success,$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).saige.round1.success $$(word 1,$$(subst .chr, ,$$@)).saige.model_matrix $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$(word 2,$$(subst ., ,$$(notdir $$@)))))/$$(lastword $$(subst /, ,$$(word 1,$$(subst /SAIGE, ,$$@))))/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$(word 2,$$(subst ., ,$$(notdir $$@)))))/$$(lastword $$(subst /, ,$$(word 1,$$(subst /SAIGE, ,$$@))))/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen.bgi $$(dir $$@)$$(lastword $$(subst ., ,$$(word 1,$$(subst .chr, ,$$@)))).saige.samples | $$(subst //,/,$$(dir $$@))
-	if [[ $(call check_model_matrix,$(word 2,$^)) ]] ; then \
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.saige.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.round1.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr{CHR}-filtered.bgen
+##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr{CHR}-filtered.bgen.bgi
+##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr{CHR}-filtered-noNAs.sample
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: run second round of SAIGE analysis, by autosome, using output of initial inflation estimation (LD-pruned) genome wide.
+## but only run if the effective sample size is greater than some heuristic minimum.
+$(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(patsubst %,$(subst .saige,,$(result)).chr%.saige.success,$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).saige.round1.success $$(word 1,$$(subst .chr, ,$$@)).saige.model_matrix.success $$(IMPUTED_DIR)/$$(call extract_chip,$$@)/$$(call extract_ancestry,$$@)/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@)/$$(call extract_ancestry,$$@)/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen.bgi $$(word 1,$$(subst .chr, ,$$@)).saige.samples | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst .success,,$(word 2,$^))) ]] ; then \
 	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_2_SCRIPT) $(word 3,$^) $(word 4,$^) $(subst .success,.rda,$<) $(subst .success,.varianceRatio.txt,$<) $(subst .success,.varianceRatio.txt_relatednessCutoff_$(SAIGE_ROUND_1_RELATEDNESS_CUTOFF)_1000_randomMarkersUsed.sparseSigma.mtx,$<) $(word 5,$^) $(subst .success,,$@) chr$(lastword $(subst .chr, ,$(subst .saige.success,,$@)))) ; \
 	else \
 	touch $@ ; \
 	fi
 
 ## patterns:
-##    output:
-##    input:
-%.saige.samples: $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(subst Oncoarray_,Oncoarray/,$$(lastword $$(subst ., ,$$(subst .saige.samples,,$$(notdir $$@))))))/$$(lastword $$(subst /, ,$$(firstword $$(subst /SAIGE/, ,$$@))))/chr22-filtered-noNAs.sample | $$(subst //,/,$$(dir $$@))
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
+##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr22-filtered-noNAs.sample
+## Notes: final subject list for actual imputed data, originally required to prune extra subjects from chip or imputed data
+%.saige.samples: $$(IMPUTED_DIR)/$$(call extract_chip,$$@)/$$(call extract_ancestry,$$@)/chr22-filtered-noNAs.sample | $$(dir $$@)
 	awk 'NR > 2 {print $$1}' $< > $@
 
-## 
-define get_analysis_prefix
-$(subst .saige,,$(subst .model_matrix,,$(subst .round1,,$(subst .success,,$(notdir $(1))))))
-endef
-
-##
+## utility function to just grab the name of a phenotype from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_phenotype
-$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
 endef
 
-##
+## utility function to just grab comma-delimited covariates from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_covariates
-$(shell $(SHARED_SOURCE)/construct_covariates.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_covariates.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
 endef
 
-##
+## utility function to just grab comma-delimited covariates from a model matrix
 define get_covariates_from_model_matrix
 $(shell awk 'NR == 1' $(1) | cut -f 1-3 --complement | sed 's/ /,/g; s/\t/,/g')
 endef
 
 ## patterns:
-##    output:
-##    input:
-%.saige.round1.success: $$(firstword $$(subst .saige.round1.success,,$$@)).saige-chip.GRCh38-resorted-nochr0.bed.success %.saige.model_matrix | $$(subst //,/,$$(dir $$@))
-	if [[ $(call check_model_matrix,$(lastword $^)) ]] ; then \
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.round1.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted-nochr0.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+%.saige.round1.success: $$(firstword $$(subst .saige.round1.success,,$$@)).saige-chip.GRCh38-resorted-nochr0.bed.success %.saige.model_matrix.success | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
 	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed.success,,$<) $(word 2,$^) $(call get_phenotype,$@) $(call get_covariates_from_model_matrix,$(word 2,$^)) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst .success,,$@)) ; \
 	else \
 	touch $@ ; \
 	fi
 
 ## patterns:
-##    output:
+##    output: results/{PHENOTYPE}
 ##    input:
-%.saige.model_matrix: $$(shell echo "$$(call get_analysis_prefix,$$@)" | sed 's/\./\t/g' | grep -lwf - $(CONFIG_DIR)/*) $$(subst .model_matrix,.samples,$$@) | $$(subst //,/,$$(dir $$@))
-	Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .saige.model_matrix,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $@
+%.saige.model_matrix.success: $$(shell $(SHARED_SOURCE)/get_config_filename.bash $$(firstword $$(subst /, ,$$(subst results/, ,$$@))) $$(CONFIG_DIR)) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
+	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@)
 
 ## patterns:
 ##    output:
@@ -99,27 +128,27 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted-nochr0.bed.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted.bed.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip-GRCh38-resorted-chr0.exclude
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted-nochr0.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip-GRCh38-resorted-chr0.exclude
 ## Notes: remove "0" chromosome annotations for compatibility with SAIGE
-%.saige-chip.GRCh38-resorted-nochr0.bed.success: %.saige-chip.GRCh38-resorted.bed.success %.saige-chip.GRCh38-resorted.chr0.exclude
+%.saige-chip.GRCh38-resorted-nochr0.bed.success: %.saige-chip.GRCh38-resorted.bed.success %.saige-chip.GRCh38-resorted.chr0.exclude | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed.success,,$<) --exclude $(word 2,$^) --make-bed --out $(subst .bed.success,,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted.chr0.exclude
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted.bed.success (really bim)
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.chr0.exclude
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.bed.success (really bim)
 ## Notes: get a plink-format exclude file for variants with unlocalized chromosome
-%.saige-chip.GRCh38-resorted.chr0.exclude: %.saige-chip.GRCh38-resorted.bed.success
+%.saige-chip.GRCh38-resorted.chr0.exclude: %.saige-chip.GRCh38-resorted.bed.success | $$(dir $$@)
 	awk '$$1 == 0 {print $$2}' $(subst .bed.success,.bim,$<) > $@
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted.bed.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38.bed
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip-GRCh38.bim
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38.fam
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bed
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip-GRCh38.bim
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.fam
 ## Notes: liftover likely breaks order of variants in the genome; quickest solution is just to reload and rewrite everything with plink.
-%.saige-chip.GRCh38-resorted.bed.success: %.saige-chip.GRCh38.bed
+%.saige-chip.GRCh38-resorted.bed.success: %.saige-chip.GRCh38.bed | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --allow-extra-chr 0 --make-bed --out $(subst .bed.success,,$@))
 
 
@@ -128,7 +157,7 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. so it's just a hack liftover intermediate step.
-%.saige-chip.GRCh38.bed: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output
+%.saige-chip.GRCh38.bed: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output || $$(dir $$@)
 	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/chr// ; s/:/\t/ ; s/-/\t/' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2"\t"$$8"\t"$$9}' > $(subst .bed,.bim,$@)
 	cp $(subst .bed.success,.fam,$<) $(subst .bed,.fam,$@)
 	cp $(subst .success,,$<) $@
@@ -139,53 +168,60 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. hack liftover data by taking liftover output and manually swapping in new position data over old.
-%.saige-chip.GRCh38.bim: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output
-        paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/chr// ; s/:/\t/ ; s/-/\t/' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2"\t"$$8"\t"$$9}' > $@
+%.saige-chip.GRCh38.bim: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output | $$(dir $$@)
+	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/chr// ; s/:/\t/ ; s/-/\t/' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2"\t"$$8"\t"$$9}' > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.fam
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success (really fam)
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. so it's just a hack liftover intermediate step.
-%.saige-chip.GRCh38.fam: %.saige-chip.lift-failures-excluded.bed.success
-        cp $(subst .bed.success,.fam,$<) $@
+%.saige-chip.GRCh38.fam: %.saige-chip.lift-failures-excluded.bed.success | $$(dir $$@)
+	cp $(subst .bed.success,.fam,$<) $@
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.lift-failures-excluded.bed.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.bed.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover.exclude
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover.exclude
 ## Notes: first step to updating plink file with GRCh38 lifted positions: remove variants that failed lift, in order
-%.saige-chip.lift-failures-excluded.bed.success: %.saige-chip.bed.success %.saige-chip.liftover-output
-	awk '! /^#/' $(subst liftover-output,liftover-failure,$(word 2,$^)) | sed 's/chr// ; s/-/\t/' | awk '{print $$1}' > $(subst .bed.success,.exclude,$@)
+%.saige-chip.lift-failures-excluded.bed.success: %.saige-chip.bed.success %.saige-chip.liftover.exclude | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed.success,,$<) --exclude $(subst .bed.success,.exclude,$@) --make-bed --out $(subst .bed.success,,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-output
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-input
-## Notes: run liftover, chips are in hg19 and imputed data are in GRCh38
-%.saige-chip.liftover-output: %.saige-chip.liftover-input
-	/home/palmercd/Development/stage/bin/liftOver -positions $< /home/palmercd/Development/stage/share/liftover_chains/hg19ToHg38.over.chain.gz $@ $(subst liftover-output,liftover-failure,$@)
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover.exclude
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output (really liftover-failure)
+## Notes: convert failed lifts into a plink-format exclude file
+%.saige-chip.liftover.exclude: %.saige-chip.liftover-output | $$(dir $$@)
+	awk '! /^#/' $(subst liftover-output,liftover-failure,$<) | sed 's/chr// ; s/-/\t/' | awk '{print $$1}' > $@
+
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-input
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.bed.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-input
+## Notes: run liftover, chips are in hg19 and imputed data are in GRCh38
+%.saige-chip.liftover-output: %.saige-chip.liftover-input | $$(dir $$@)
+	$(LIFTOVER_EXECUTABLE) -positions $< $(LIFTOVER_19_TO_38) $@ $(subst liftover-output,liftover-failure,$@)
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-input
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed.success
 ## Notes:
-%.saige-chip.liftover-input: %.saige-chip.bed.success
+%.saige-chip.liftover-input: %.saige-chip.bed.success | $$(dir $$@)
 	awk '{print "chr"$$1":"$$4"-"$$4}' $(subst .bed.success,.bim,$<) > $@
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.bed.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed.success
 ##    input:  {CLEANED_CHIPS_BY_ANCESTRY}/{ANCESTRY}/{CHIP}.nohet.autosomes.bed
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.samples.plink-format
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples.plink-format
 ##    input:  {CLEANED_CHIPS_BY_ANCESTRY}/{ANCESTRY}/{CHIP}.step2.pruning.prune.in
 ##    input:  {CLEANED_CHIPS_BY_ANCESTRY}/{ANCESTRY}/{CHIP}.step3.pruning.prune.out
-## Notes: gets an ancestry-specific LD-pruned (more or less) dataset for BOLT heritability estimation.
-%.saige-chip.bed.success: ../cleaned-chips-by-ancestry/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).nohet.autosomes.bed %.saige.samples.plink-format ../cleaned-chips-by-ancestry/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).step2.pruning.prune.in ../cleaned-chips-by-ancestry/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).step3.pruning.prune.out
+## Notes: gets an ancestry-specific LD-pruned (more or less) dataset for SAIGE heritability estimation.
+%.saige-chip.bed.success: $(GENOTYPE_DIR)/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).nohet.autosomes.bed %.saige.samples.plink-format $(GENOTYPE_DIR)/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).step2.pruning.prune.in $(GENOTYPE_DIR)/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).step3.pruning.prune.out | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --keep $(word 2,$^) --extract $(word 3,$^) --exclude $(word 4,$^) --make-bed --out $(subst .bed.success,,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.samples.plink-format
-##    input:  results/{PHENTOYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.samples
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples.plink-format
+##    input:  results/{PHENTOYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
 ## Notes: take single column subject ID list and duplicate it into two columns, for plink --keep convention.
-%.saige.samples.plink-format: %.saige.samples
+%.saige.samples.plink-format: %.saige.samples | $$(dir $$@)
 	awk '{print $$1"\t"$$1}' $< > $@

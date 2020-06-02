@@ -74,9 +74,11 @@ for (pc in possible.pcs[possible.pcs %in% covariate.list]) {
     colnames(h)[ncol(h)] <- pc
 }
 
+all.chips <- c("GSA", "Omni25", "Omni5", "OmniX", "Oncoarray")
+
 
 ancestry.combined <- data.frame()
-for (chip in c("GSA", "Omni25", "Omni5", "OmniX", "Oncoarray")) {
+for (chip in all.chips) {
     ancestry.data <- read.table(paste("/CGF/GWAS/Scans/PLCO/builds/1/ancestry/PLCO_", chip, ".graf_estimates.txt", sep=""), header=TRUE, sep="\t", stringsAsFactors=FALSE)
     ancestry.combined <- rbind(ancestry.combined, ancestry.data)
 }
@@ -97,7 +99,7 @@ output.df <- output.df[complete.cases(output.df),]
 
 ## identify non-binary categoricals and turn them into dummies
 MINIMUM.FACTOR.LEVEL.COUNT <- 10
-for (cat.var in colnames(output.df)[grepl("ca$", colnames(output.df)) | colnames(output.df) %in% c("center", "sex", "is.other.asian")]) {
+for (cat.var in colnames(output.df)[grepl("ca$", colnames(output.df)) | colnames(output.df) %in% c("center", "sex", "is.other.asian", paste("batch", c("GSA", "Oncoarray", "OmniX", "Omni25"), sep="."))]) {
     ## create n-1 dummies
     ## reorder the base factor so the most populous group is the reference
     output.df[,cat.var] <- factor(as.vector(output.df[,cat.var], mode="character"))
@@ -137,5 +139,7 @@ colnames(output.df)[1:2] <- c("FID", "IID")
 #}
 #output.df[,1] <- paste(output.df[,1], output.df[,1], sep="_")
 #output.df[,2] <- paste(output.df[,2], output.df[,2], sep="_")
-print(head(output.df))
+#print(head(output.df))
+## filter out chip batch variables that don't match the chip in question
+output.df <- output.df[,(grepl(paste("batch", chip.nosubsets, sep="."), colnames(output.df)) | !grepl("batch.", colnames(output.df)))]
 write.table(output.df, output.filename, row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t")

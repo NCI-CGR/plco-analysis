@@ -1,0 +1,122 @@
+## Cameron Palmer, 29 May 2020
+## Run plink on chips
+
+GENOTYPE_DIR := $(CLEANED_CHIP_OUTPUT_DIR)
+
+IMPUTED_DIR := $(BGEN_OUTPUT_DIR)
+
+RESULTS_DIR := $(RESULT_OUTPUT_DIR)
+
+CONFIG_DIR := $(CONFIG_INPUT_DIR)
+
+ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
+## empirical approximate minimum subject count, specific to fastGWA
+MINIMUM_VALID_SUBJECT_COUNT := $(PLINK_MINIMUM_VALID_SUBJECT_COUNT)
+## construct analysis targets for all config entries that request fastGWA
+ANALYSIS_RESULTS_PLINK := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell shared-source/construct_output_filenames.bash $(config) plink)))
+
+.SECONDEXPANSION:
+.SECONDARY:
+.DELETE_ON_ERROR:
+.PHONY: all $(addsuffix .success,$(ANALYSIS_RESULTS_PLINK))
+all: $(addsuffix .gz,$(ANALYSIS_RESULTS_PLINK)) | $(dir $(ANALYSIS_RESULTS_PLINK))
+
+define check_model_matrix
+"$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(MINIMUM_VALID_SUBJECT_COUNT)"
+endef
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{MODEL_TYPE}.gz
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{MODEL_TYPE}.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: gzip the genome-wide plink association results.
+$(addsuffix .gz,$(ANALYSIS_RESULTS_PLINK)): $$(subst .gz,.success,$$@) $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	gzip -c $(subst .success,,$<) > $@ ; \
+	fi
+
+## utility function to grab {CHIP} out of results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{whatever}
+define extract_chip =
+$(firstword $(subst _, ,$(lastword $(subst ., ,$(word 1,$(subst .plink, ,$(1)))))))
+endef
+
+## utility function to grab {ANCESTRY} out of results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.{whatever}
+define extract_ancestry =
+$(word 3,$(subst /, ,$(1)))
+endef
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{MODEL_TYPE}.success
+##    input:  {CLEANED_CHIPS}/{ANCESTRY}/{CHIP}.nohet.autosomes.bed
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.phenotype
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.covariates
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: run PLINK association on chip data.
+## the model matrix is only required here to enforce a preflight sample size check.
+$(addsuffix .success,$(ANALYSIS_RESULTS_PLINK)): $$(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@).nohet.autosomes.bed $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success $$(subst .success,.phenotype,$$@) $$(subst .success,.covariates,$$@) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst .success,,$(word 2,$^))) ]] ; then \
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --pheno $(word 3,$^) --covar $(word 4,$^) --allow-no-sex $(if $(filter %.assoc.linear.success,$@),--linear,--logistic) --out $(firstword $(subst .plink.assoc., ,$@)).plink) ; \
+	fi
+
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.samples
+##    input:  bgen/{CHIP}/{ANCESTRY}/chr22-filtered-noNAs.sample
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: this is just a list of included subject ids. this is mostly a step for compatibility with code shared by the other methods.
+%.plink.samples: $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(lastword $$(subst ., ,$$(subst .plink.samples,,$$@))))/$$(call extract_ancestry,$$@)/chr22-filtered-noNAs.sample | $$(dir $$@)
+	awk 'NR > 2 {print $$1"_"$$1}' $< > $@
+
+## utility function to just grab the name of a phenotype from config files with an analysis name {PHENOTYPE}.{CHIP}
+define get_phenotype
+$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
+endef
+
+## utility function to just grab comma-delimited covariates from config files with an analysis name {PHENOTYPE}.{CHIP}
+define get_covariates
+$(shell $(SHARED_SOURCE)/construct_covariates.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
+endef
+
+## utility function to just grab comma-delimited covariates from a model matrix
+define get_covariates_from_model_matrix
+$(shell awk 'NR == 1' $(1) | cut -f 1-3 --complement | sed 's/ /,/g; s/\t/,/g')
+endef
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.logistic.phenotype
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+## Notes: cut just the IDs and phenotype out of the model matrix and dump them in their own file.
+%.assoc.logistic.phenotype: $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success | $$(dir $$@)
+	cut -f 1-3 $(subst .success,,$<) | awk '$$3 == 1 {$$3 = 2} ; $$3 == 0 {$$3 = 1} ; {print $$0}' > $@
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.linear.phenotype
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+## Notes: cut just the IDs and phenotype out of the model matrix and dump them in their own file.
+%.assoc.linear.phenotype: $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success | $$(dir $$@)
+	cut -f 1-3 $(subst .success,,$<) > $@
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{MODEL_TYPE}.covariates
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+## Notes: cut just the IDs and covariates out of the model matrix and dump them in their own file.
+%.covariates: $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success | $$(dir $$@)
+	cut -f 3 --complement $(subst .success,,$<) > $@
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##    input:  [TODO: figure out what brain addled nonsense this was supposed to be because it's nothing now]
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.samples
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
+## this is separately submitted to the cluster.
+%.plink.model_matrix.success: $$(shell $(SHARED_SOURCE)/get_config_filename.bash $$(firstword $$(subst /, ,$$(subst results/, ,$$@))) $$(CONFIG_DIR)) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
+	$(call qsub_handler,$(subst .success,,$@),Rscript shared-source/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .plink.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: build the output directory tree if needed.
+$(sort $(dir $(ANALYSIS_RESULTS_PLINK))):
+	mkdir -p $@

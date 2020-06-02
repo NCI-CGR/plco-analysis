@@ -10,7 +10,7 @@ meta: $(SUPPORTED_METHODS)
 	$(MAKE) -C shared-makefiles/Makefile.metal
 
 $(SUPPORTED_METHODS): bgen cleaned-chips-by-ancestry
-	$(MAKE) -C shared-makefiles/Makefile.$@
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$@
 
 bgen:
 	$(MAKE) -C $(BGEN_OUTPUT_DIR)

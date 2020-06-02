@@ -1,14 +1,16 @@
 ## Cameron Palmer, 22 May 2020
 ## workflow for BOLT-LMM analyses
 
-GENOTYPE_DIR := $(CLEANED_CHIP_INPUT_DIR)
+GENOTYPE_DIR := $(CLEANED_CHIP_OUTPUT_DIR)
 IMPUTED_DIR := $(BGEN_OUTPUT_DIR)
 
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
+## empirical approximate minimum subject count, specific to BOLTLMM
+MINIMUM_VALID_SUBJECT_COUNT := $(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)
 ## construct analysis targets for all config entries that request BOLT
-ANALYSIS_RESULTS_BOLTLMM := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) boltlmm)))
+ANALYSIS_RESULTS_BOLTLMM := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) boltlmm $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR))))
 
 .SECONDEXPANSION:
 .SECONDARY:
@@ -18,8 +20,6 @@ all: $(ANALYSIS_RESULTS_BOLTLMM) | $(sort $(dir $(ANALYSIS_RESULTS_BOLTLMM)))
 
 $(ANALYSIS_RESULTS_BOLTLMM): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
-## empirical approximate minimum subject count, specific to BOLTLMM
-MINIMUM_VALID_SUBJECT_COUNT := $(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)
 
 define check_model_matrix
 "$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(MINIMUM_VALID_SUBJECT_COUNT)"
@@ -28,9 +28,11 @@ endef
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.tsv.gz
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.tsv
-## Notes: gzip the genome-wide BOLTLMM results
-%.tsv.gz: %.tsv
-	if [[ $(call check_model_matrix,$(subst .boltlmm.tsv.gz,,$@).boltlmm.model_matrix) ]] ; then \
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix.success
+## Notes: gzip the genome-wide BOLTLMM results.
+## the model matrix is only required here to enforce a preflight sample size check.
+%.tsv.gz: %.tsv %.model_matrix.success
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
 	gzip -c $< > $@ ; \
 	fi
 
@@ -190,19 +192,14 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 %.boltlmm.samples.plink-format: %.boltlmm.samples
 	awk '{print $$1}' $< | sed 's/_/\t/g' > $@
 
-## utility function to just grab {PHENOTYPE}.{CHIP} out of a filename
-define get_analysis_prefix
-$(subst .boltlmm,,$(subst .model_matrix,,$(subst .round1,,$(subst .success,,$(notdir $(1))))))
-endef
-
 ## utility function to just grab the name of a phenotype from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_phenotype
-$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
 endef
 
 ## utility function to just grab comma-delimited covariates from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_covariates
-$(shell $(SHARED_SOURCE)/construct_covariates.bash $(call get_analysis_prefix,$(1)) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_covariates.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
 endef
 
 ## utility function to just grab comma-delimited covariates from a model matrix
@@ -232,7 +229,7 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster.
-%.boltlmm.model_matrix.success: $$(shell echo "$$(call get_analysis_prefix,$$@)" | sed 's/\./\t/g' | grep -lwf - $(CONFIG_DIR)/*) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
+%.boltlmm.model_matrix.success: $$(shell $(SHARED_SOURCE)/get_config_filename.bash $$(firstword $$(subst /, ,$$(subst results/, ,$$@))) $$(CONFIG_DIR)) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:
