@@ -3,13 +3,13 @@
 ## 
 include Makefile.config
 export
-.PHONY: all $(SUPPORTED_METHODS) bgen meta cleaned-chips-by-ancestry ancestry relatedness
+.PHONY: all $(SUPPORTED_METHODS) bgen meta cleaned-chips-by-ancestry ancestry relatedness ldsc
 all: meta
 
 meta: $(SUPPORTED_METHODS)
 	$(MAKE) -C shared-makefiles/Makefile.metal
 
-$(SUPPORTED_METHODS): bgen cleaned-chips-by-ancestry
+$(SUPPORTED_METHODS): bgen cleaned-chips-by-ancestry ldsc
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$@
 
 bgen:
@@ -23,3 +23,6 @@ ancestry: relatedness
 
 relatedness:
 	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR)
+
+ldsc:
+	$(MAKE) -C $(LDSC_OUTPUT_DIR)
