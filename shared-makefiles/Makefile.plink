@@ -102,11 +102,12 @@ endef
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
-##    input:  [TODO: figure out what brain addled nonsense this was supposed to be because it's nothing now]
+##    input:  config/[relevant config file]
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.samples
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
-## this is separately submitted to the cluster.
+## this is separately submitted to the cluster. Config file dependency guarantees rerun if the file is edited at all, which
+## is conservative but correct.
 %.plink.model_matrix.success: $$(shell $(SHARED_SOURCE)/get_config_filename.bash $$(firstword $$(subst /, ,$$(subst results/, ,$$@))) $$(CONFIG_DIR)) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript shared-source/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .plink.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
