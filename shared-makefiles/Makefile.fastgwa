@@ -69,7 +69,7 @@ endef
 ## on a per-method basis.
 $(foreach result,$(ANALYSIS_RESULTS_FASTGWA),$(patsubst %,$(subst .fastgwa,,$(result)).chr%.fastgwa.success,$(CHRS))): fastgwa-grm/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@, )-sp.grm.sp ../bgen-format/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst .chr, chr,$$(subst .fastgwa.success,,$$@)))-filtered.bgen ../bgen-format/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst .chr, chr,$$(subst .fastgwa.success,,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).fastgwa.phenotype $$(word 1,$$(subst .chr, ,$$@)).fastgwa.covariates $$(word 1,$$(subst .chr, ,$$@)).fastgwa.model_matrix.success
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
-	$(call qsub_handler_specify_queue_time,$(subst .success,,$@),$(GCTA) --bgen $(word 2,$^) --sample $(word 3,$^) --fastGWA-mlm --grm-sparse $(subst -sp.grm.sp,-sp,$<) --pheno $(word 4,$^) --qcovar $(word 5,$^) --threads 4 --out $(subst .fastgwa.success,,$@) > $(subst .success,.log,$@),all.q,1:00:00) ; \
+	$(call qsub_handler_specify_queue_time,$(subst .success,,$@),$(GCTA) --bgen $(word 2,$^) --sample $(word 3,$^) --fastGWA-mlm --grm-sparse $(subst -sp.grm.sp,-sp,$<) --pheno $(word 4,$^) $(if $(shell head -1 $(word 5,$^) | cut -f 1-2 --complement),--qcovar $(word 5,$^),) --threads 4 --out $(subst .fastgwa.success,,$@) > $(subst .success,.log,$@),all.q,1:00:00) ; \
 	else \
 	touch $@ ; \
 	fi
@@ -90,11 +90,6 @@ endef
 ## utility function to just grab comma-delimited covariates from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_covariates
 $(shell $(SHARED_SOURCE)/construct_covariates.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
-endef
-
-## utility function to just grab comma-delimited covariates from a model matrix
-define get_covariates_from_model_matrix
-$(shell awk 'NR == 1' $(1) | cut -f 1-3 --complement | sed 's/ /,/g; s/\t/,/g')
 endef
 
 ## patterns:

@@ -57,7 +57,7 @@ endef
 ## the model matrix is only required here to enforce a preflight sample size check.
 $(addsuffix .success,$(ANALYSIS_RESULTS_PLINK)): $$(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@).nohet.autosomes.bed $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success $$(subst .success,.phenotype,$$@) $$(subst .success,.covariates,$$@) | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(word 2,$^))) ]] ; then \
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --pheno $(word 3,$^) --covar $(word 4,$^) --allow-no-sex $(if $(filter %.assoc.linear.success,$@),--linear,--logistic) --out $(firstword $(subst .plink.assoc., ,$@)).plink) ; \
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --pheno $(word 3,$^) $(if $(shell head -1 $(word 4,$^) | cut -f 1-2 --complement),--covar $(word 4,$^),) --allow-no-sex $(if $(filter %.assoc.linear.success,$@),--linear,--logistic) --out $(firstword $(subst .plink.assoc., ,$@)).plink) ; \
 	fi
 
 
@@ -77,11 +77,6 @@ endef
 ## utility function to just grab comma-delimited covariates from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_covariates
 $(shell $(SHARED_SOURCE)/construct_covariates.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
-endef
-
-## utility function to just grab comma-delimited covariates from a model matrix
-define get_covariates_from_model_matrix
-$(shell awk 'NR == 1' $(1) | cut -f 1-3 --complement | sed 's/ /,/g; s/\t/,/g')
 endef
 
 ## patterns:
