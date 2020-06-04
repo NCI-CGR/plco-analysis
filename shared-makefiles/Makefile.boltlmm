@@ -54,7 +54,7 @@ dangerous-clean:
 	rm -Rf $(sort $(dir $(ANALYSIS_RESULTS_BOLTLMM)))
 
 
-## utility function to grab {CHIP} out of results/{PHENOTYPE}/{ANCESTYR}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.{whatever}
+## utility function to grab {CHIP} out of results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.{whatever}
 define extract_chip =
 $(firstword $(subst _,$(2),$(lastword $(subst ., ,$(word 1,$(subst .chr, ,$(subst GSA_,GSA/,$(1))))))))
 endef
