@@ -99,7 +99,7 @@ $(patsubst %,1KG_%.merge_list,$(1KG_POPS)): $$(patsubst %,$$(subst .merge_list,,
 ##    input:  {POP}.samples.plinkformat.tsv
 ##    input:  genetic_map_chr{CHR}.txt
 ## Notes: parse 1000 Genomes vcf data for a chromosome, extract subjects from desired ancestry, write to plink bed/bim/fam
-1KG_%.bed.success: /CGF/Bioinformatics/Production/palmercd/1000Genomes/ALL.$$(word 2,$$(subst ., ,$$@))_GRCh38.genotypes.20170504.vcf.gz $$(word 1,$$(subst 1KG_,,$$(subst .chr, ,$$@))).samples.plinkformat.tsv genetic_map_chr$$(subst chr,,$$(word 2,$$(subst ., ,$$@))).txt
+1KG_%.bed.success: $$(KG_GENOTYPES_PREFIX)$$(subst chr,,$$(word 2,$$(subst ., ,$$@)))$(KG_GENOTYPES_SUFFIX) $$(word 1,$$(subst 1KG_,,$$(subst .chr, ,$$@))).samples.plinkformat.tsv genetic_map_chr$$(subst chr,,$$(word 2,$$(subst ., ,$$@))).txt
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --vcf $< --double-id --vcf-half-call m --keep $(word 2,$^) --cm-map $(word 3,$^) $(word 2,$(subst .chr, ,$(subst .bed.success,,$@))) --make-bed --out $(subst .bed.success,,$@))
 
 ## patterns:

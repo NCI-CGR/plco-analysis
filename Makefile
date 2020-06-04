@@ -3,7 +3,7 @@
 ## 
 include Makefile.config
 export
-.PHONY: all $(SUPPORTED_METHODS) bgen meta cleaned-chips-by-ancestry ancestry relatedness ldsc
+.PHONY: all $(SUPPORTED_METHODS) bgen meta cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files
 all: meta
 
 meta: $(SUPPORTED_METHODS)
@@ -24,5 +24,8 @@ ancestry: relatedness
 relatedness:
 	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR)
 
-ldsc:
+ldsc: 1KG_files
 	$(MAKE) -C $(LDSC_OUTPUT_DIR)
+
+1KG_files:
+	$(MAKE) -C $(KG_REFERENCE_INPUT_DIR)
