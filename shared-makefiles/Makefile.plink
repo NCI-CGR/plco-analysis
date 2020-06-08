@@ -18,7 +18,7 @@ ANALYSIS_RESULTS_PLINK := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSI
 .SECONDEXPANSION:
 .SECONDARY:
 .DELETE_ON_ERROR:
-.PHONY: all $(sort $(dir $(ANALYSIS_RESULTS_PLINK)))
+.PHONY: all
 all: $(subst .assoc.logistic,,$(subst .assoc.linear,,$(addsuffix .tsv.gz,$(ANALYSIS_RESULTS_PLINK)))) | $(dir $(ANALYSIS_RESULTS_PLINK))
 
 define check_model_matrix
