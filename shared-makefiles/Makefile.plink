@@ -18,22 +18,45 @@ ANALYSIS_RESULTS_PLINK := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSI
 .SECONDEXPANSION:
 .SECONDARY:
 .DELETE_ON_ERROR:
-.PHONY: all $(addsuffix .success,$(ANALYSIS_RESULTS_PLINK))
-all: $(addsuffix .gz,$(ANALYSIS_RESULTS_PLINK)) | $(dir $(ANALYSIS_RESULTS_PLINK))
+.PHONY: all $(sort $(dir $(ANALYSIS_RESULTS_PLINK)))
+all: $(subst .assoc.logistic,,$(subst .assoc.linear,,$(addsuffix .gz,$(ANALYSIS_RESULTS_PLINK)))) | $(dir $(ANALYSIS_RESULTS_PLINK))
 
 define check_model_matrix
 "$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(MINIMUM_VALID_SUBJECT_COUNT)"
 endef
 
+
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{MODEL_TYPE}.gz
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{MODEL_TYPE}.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.gz
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: gzip the genome-wide plink association results.
-$(addsuffix .gz,$(ANALYSIS_RESULTS_PLINK)): $$(subst .gz,.success,$$@) $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success | $$(dir $$@)
+$(addsuffix .gz,$(subst .assoc.logistic,,$(subst .assoc.linear,,$(ANALYSIS_RESULTS_PLINK)))): $$(subst .gz,,$$@) $$(subst .plink.gz,.plink.model_matrix.success,$$@) | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
 	gzip -c $(subst .success,,$<) > $@ ; \
+	fi
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.logistic.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTYR}/{METHOD}/
+## Notes: convert raw plink .assoc.logistic results into standard output format, converting OR
+$(subst .assoc.logistic,,$(filter %.assoc.logistic,$(ANALYSIS_RESULTS_PLINK))): $$(addsuffix .assoc.logistic.success,$$@) $$(addsuffix .model_matrix.success,$$@) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"log($$7)/log(10)"\t"(log($$7)/log(10)/$$8)"\t"$$9"\t"$$6}' $< > $@ ; \
+	fi
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.linear.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTYR}/{METHOD}/
+## Notes: convert raw plink .assoc.lineaer results into standard output format
+$(subst .assoc.linear,,$(filter %.assoc.linear,$(ANALYSIS_RESULTS_PLINK))): $$(addsuffix .assoc.linear.success,$$@) $$(addsuffix .model_matrix.success,$$@) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"$$7"\t"($$7/$$8)"\t"$$9"\t"$$6}' $< > $@ ; \
 	fi
 
 ## utility function to grab {CHIP} out of results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{whatever}
