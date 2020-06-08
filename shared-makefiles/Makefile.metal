@@ -4,7 +4,7 @@
 include $(PROJECT_BASE_DIR)/Makefile.config
 
 ALL_TARGETS := $(sort $(dir $(shell find $(RESULT_OUTPUT_DIR) -name "*.tsv.gz" -print)))
-ALL_TARGETS := $(foreach target,$(ALL_TARGETS),$(target)$(word 2,$(subst /, ,$(target))).$(word 3,$(subst /, ,$(target))).$(word 4,$(subst /, ,$(target))).meta1.tsv)
+ALL_TARGETS := $(foreach target,$(ALL_TARGETS),$(target)$(word 2,$(subst /, ,$(target))).$(word 3,$(subst /, ,$(target))).$(word 4,$(subst /, ,$(target)))1.tsv)
 METAL := $(METAL_EXECUTABLE)
 
 .DELETE_ON_ERROR:
@@ -15,8 +15,8 @@ METAL := $(METAL_EXECUTABLE)
 all: $(addsuffix .success,$(ALL_TARGETS))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.meta1.tsv
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.metal.par
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.tsv
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}l.par
 ## Notes: this simply wraps the call to metal itself. configuration happens with the par file rule
 $(addsuffix .success,$(ALL_TARGETS)): $$(subst .meta1.tsv.success,.metal.par,$$@)
 	$(call qsub_handler,$(subst .success,,$@),$(METAL) < $<)
