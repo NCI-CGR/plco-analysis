@@ -1,7 +1,5 @@
-## Cameron Palmer, 04 June 2020
+## Cameron Palmer, 08 June 2020
 ## run meta-analysis on completed association results
-
-## does not currently support plink output
 
 include $(PROJECT_BASE_DIR)/Makefile.config
 
