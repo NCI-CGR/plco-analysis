@@ -56,7 +56,7 @@ $(addsuffix .PLINK.tsv,$(subst .plink.assoc.logistic,,$(filter %.assoc.logistic,
 ## Notes: convert raw plink .assoc.lineaer results into standard output format
 $(addsuffix .PLINK.tsv,$(subst .plink.assoc.linear,,$(filter %.assoc.linear,$(ANALYSIS_RESULTS_PLINK)))): $$(subst .PLINK.tsv,.plink.assoc.linear.success,$$@) $$(subst .PLINK.tsv,.plink.model_matrix.success,$$@) | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
-	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"$$7"\t"($$7/$$8)"\t"$$9"\t"$$6}' $(subst .success,,$<) > $@ ; \
+	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" && $$8 != "0" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"$$7"\t"($$7/$$8)"\t"$$9"\t"$$6}' $(subst .success,,$<) > $@ ; \
 	fi
 
 ## utility function to grab {CHIP} out of results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{whatever}
