@@ -21,11 +21,6 @@ ANALYSIS_RESULTS_PLINK := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSI
 .PHONY: all
 all: $(subst .assoc.logistic,,$(subst .assoc.linear,,$(addsuffix .tsv.gz,$(ANALYSIS_RESULTS_PLINK)))) | $(dir $(ANALYSIS_RESULTS_PLINK))
 
-define check_model_matrix
-"$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(MINIMUM_VALID_SUBJECT_COUNT)"
-endef
-
-
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.PLINK.tsv.gz
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.PLINK.tsv
@@ -33,7 +28,7 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: gzip the genome-wide plink association results.
 $(addsuffix .PLINK.tsv.gz,$(subst .plink.assoc.logistic,,$(subst .plink.assoc.linear,,$(ANALYSIS_RESULTS_PLINK)))): $$(subst .PLINK.tsv.gz,.PLINK.tsv,$$@) $$(subst .PLINK.tsv.gz,.plink.model_matrix.success,$$@) | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	gzip -c $(subst .success,,$<) > $@ ; \
 	fi
 
@@ -44,7 +39,7 @@ $(addsuffix .PLINK.tsv.gz,$(subst .plink.assoc.logistic,,$(subst .plink.assoc.li
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: convert raw plink .assoc.logistic results into standard output format, converting OR
 $(addsuffix .PLINK.tsv,$(subst .plink.assoc.logistic,,$(filter %.assoc.logistic,$(ANALYSIS_RESULTS_PLINK)))): $$(subst .PLINK.tsv,.plink.assoc.logistic.success,$$@) $$(subst .PLINK.tsv,.plink.model_matrix.success,$$@) | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"log($$7)/log(10)"\t"(log($$7)/log(10)/$$8)"\t"$$9"\t"$$6}' $(subst .success,,$<) > $@ ; \
 	fi
 
@@ -55,7 +50,7 @@ $(addsuffix .PLINK.tsv,$(subst .plink.assoc.logistic,,$(filter %.assoc.logistic,
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: convert raw plink .assoc.lineaer results into standard output format
 $(addsuffix .PLINK.tsv,$(subst .plink.assoc.linear,,$(filter %.assoc.linear,$(ANALYSIS_RESULTS_PLINK)))): $$(subst .PLINK.tsv,.plink.assoc.linear.success,$$@) $$(subst .PLINK.tsv,.plink.model_matrix.success,$$@) | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" && $$8 != "0" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"$$7"\t"($$7/$$8)"\t"$$9"\t"$$6}' $(subst .success,,$<) > $@ ; \
 	fi
 

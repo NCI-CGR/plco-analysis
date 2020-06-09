@@ -20,10 +20,6 @@ all: $(ANALYSIS_RESULTS_FASTGWA) | $(dir $(ANALYSIS_RESULTS_FASTGWA))
 
 $(ANALYSIS_RESULTS_FASTGWA): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
-define check_model_matrix
-"$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(MINIMUM_VALID_SUBJECT_COUNT)"
-endef
-
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.tsv.gz
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.tsv
@@ -41,7 +37,7 @@ endef
 ## Notes: combine results from per-chromosome fastGWA runs into a single genome-wide file, suitable for meta-analysis.
 ## the model matrix is only required here to enforce a preflight sample size check.
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $$(patsubst %,$$(subst .fastgwa.tsv,,$$@).chr%.fastgwa.success,$$(CHRS)) $$(subst .fastgwa.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	cat $(filter-out %.model_matrix.success,$(subst .fastgwa.success,.fastGWA,$^)) | awk '! /CHR/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$3"\t"$$2"\t"$$4"\t"$$5"\tNA\t"$$8"\t"$$9"\t"$$10"\t"$$6}' > $@ ; \
 	fi
 
@@ -68,7 +64,7 @@ endef
 ## this is a step that requires the "noNA" modification to sample files in the bgen pipeline. the model matrix is used to enforce minimum sample size requirements
 ## on a per-method basis.
 $(foreach result,$(ANALYSIS_RESULTS_FASTGWA),$(patsubst %,$(subst .fastgwa,,$(result)).chr%.fastgwa.success,$(CHRS))): fastgwa-grm/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@, )-sp.grm.sp ../bgen-format/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst .chr, chr,$$(subst .fastgwa.success,,$$@)))-filtered.bgen ../bgen-format/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst .chr, chr,$$(subst .fastgwa.success,,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).fastgwa.phenotype $$(word 1,$$(subst .chr, ,$$@)).fastgwa.covariates $$(word 1,$$(subst .chr, ,$$@)).fastgwa.model_matrix.success
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call qsub_handler_specify_queue_time,$(subst .success,,$@),$(GCTA) --bgen $(word 2,$^) --sample $(word 3,$^) --fastGWA-mlm --grm-sparse $(subst -sp.grm.sp,-sp,$<) --pheno $(word 4,$^) $(if $(shell head -1 $(word 5,$^) | cut -f 1-2 --complement),--qcovar $(word 5,$^),) --threads 4 --out $(subst .fastgwa.success,,$@) > $(subst .success,.log,$@),all.q,1:00:00) ; \
 	else \
 	touch $@ ; \

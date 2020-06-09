@@ -23,10 +23,6 @@ ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSI
 .PHONY: all $(ANALYSIS_RESULTS_SAIGE) $(sort $(dir $(ANALYSIS_RESULTS_SAIGE)))
 all: $(ANALYSIS_RESULTS_SAIGE)
 
-define check_model_matrix
-"$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(MINIMUM_VALID_SUBJECT_COUNT)"
-endef
-
 $(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
 ## patterns:
@@ -47,7 +43,7 @@ $(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 ##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.saige.model_matrix.success
 ## Notes: combine results from each autosome into a single genome-wide result
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(subst .saige.tsv,,$$@).saige.model_matrix.success | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	cat $(subst .success,.txt,$(filter-out %.model_matrix.success,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5"\tNA\t"$$10"\t"$$11"\t"$$13"\t"$$9}' > $@ ; \
 	fi
 
@@ -109,7 +105,7 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 %.saige.round1.success: $$(firstword $$(subst .saige.round1.success,,$$@)).saige-chip.GRCh38-resorted-nochr0.bed.success %.saige.model_matrix.success | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed.success,,$<) $(word 2,$^) $(call get_phenotype,$@) $(if $(call get_covariates_from_model_matrix,$(word 2,$^)),$(call get_covariates_from_model_matrix,$(word 2,$^)),NA) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst .success,,$@)) ; \
 	else \
 	touch $@ ; \
