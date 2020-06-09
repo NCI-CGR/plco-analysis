@@ -40,7 +40,7 @@ $(addsuffix .PLINK.tsv.gz,$(subst .plink.assoc.logistic,,$(subst .plink.assoc.li
 ## Notes: convert raw plink .assoc.logistic results into standard output format, converting OR
 $(addsuffix .PLINK.tsv,$(subst .plink.assoc.logistic,,$(filter %.assoc.logistic,$(ANALYSIS_RESULTS_PLINK)))): $$(subst .PLINK.tsv,.plink.assoc.logistic.success,$$@) $$(subst .PLINK.tsv,.plink.model_matrix.success,$$@) | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"log($$7)/log(10)"\t"(log($$7)/log(10)/$$8)"\t"$$9"\t"$$6}' $(subst .success,,$<) > $@ ; \
+	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" && $$8 != "0" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"log($$7)/log(10)"\t"(log($$7)/log(10)/$$8)"\t"$$9"\t"$$6}' $(subst .success,,$<) > $@ ; \
 	fi
 
 ## patterns:
