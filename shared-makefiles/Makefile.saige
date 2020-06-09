@@ -41,10 +41,10 @@ $(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 ##    output: results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv
 ##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.saige.success
 ##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.saige.model_matrix.success
-## Notes: combine results from each autosome into a single genome-wide result
+## Notes: combine results from each autosome into a single genome-wide result. note allele flip to conform to format
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(subst .saige.tsv,,$$@).saige.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	cat $(subst .success,.txt,$(filter-out %.model_matrix.success,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5"\tNA\t"$$10"\t"$$11"\t"$$13"\t"$$9}' > $@ ; \
+	cat $(subst .success,.txt,$(filter-out %.model_matrix.success,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\tNA\t"$$10"\t"$$11"\t"$$13"\t"$$9}' > $@ ; \
 	fi
 
 
