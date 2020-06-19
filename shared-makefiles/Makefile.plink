@@ -73,7 +73,7 @@ endef
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: run PLINK association on chip data.
 ## the model matrix is only required here to enforce a preflight sample size check.
-$(addsuffix .success,$(ANALYSIS_RESULTS_PLINK)): $$(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@).nohet.autosomes.bed $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success $$(subst .success,.phenotype,$$@) $$(subst .success,.covariates,$$@) | $$(dir $$@)
+$(addsuffix .success,$(ANALYSIS_RESULTS_PLINK)): $$(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@,/).nohet.autosomes.bed $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success $$(subst .success,.phenotype,$$@) $$(subst .success,.covariates,$$@) | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(word 2,$^))) ]] ; then \
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --pheno $(word 3,$^) $(if $(shell head -1 $(word 4,$^) | cut -f 1-2 --complement),--covar $(word 4,$^),) --allow-no-sex $(if $(filter %.assoc.linear.success,$@),--linear,--logistic) --out $(firstword $(subst .plink.assoc., ,$@)).plink) ; \
 	fi

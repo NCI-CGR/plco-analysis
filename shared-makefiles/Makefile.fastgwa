@@ -75,7 +75,7 @@ $(foreach result,$(ANALYSIS_RESULTS_FASTGWA),$(patsubst %,$(subst .fastgwa,,$(re
 ##    input:  bgen/{CHIP}/{ANCESTRY}/chr22-filtered-noNAs.sample
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: this is just a list of included subject ids. this is mostly a step for compatibility with code shared by the other methods.
-%.fastgwa.samples: $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/chr22-filtered-noNAs.sample | $$(dir $$@)
+%.fastgwa.samples: $$(IMPUTED_DIR)/$$(call extract_chip,$$(subst .fastgwa.samples,,$$@),/)/$$(call extract_ancestry,$$@)/chr22-filtered-noNAs.sample | $$(dir $$@)
 	awk 'NR > 2 {print $$1"_"$$1}' $< > $@
 
 ## utility function to just grab the name of a phenotype from config files with an analysis name {PHENOTYPE}.{CHIP}

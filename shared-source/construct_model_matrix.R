@@ -17,16 +17,20 @@ id.colname <- "plco_id"
 
 possible.pcs <- paste("PC", 1:10, sep="")
 
+## try to read phenotype data
 h <- read.table(phenotype.filename, header=TRUE, sep="\t")
 if (length(unique(colnames(h))) != length(colnames(h))) {
    stop(paste("duplicate column names detected in phenotype file \"", phenotype.filename, "\"", sep=""))
 }
+## enforce IDs present once
 if (length(which(colnames(h) == id.colname)) != 1) {
    stop(paste("header of phenotype data does not contain exactly one ", id.colname, " column", sep=""))
 }
+## enforce phenotype present once
 if (length(which(colnames(h) == phenotype.name)) != 1) {
    stop(paste("header of phenotype data does not contain requested phenotype \"", phenotype.name, "\" exactly once", sep=""))
 }
+## enforce requested covariates
 if (length(covariate.list) > 0) {
    if (length(which(covariate.list %in% c(colnames(h), possible.pcs))) != length(covariate.list)) {
       stop(paste("some requested covariates not present in phenotype dataset: ", which(!(covariate.list %in% colnames(h))), sep=""))
@@ -40,9 +44,11 @@ inverse.normalize <- function(i) {
 	qnorm((rank(i, na.last="keep") - 0.5)/sum(!is.na(i)))
 }
 
+## try to hack diagnose phenotype distribution for mild consistency checking
 unique.outcomes <- unique(h[,phenotype.name][!is.na(h[,phenotype.name])])
 trait.is.binary <- length(unique.outcomes) == 2 & length(c(0,1) %in% unique.outcomes) == 2
 
+## apply sex-stratified inverse normal transform when: covariate is continuous and not age covariate, or when analysis is FASTGWA or BOLT on the specified non-binary trait
 for (col.index in which((grepl("_co$", colnames(h)) & !grepl("_age_", colnames(h))) | (grepl("bolt|fastgwa", output.filename, ignore.case=TRUE) & !trait.is.binary & colnames(h) == phenotype.name))) {
     for (i in 1:2) {
     	h[,col.index][h$sex == i] <- inverse.normalize(h[,col.index][h$sex == i])
@@ -61,6 +67,7 @@ if (file.exists(pc.filename)) {
    warning(paste("components do not exist for ancestry/chip combination ", ancestry, " ", chip.nosubsets, ", due to inadequate sample size", sep=""))
 }
 
+## add component data if requested and do it messily and without plyr
 for (pc in possible.pcs[possible.pcs %in% covariate.list]) {
     if (nrow(pc.data) == 0) {
        h <- transform(h, tmp = rep(NA, nrow(h)))
@@ -76,7 +83,7 @@ for (pc in possible.pcs[possible.pcs %in% covariate.list]) {
 
 all.chips <- c("GSA", "Omni25", "Omni5", "OmniX", "Oncoarray")
 
-
+## partition data down to requested chip/ancestry. This is a bit extra, but allows preflight sample size checking
 ancestry.combined <- data.frame()
 for (chip in all.chips) {
     ancestry.data <- read.table(paste("/CGF/GWAS/Scans/PLCO/builds/1/ancestry/PLCO_", chip, ".graf_estimates.txt", sep=""), header=TRUE, sep="\t", stringsAsFactors=FALSE)
@@ -86,7 +93,6 @@ ancestry.combined <- ancestry.combined[,c(1, ncol(ancestry.combined))]
 ancestry.combined[,2] <- str_replace_all(ancestry.combined[,2], " ", "_")
 ancestry.combined <- ancestry.combined[ancestry.combined[,2] == ancestry,]
 h <- h[h[,id.colname] %in% ancestry.combined[,1],]
-
 
 chip.samples <- read.table(chip.samplefile, header=FALSE, stringsAsFactors=FALSE)
 chip.samples[,1] <- unlist(lapply(strsplit(chip.samples[,1], "_"), function(i) {i[1]}))
@@ -98,7 +104,9 @@ output.df <- h[,c(rep(id.colname, 2), phenotype.name, covariate.list)]
 output.df <- output.df[complete.cases(output.df),]
 
 ## identify non-binary categoricals and turn them into dummies
+## wow this part is a pain
 MINIMUM.FACTOR.LEVEL.COUNT <- 10
+## flag things that need dummification
 for (cat.var in colnames(output.df)[grepl("ca$", colnames(output.df)) | colnames(output.df) %in% c("center", "sex", "is.other.asian", paste("batch", c("GSA", "Oncoarray", "OmniX", "Omni25"), sep="."))]) {
     ## create n-1 dummies
     ## reorder the base factor so the most populous group is the reference
@@ -133,13 +141,7 @@ for (cat.var in colnames(output.df)[grepl("ca$", colnames(output.df)) | colnames
     }
 }
 
+## finally maybe report results
 colnames(output.df)[1:2] <- c("FID", "IID")
-#if (grepl("saige", output.filename, ignore.case=TRUE)) {
-#   output.df[output.df[,phenotype.name] >= 0, phenotype.name] <- output.df[output.df[,phenotype.name] >= 0, phenotype.name] + 1
-#}
-#output.df[,1] <- paste(output.df[,1], output.df[,1], sep="_")
-#output.df[,2] <- paste(output.df[,2], output.df[,2], sep="_")
-#print(head(output.df))
-## filter out chip batch variables that don't match the chip in question
 output.df <- output.df[,(grepl(paste("batch", chip.nosubsets, sep="."), colnames(output.df)) | !grepl("batch.", colnames(output.df)))]
 write.table(output.df, output.filename, row.names=FALSE, col.names=TRUE, quote=FALSE, sep="\t")
