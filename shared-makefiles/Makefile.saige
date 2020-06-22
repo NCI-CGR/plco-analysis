@@ -37,12 +37,27 @@ $(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 	gzip -c $< > $@ ; \
 	fi
 
+
 ## patterns:
-##    output: results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.nofreq.tsv
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: add frequency data to a results file
+$(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $(ANNOTATE_FREQUENCY) $$(subst .saige.tsv,.saige.nofreq.tsv,$$@) $$(subst .saige.tsv,.saige.model_matrix.success,$$@) | $$(dir $$@)
+        if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+        $< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@ ; \
+        fi
+
+
+
+## patterns:
+##    output: results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.nofreq.tsv
 ##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.saige.success
 ##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.saige.model_matrix.success
 ## Notes: combine results from each autosome into a single genome-wide result. note allele flip to conform to format
-$(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(subst .saige.tsv,,$$@).saige.model_matrix.success | $$(dir $$@)
+## frequency is set to NA at this step and requires a separate processing step
+$(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.nofreq.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(subst .saige.nofreq.tsv,,$$@).saige.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	cat $(subst .success,.txt,$(filter-out %.model_matrix.success,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\tNA\t"$$10"\t"$$11"\t"$$13"\t"$$9}' > $@ ; \
 	fi

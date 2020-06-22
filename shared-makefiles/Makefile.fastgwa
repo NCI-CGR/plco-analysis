@@ -31,15 +31,30 @@ $(ANALYSIS_RESULTS_FASTGWA): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.tsv
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.nofreq.tsv
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.model_matrix.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: add frequency data to a results file
+$(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $(ANNOTATE_FREQUENCY) $$(subst .fastgwa.tsv,.fastgwa.nofreq.tsv,$$@) $$(subst .fastgwa.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
+        if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+        $< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@ ; \
+        fi
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.nofreq.tsv
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.fastgwa.success
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.model_matrix.success
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: combine results from per-chromosome fastGWA runs into a single genome-wide file, suitable for meta-analysis.
-## the model matrix is only required here to enforce a preflight sample size check.
-$(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $$(patsubst %,$$(subst .fastgwa.tsv,,$$@).chr%.fastgwa.success,$$(CHRS)) $$(subst .fastgwa.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
+## the model matrix is only required here to enforce a preflight sample size check. frequency is set to NA at this step
+## and requires a separate processing step
+$(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_FASTGWA)): $$(patsubst %,$$(subst .fastgwa.nofreq.tsv,,$$@).chr%.fastgwa.success,$$(CHRS)) $$(subst .fastgwa.nofreq.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	cat $(filter-out %.model_matrix.success,$(subst .fastgwa.success,.fastGWA,$^)) | awk '! /CHR/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$3"\t"$$2"\t"$$4"\t"$$5"\tNA\t"$$8"\t"$$9"\t"$$10"\t"$$6}' > $@ ; \
 	fi
+
+
+
 
 ## utility function to grab {CHIP} out of results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.{whatever}
 define extract_chip =
