@@ -34,19 +34,23 @@ $(ANALYSIS_RESULTS_BOLTLMM): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.tsv
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.nofreq.tsv
+##    input:  [frequency annotation software]
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.nofreq.tsv
+##            config/[relevant config file]
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix.success
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
-$(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $(ANNOTATE_FREQUENCY) $$(subst .boltlmm.tsv,.boltlmm.nofreq.tsv,$$@) $$(subst .boltlmm.tsv,.boltlmm.model_matrix.success,$$@) | $$(dir $$@)
-        if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
-        $< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@ ; \
-        fi
+$(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $(ANNOTATE_FREQUENCY) $$(subst .boltlmm.tsv,.boltlmm.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .boltlmm.tsv,.boltlmm.model_matrix.success,$$@) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^))) ; \
+	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $< $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
+	fi
 
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.nofreq.tsv
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.boltlmm.success
+##    input:  config/[relevant config file]
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix.success
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: combine results from per-chromosome BOLTLMM runs into a single genome-wide file, suitable for meta-analysis.
@@ -54,7 +58,8 @@ $(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $(ANNOTATE_FREQUENCY) $$(subst .b
 ## and requires a separate processing step
 $(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $$(patsubst %,$$(subst .boltlmm.nofreq.tsv,,$$@).chr%.boltlmm.success,$$(CHRS)) $$(subst .boltlmm.nofreq.tsv,,$$@).boltlmm.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	cat $(filter-out %.model_matrix.success,$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\tNA\t"$$9"\t"$$10"\t"$$11"\tNA"}' > $@ ; \
+	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 2,$^))) ; \
+	cat $(filter-out %.model_matrix.success,$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$9"\t"$$10"\t"$$11"\tNA"}' > $@ ; \
 	fi
 
 ## phony clean target to eliminate all BOLT analysis directories
@@ -229,7 +234,7 @@ endef
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster. Config file dependency guarantees rerun if the file is edited at all, which
 ## is conservative but correct.
-%.boltlmm.model_matrix.success: $$(shell $(SHARED_SOURCE)/get_config_filename.bash $$(firstword $$(subst /, ,$$(subst $(RESULTS_DIR), ,$$@))) $$(CONFIG_DIR)) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
+%.boltlmm.model_matrix.success: $$(call compute_config,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:

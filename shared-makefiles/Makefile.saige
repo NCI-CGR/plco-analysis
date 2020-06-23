@@ -40,26 +40,31 @@ $(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.nofreq.tsv
+##    input:  [frequency annotation software]
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.nofreq.tsv
+##            config/[relevant config file]
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
-$(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $(ANNOTATE_FREQUENCY) $$(subst .saige.tsv,.saige.nofreq.tsv,$$@) $$(subst .saige.tsv,.saige.model_matrix.success,$$@) | $$(dir $$@)
-        if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
-        $< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@ ; \
-        fi
+$(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $(ANNOTATE_FREQUENCY) $$(subst .saige.tsv,.saige.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .saige.tsv,.saige.model_matrix.success,$$@) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^))) ; \
+	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $< $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
+	fi
 
 
 
 ## patterns:
 ##    output: results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.nofreq.tsv
 ##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.saige.success
+##    input:  config/[relevant config file]
 ##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.saige.model_matrix.success
 ## Notes: combine results from each autosome into a single genome-wide result. note allele flip to conform to format
 ## frequency is set to NA at this step and requires a separate processing step
-$(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.nofreq.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(subst .saige.nofreq.tsv,,$$@).saige.model_matrix.success | $$(dir $$@)
+$(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.nofreq.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(call compute_config,$$@) $$(subst .saige.nofreq.tsv,,$$@).saige.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	cat $(subst .success,.txt,$(filter-out %.model_matrix.success,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\tNA\t"$$10"\t"$$11"\t"$$13"\t"$$9}' > $@ ; \
+	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 2,$^))) ; \
+	cat $(subst .success,.txt,$(filter-out %.model_matrix.success,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9}' > $@ ; \
 	fi
 
 
@@ -129,7 +134,7 @@ endef
 ## patterns:
 ##    output: results/{PHENOTYPE}
 ##    input:
-%.saige.model_matrix.success: $$(shell $(SHARED_SOURCE)/get_config_filename.bash $$(firstword $$(subst /, ,$$(subst $(RESULTS_DIR), ,$$@))) $$(CONFIG_DIR)) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
+%.saige.model_matrix.success: $$(call compute_config,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:
