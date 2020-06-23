@@ -101,12 +101,12 @@ $(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(patsubst %,$(subst .saige,,$(result
 
 ## utility function to just grab the name of a phenotype from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_phenotype
-$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(firstword $(subst /, ,$(subst $(RESULTS_DIR), ,$(1)))) $(CONFIG_DIR))
 endef
 
 ## utility function to just grab comma-delimited covariates from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_covariates
-$(shell $(SHARED_SOURCE)/construct_covariates.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_covariates.bash $(firstword $(subst /, ,$(subst $(RESULTS_DIR), ,$(1)))) $(CONFIG_DIR))
 endef
 
 ## utility function to just grab comma-delimited covariates from a model matrix
@@ -129,7 +129,7 @@ endef
 ## patterns:
 ##    output: results/{PHENOTYPE}
 ##    input:
-%.saige.model_matrix.success: $$(shell $(SHARED_SOURCE)/get_config_filename.bash $$(firstword $$(subst /, ,$$(subst results/, ,$$@))) $$(CONFIG_DIR)) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
+%.saige.model_matrix.success: $$(shell $(SHARED_SOURCE)/get_config_filename.bash $$(firstword $$(subst /, ,$$(subst $(RESULTS_DIR), ,$$@))) $$(CONFIG_DIR)) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:

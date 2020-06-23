@@ -125,7 +125,7 @@ endef
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster. Config file dependency guarantees rerun if the file is edited at all, which
 ## is conservative but correct.
-%.fastgwa.model_matrix.success: $$(shell $(SHARED_SOURCE)/get_config_filename.bash $$(firstword $$(subst /, ,$$(subst results/, ,$$@))) $$(CONFIG_DIR)) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
+%.fastgwa.model_matrix.success: $$(shell $(SHARED_SOURCE)/get_config_filename.bash $$(firstword $$(subst /, ,$$(subst $(RESULTS_DIR), ,$$@))) $$(CONFIG_DIR)) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 3,$(subst /, ,$@)) $(lastword $(subst ., ,$(subst .fastgwa.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:
