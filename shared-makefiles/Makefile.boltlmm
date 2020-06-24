@@ -66,7 +66,7 @@ $(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $(ANNOTATE_FREQUENCY) $$(subst .b
 $(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $$(patsubst %,$$(subst .boltlmm.nofreq.tsv,,$$@).chr%.boltlmm.success,$$(CHRS)) $$(subst .boltlmm.nofreq.tsv,,$$@).boltlmm.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 2,$^))) ; \
-	cat $(filter-out %.model_matrix.success,$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$9"\t"$$10"\t"$$11"\tNA"}' > $@ ; \
+	cat $(filter-out %.model_matrix.success,$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$9"\t"$$10"\t"$$11"\t$(strip $(shell wc -l $(subst .success,,$(lastword $^)) | awk '{print $$1}'))-1"}' > $@ ; \
 	fi
 
 ## phony clean target to eliminate all BOLT analysis directories
