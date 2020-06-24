@@ -8,7 +8,7 @@ UNIQUE_PLATFORMS := $(subst _,/,$(filter-out Omni5,$(PLATFORMS)))
 
 .DELETE_ON_ERROR:
 .SECONDEXPANSION:
-.PHONY: all $(UNIQUE_PLATFORMS) $(addsuffix /,$(UNIQUE_PLATFORMS))
+.PHONY: all $(UNIQUE_PLATFORMS)
 ## all targets are: each platform, without Omni5 because it has no non-redundant subjects
 all: $(UNIQUE_PLATFORMS)
 
