@@ -74,7 +74,7 @@ GRAF.update_names: $(GRAF_1KG_VARIANT_BIMFILE)
 
 
 ## patterns:
-##    output: {CHIP}.nohet.autosomes.bed (and bim, amd fam)
+##    output: {CHIP}.nohet.autosomes.bed (and bim, and fam)
 ##    input:  {CHIP}.step1.maf.geno.hwe.bed
 ##    input:  {CHIP}.step4.het.remove
 ## Notes: this applies the heterozygosity filter from step4. Note that in practice in the cleaned dataset, the remove

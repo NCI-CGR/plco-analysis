@@ -1,9 +1,10 @@
 #!/bin/bash
-if [ "$#" -ne 1 ]; then
-    echo "the command 'resolve_bolt_ldscore.bash' requires one command line argument: the ancestry being analyzed"
+if [ "$#" -ne 2 ]; then
+    echo "the command 'resolve_bolt_ldscore.bash' requires two command line arguments: the ancestry being analyzed, and the ldscore directory"
 else
     ANCESTRY="$1"
-    LDSC_PREFIX="/CGF/Bioinformatics/Production/palmercd/ldsc/LDSCORE.1000G_"
+    LDSC_DIRECTORY="$2"
+    LDSC_PREFIX="${LDSC_DIRECTORY}/LDSCORE.1000G_"
     LDSC_SUFFIX=".l2.ldscore.gz"
     if [[ "$ANCESTRY" == "European" ]] ; then
 	echo "${LDSC_PREFIX}EUR${LDSC_SUFFIX}" ;

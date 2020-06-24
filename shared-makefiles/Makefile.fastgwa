@@ -74,7 +74,7 @@ endef
 
 ## utility function to grab {ANCESTRY} out of results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.{whatever}
 define extract_ancestry =
-$(word 3,$(subst /, ,$(1)))
+$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(1))))
 endef
 
 ## patterns:

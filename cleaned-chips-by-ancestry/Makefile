@@ -5,7 +5,7 @@ include $(PROJECT_BASE_DIR)/Makefile.config
 export
 STUDIES := $(sort $(foreach platform,$(PLATFORMS),$(firstword $(subst _, ,$(platform)))))
 
-.PHONY: all clean $(CLEANED_ANCESTRY_NAMES) $(addsuffix /,$(CLEANED_ANCESTRY_NAMES))
+.PHONY: all clean $(CLEANED_ANCESTRY_NAMES)
 .DELETE_ON_ERROR:
 .SECONDARY:
 .SECONDEXPANSION:
