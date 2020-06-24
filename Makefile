@@ -9,7 +9,7 @@ all: meta
 meta: $(SUPPORTED_METHODS)
 	$(MAKE) -C shared-makefiles/Makefile.metal
 
-$(SUPPORTED_METHODS): bgen cleaned-chips-by-ancestry ldsc
+$(SUPPORTED_METHODS): cleaned-chips-by-ancestry ldsc bgen
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$@
 
 bgen:
