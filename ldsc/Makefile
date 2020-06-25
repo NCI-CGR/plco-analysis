@@ -9,7 +9,7 @@ include $(PROJECT_BASE_DIR)/Makefile.config
 .SECONDEXPANSION:
 1KG_POPS := AFR EUR SAS EAS AMR
 ALL_TARGETS := $(patsubst %,LDSCORE.1000G_%.l2.ldscore-reformatted.gz,$(1KG_POPS) ALL AFRAMR)
-all: $(ALL_TARGETS)
+all: $(filter-out LDSCORE.1000G_ALL.l2.ldscore-reformatted.gz,$(ALL_TARGETS))
 LDSC := $(LDSC_PY)
 HG38_CM_MAP := $(GRCH38_RECOMBINATION_MAP)
 MAF_THRESHOLD := $(LDSC_MAF_THRESHOLD)
