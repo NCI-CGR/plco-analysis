@@ -40,7 +40,7 @@ endef
 ## Notes: compress combined saige output file.
 ## the model matrix is only required here to enforce a preflight sample size check.
 %.tsv.gz: %.tsv %.model_matrix.success | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	gzip -c $< > $@ ; \
 	fi
 
@@ -54,7 +54,7 @@ endef
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $(ANNOTATE_FREQUENCY) $$(subst .saige.tsv,.saige.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .saige.tsv,.saige.model_matrix.success,$$@) | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^))) ; \
 	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $< $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
 	fi
@@ -69,8 +69,8 @@ $(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $(ANNOTATE_FREQUENCY) $$(subst .sai
 ## Notes: combine results from each autosome into a single genome-wide result. note allele flip to conform to format
 ## frequency is set to NA at this step and requires a separate processing step
 $(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.nofreq.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(call compute_config,$$@) $$(subst .saige.nofreq.tsv,,$$@).saige.model_matrix.success | $$(dir $$@)
+	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 2,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 2,$^))) ; \
 	cat $(subst .success,.txt,$(filter-out %.model_matrix.success,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9}' > $@ ; \
 	fi
 
@@ -98,7 +98,7 @@ endef
 ## Notes: run second round of SAIGE analysis, by autosome, using output of initial inflation estimation (LD-pruned) genome wide.
 ## but only run if the effective sample size is greater than some heuristic minimum.
 $(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(patsubst %,$(subst .saige,,$(result)).chr%.saige.success,$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).saige.round1.success $$(word 1,$$(subst .chr, ,$$@)).saige.model_matrix.success $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen.bgi $$(word 1,$$(subst .chr, ,$$@)).saige.samples | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(word 2,$^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(word 2,$^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_2_SCRIPT) $(word 3,$^) $(word 4,$^) $(subst .success,.rda,$<) $(subst .success,.varianceRatio.txt,$<) $(subst .success,.varianceRatio.txt_relatednessCutoff_$(SAIGE_ROUND_1_RELATEDNESS_CUTOFF)_1000_randomMarkersUsed.sparseSigma.mtx,$<) $(word 5,$^) $(subst .success,,$@) chr$(lastword $(subst .chr, ,$(subst .saige.success,,$@)))) ; \
 	else \
 	touch $@ ; \
@@ -142,7 +142,7 @@ endef
 ##    output: results/{PHENOTYPE}
 ##    input:
 %.saige.model_matrix.success: $$(call compute_config,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
+	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:
 ##    output:

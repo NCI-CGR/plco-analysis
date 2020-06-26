@@ -31,7 +31,7 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.tsv
 ## Notes: gzip the genome-wide fastGWA results.
 %.tsv.gz: %.tsv
-	if [[ $(call check_model_matrix,$(subst .fastgwa.tsv.gz,.fastgwa.model_matrix,$@)) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .fastgwa.tsv.gz,.fastgwa.model_matrix,$@),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	gzip -c $< > $@ ; \
 	fi
 
@@ -44,7 +44,7 @@ endef
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $(ANNOTATE_FREQUENCY) $$(subst .fastgwa.tsv,.fastgwa.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .fastgwa.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^))) ; \
 	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $< $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@ ; \
 	fi
@@ -137,7 +137,7 @@ endef
 ## this is separately submitted to the cluster. Config file dependency guarantees rerun if the file is edited at all, which
 ## is conservative but correct.
 %.fastgwa.model_matrix.success: $$(call compute_config,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),$@))) $(lastword $(subst ., ,$(subst .fastgwa.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
+	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .fastgwa.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/

@@ -81,7 +81,7 @@ endef
 ## Notes: run PLINK association on chip data.
 ## the model matrix is only required here to enforce a preflight sample size check.
 $(addsuffix .success,$(ANALYSIS_RESULTS_PLINK)): $$(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@,/).nohet.autosomes.bed $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success $$(subst .success,.phenotype,$$@) $$(subst .success,.covariates,$$@) | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(word 2,$^))) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst .success,,$(word 2,$^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --pheno $(word 3,$^) $(if $(shell head -1 $(word 4,$^) | cut -f 1-2 --complement),--covar $(word 4,$^),) --allow-no-sex $(if $(filter %.assoc.linear.success,$@),--linear,--logistic) --out $(firstword $(subst .plink.assoc., ,$@)).plink) ; \
 	fi
 
@@ -134,7 +134,7 @@ endef
 ## this is separately submitted to the cluster. Config file dependency guarantees rerun if the file is edited at all, which
 ## is conservative but correct.
 %.plink.model_matrix.success: $$(call compute_config,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript shared-source/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),$@))) $(lastword $(subst ., ,$(subst .plink.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
+	$(call qsub_handler,$(subst .success,,$@),Rscript shared-source/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .plink.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
