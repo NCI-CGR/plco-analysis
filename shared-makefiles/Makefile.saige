@@ -1,16 +1,13 @@
 ## Cameron Palmer, 28 May 2020
 ## workflow for SAIGE analyses
 
+include $(PROJECT_BASE_DIR)/Makefile.config
+
 GENOTYPE_DIR := $(CLEANED_CHIP_OUTPUT_DIR)
-$(info $(GENOTYPE_DIR))
 IMPUTED_DIR := $(BGEN_OUTPUT_DIR)
-$(info $(IMPUTED_DIR))
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
-$(info $(RESULTS_DIR))
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
-$(info $(CONFIG_DIR))
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
-$(info $(ANALYSIS_CONFIGS))
 ## empirical approximate minimum subject count (+1), specific to SAIGE
 MINIMUM_VALID_SUBJECT_COUNT := $(SAIGE_MINIMUM_VALID_SUBJECT_COUNT)
 
@@ -54,8 +51,8 @@ endef
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $(ANNOTATE_FREQUENCY) $$(subst .saige.tsv,.saige.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .saige.tsv,.saige.model_matrix.success,$$@) | $$(dir $$@)
+	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^))) ; \
 	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $< $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
 	fi
 
@@ -139,13 +136,16 @@ endef
 	fi
 
 ## patterns:
-##    output: results/{PHENOTYPE}
-##    input:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##    input:  config/[relevant config file]
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 %.saige.model_matrix.success: $$(call compute_config,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
 
 ## patterns:
-##    output:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: build the output directory tree if needed.
 $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 	mkdir -p $@
 

@@ -1,0 +1,45 @@
+## create modified file that just contains desired columns except beta is replaced by beta/se
+
+include $(PROJECT_BASE_DIR)/Makefile.config
+
+RESULTS_DIR := $(RESULT_OUTPUT_DIR)
+
+#SAIGE_TARGETS := $(shell find $(RESULTS_DIR) -path "*European*saige.tsv" -print)
+BOLT_TARGETS := $(shell find $(RESULTS_DIR) -path "*European*boltlmm.tsv" -print)
+#FASTGWA_TARGETS := $(shell find $(RESULTS_DIR) -path "*European*fastgwa.tsv" -print)
+
+ALL_OUTPUT := $(subst .tsv,.ldsc.tsv.success,$(SAIGE_TARGETS) $(BOLT_TARGETS) $(FASTGWA_TARGETS))
+
+MUNGE_SUMSTATS := ~/Development/ldsc/munge_sumstats.py
+LD_CHR := /CGF/GWAS/Scans/PLCO/builds/1/analysis-requests/ldsc/eur_w_ld_chr/
+LD_TARGETS := $(patsubst %,$(subst w_ld_chr/,w_ld_chr_GRCh38/,$(LD_CHR))%.l2.M_5_50,$(CHRS))
+
+.PHONY: all
+.DELETE_ON_ERROR:
+.SECONDARY:
+.SECONDEXPANSION:
+all: $(LD_TARGETS) #$(ALL_OUTPUT)
+
+%.ldsc.tsv: %.ldsc.sumstats.gz $(LD_TARGETS)
+	$(call qsub_handler,$(subst .success,,$@),$(LDSC_PY) --h2 $< --ref-ld-chr $(LD_CHR) --w-ld-chr $(LD_CHR) --out $(subst something)
+
+%.ldsc.sumstats.gz.success: %.ldsc.ldsc-processed.tsv
+	$(call qsub_handler,$(subst .success,,$@),$(MUNGE_SUMSTATS) --signed-sumstats STAT,0 --out $(subst .sumstats.gz.success,,$@) --a1-inc --frq Freq_Tested_Allele_in_TOPMed --N-col N --a1 Tested_Allele --a2 Other_Allele --snp SNP --sumstats $< --p P)
+
+%.ldsc.ldsc-processed.tsv: %.tsv
+	awk 'NR > 1 {$$7 = $$7 / $$8} ; {print $$1":"$$2"\t"$$4"\t"$$5"\t"$$6"\tSTAT\t$$9"\t$$10}' $< > $@
+
+%.l2.M_5_50: %.l2.ldscore.gz | $$(dir $$@)
+	gunzip -c $< | awk 'NR > 1 && $$5 >= 0.05' > $@
+
+%.l2.ldscore.gz: %.lifted.bed | $$(dir $$@)
+	sed 's/:/\t/g ; s/^chr//' $< | awk 'NR == 1 {print "CHR\tSNP\tBP\tCM\tMAF\tL2} ; {print $$1"\t"$$1":"$$2+1"\t"$$2+1"\t0\t"$$5"\t"$$6}' | gzip -c > $@
+
+%.lifted.bed: %.input.bed | $$(dir $$@)
+	$(LIFTOVER_EXECUTABLE) $< $(LIFTOVER_19_TO_38) $@ $(subst .bed,.fail,$@)
+
+%.input.bed: $$(subst _GRCh38,,$$(subst .input.bed,.l2.ldscore.gz,$$@)) | $$(dir $$@)
+	gunzip -c $< | awk 'NR > 1 {print "chr"$$1"\t"$$3-1"\t"$$3"\t"$$2":"$$5":"$$6}' > $@
+
+$(sort $(dir $(LD_TARGETS))):
+	mkdir -p $@
