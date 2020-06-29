@@ -7,7 +7,7 @@ export
 all: meta
 
 meta: $(SUPPORTED_METHODS)
-	$(MAKE) -C shared-makefiles/Makefile.metal
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.metal
 
 fastgwa: fastgwa-grm
 

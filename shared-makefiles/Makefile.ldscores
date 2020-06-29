@@ -14,12 +14,19 @@ MUNGE_SUMSTATS := ~/Development/ldsc/munge_sumstats.py
 LD_CHR := /CGF/GWAS/Scans/PLCO/builds/1/analysis-requests/ldsc/eur_w_ld_chr/
 LD_CHR_GRCh38 := $(subst w_ld_chr/,w_ld_chr_GRCh38/,$(LD_CHR))
 LD_TARGETS := $(patsubst %,$(LD_CHR_GRCh38)%.l2.M_5_50,$(CHRS))
-
+LDSCORE_SUMMARY := $(RESULTS_DIR)/ldscore_summary.tsv
 .PHONY: all
 .DELETE_ON_ERROR:
 .SECONDARY:
 .SECONDEXPANSION:
-all: $(ALL_OUTPUT)
+all: $(ALL_OUTPUT) $(LDSCORE_SUMMARY)
+
+$(LDSCORE_SUMMARY): $(subst .ldsc.log.success,.ldsc.report,$(ALL_OUTPUT))
+	cat $^ | sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 | awk 'NR == 1 {print "phenotype\tplatform\tancestry\tmethod\tinflation_factor\tintercept\terror"} ; NR > 1' > $@
+
+%.ldsc.report: %.ldsc.log.success
+	echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log.success// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\t%s\t%s\t%s\t", $$2, $$3, $$1, $$4)}' > $@
+	grep -E "Lambda GC|Intercept" $(subst .success,,$^) | sed 's/:/\t/g' | awk '/Lambda GC/ {printf("%s\t",$$3)} ; /Intercept/ {print $$2"\t"$$3}' >> $@
 
 %.ldsc.log.success: %.ldsc.sumstats.gz.success $(LD_TARGETS)
 	$(call qsub_handler,$(subst .success,,$@),$(LDSC_PY) --h2 $(subst .success,,$<) --ref-ld-chr $(LD_CHR_GRCh38) --w-ld-chr $(LD_CHR_GRCh38) --out $(subst .log.success,,$@))
