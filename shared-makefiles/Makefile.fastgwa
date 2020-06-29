@@ -46,9 +46,9 @@ endef
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $(ANNOTATE_FREQUENCY) $$(subst .fastgwa.tsv,.fastgwa.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .fastgwa.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
+	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^))) ; \
-	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $< $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@ ; \
+	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $< $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
 	fi
 
 ## patterns:
@@ -61,9 +61,9 @@ $(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $(ANNOTATE_FREQUENCY) $$(subst .f
 ## the model matrix is only required here to enforce a preflight sample size check. frequency is set to NA at this step
 ## and requires a separate processing step
 $(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_FASTGWA)): $$(patsubst %,$$(subst .fastgwa.nofreq.tsv,,$$@).chr%.fastgwa.success,$$(CHRS)) $$(call compute_config,$$@) $$(subst .fastgwa.nofreq.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
+	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 2,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 2,$^))) ; \
-	cat $(filter-out %.model_matrix.success,$(subst .fastgwa.success,.fastGWA,$^)) | awk '! /CHR/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$3"\t"$$2"\t"$$4"\t"$$5"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$8"\t"$$9"\t"$$10"\t"$$6}' > $@ ; \
+	cat $(filter-out %.model_matrix.success %.config,$(subst .fastgwa.success,.fastGWA,$^)) | awk '! /CHR/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$3"\t"$$2"\t"$$4"\t"$$5"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$8"\t"$$9"\t"$$10"\t"$$6}' > $@ ; \
 	fi
 
 
@@ -108,12 +108,12 @@ $(foreach result,$(ANALYSIS_RESULTS_FASTGWA),$(patsubst %,$(subst .fastgwa,,$(re
 
 ## utility function to just grab the name of a phenotype from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_phenotype
-$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(firstword $(subst /, ,$(subst $(RESULTS_DIR), ,$(1)))) $(CONFIG_DIR))
 endef
 
 ## utility function to just grab comma-delimited covariates from config files with an analysis name {PHENOTYPE}.{CHIP}
 define get_covariates
-$(shell $(SHARED_SOURCE)/construct_covariates.bash $(firstword $(subst /, ,$(subst results/, ,$(1)))) $(CONFIG_DIR))
+$(shell $(SHARED_SOURCE)/construct_covariates.bash $(firstword $(subst /, ,$(subst $(RESULTS_DIR), ,$(1)))) $(CONFIG_DIR))
 endef
 
 ## patterns:

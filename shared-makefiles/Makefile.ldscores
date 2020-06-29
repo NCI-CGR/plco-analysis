@@ -19,7 +19,7 @@ LD_TARGETS := $(patsubst %,$(LD_CHR_GRCh38)%.l2.M_5_50,$(CHRS))
 .DELETE_ON_ERROR:
 .SECONDARY:
 .SECONDEXPANSION:
-all: $(LD_TARGETS) #$(ALL_OUTPUT)
+all: $(ALL_OUTPUT)
 
 %.ldsc.tsv: %.ldsc.sumstats.gz $(LD_TARGETS)
 	$(call qsub_handler,$(subst .success,,$@),$(LDSC_PY) --h2 $< --ref-ld-chr $(LD_CHR) --w-ld-chr $(LD_CHR) --out $(subst something)
@@ -31,7 +31,7 @@ all: $(LD_TARGETS) #$(ALL_OUTPUT)
 	awk 'NR > 1 {$$7 = $$7 / $$8} ; {print $$1":"$$2"\t"$$4"\t"$$5"\t"$$6"\tSTAT\t$$9"\t$$10}' $< > $@
 
 $(LD_CHR_GRCh38)%.l2.M_5_50: $(LD_CHR_GRCh38)%.l2.ldscore.gz | $$(dir $$@)
-	gunzip -c $< | awk 'NR > 1 && $$5 >= 0.05' > $@
+	gunzip -c $< | awk 'NR > 1 && $$5 >= 0.05' | wc > $@
 
 $(LD_CHR_GRCh38)%.l2.ldscore.gz: $(LD_CHR_GRCh38)%.lifted.bed | $$(dir $$@)
 	sed 's/:/\t/g ; s/^chr//' $< | awk 'NR == 1 {print "CHR\tSNP\tBP\tCM\tMAF\tL2"} ; {print $$1"\t"$$1":"$$2+1"\t"$$2+1"\t0\t"$$5"\t"$$6}' | gzip -c > $@
