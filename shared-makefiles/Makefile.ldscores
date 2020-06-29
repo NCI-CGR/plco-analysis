@@ -4,7 +4,7 @@ include $(PROJECT_BASE_DIR)/Makefile.config
 
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 
-#SAIGE_TARGETS := $(shell find $(RESULTS_DIR) -path "*European*saige.tsv" -print)
+#SAIGE_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/*saige.tsv" -print)
 BOLT_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/*boltlmm.tsv" -print)
 FASTGWA_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/*fastgwa.tsv" -print)
 
@@ -24,11 +24,12 @@ all: $(ALL_OUTPUT)
 %.ldsc.log.success: %.ldsc.sumstats.gz.success $(LD_TARGETS)
 	$(call qsub_handler,$(subst .success,,$@),$(LDSC_PY) --h2 $(subst .success,,$<) --ref-ld-chr $(LD_CHR_GRCh38) --w-ld-chr $(LD_CHR_GRCh38) --out $(subst .log.success,,$@))
 
+COMMA := ,
 %.ldsc.sumstats.gz.success: %.ldsc.ldsc-processed.tsv
-	$(call qsub_handler,$(subst .success,,$@),$(MUNGE_SUMSTATS) --signed-sumstats STAT,0 --out $(subst .sumstats.gz.success,,$@) --a1-inc --frq Freq_Tested_Allele_in_TOPMed --N-col N --a1 Tested_Allele --a2 Other_Allele --snp SNP --sumstats $< --p P)
+	$(call qsub_handler,$(subst .success,,$@),$(MUNGE_SUMSTATS) --signed-sumstats STAT$(COMMA)0 --out $(subst .sumstats.gz.success,,$@) --a1-inc --frq Freq_Tested_Allele_in_TOPMed --N-col N --a1 Tested_Allele --a2 Other_Allele --snp SNP --sumstats $< --p P)
 
 %.ldsc.ldsc-processed.tsv: %.tsv
-	awk 'NR > 1 {$$7 = $$7 / $$8} ; {print $$1":"$$2"\t"$$4"\t"$$5"\t"$$6"\tSTAT\t"$$9"\t"$$10}' $< > $@
+	awk 'NR > 1 {$$7 = $$7 / $$8 ; print $$1":"$$2"\t"$$4"\t"$$5"\t"$$6"\t"$$7"\t"$$9"\t"$$10} ; NR == 1 {print "SNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tSTAT\tP\tN"}' $< > $@
 
 $(LD_CHR_GRCh38)%.l2.M_5_50: $(LD_CHR_GRCh38)%.l2.ldscore.gz | $$(dir $$@)
 	gunzip -c $< | awk 'NR > 1 && $$5 >= 0.05' | wc -l > $@

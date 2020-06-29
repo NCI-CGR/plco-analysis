@@ -130,7 +130,7 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 %.saige.round1.success: $$(firstword $$(subst .saige.round1.success,,$$@)).saige-chip.GRCh38-resorted-nochr0.bed.success %.saige.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed.success,,$<) $(word 2,$^) $(call get_phenotype,$@) $(if $(call get_covariates_from_model_matrix,$(word 2,$^)),$(call get_covariates_from_model_matrix,$(word 2,$^)),NA) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst .success,,$@)) ; \
+	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed.success,,$<) $(subst .success,,$(word 2,$^)) $(call get_phenotype,$@) $(if $(call get_covariates_from_model_matrix,$(subst .success,,$(word 2,$^))),$(call get_covariates_from_model_matrix,$(subst .success,,$(word 2,$^))),NA) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst .success,,$@)) ; \
 	else \
 	touch $@ ; \
 	fi
