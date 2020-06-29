@@ -68,7 +68,7 @@ $(addsuffix .tsv,$(ANALYSIS_RESULTS_SAIGE)): $(ANNOTATE_FREQUENCY) $$(subst .sai
 $(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_SAIGE)): $$(patsubst %,$$(subst .saige.nofreq.tsv,,$$@).chr%.saige.success,$$(CHRS)) $$(call compute_config,$$@) $$(subst .saige.nofreq.tsv,,$$@).saige.model_matrix.success | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 2,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	cat $(subst .success,.txt,$(filter-out %.model_matrix.success,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9}' > $@ ; \
+	cat $(subst .success,.txt,$(filter-out %.model_matrix.success %.config,$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9}' > $@ ; \
 	fi
 
 
@@ -180,7 +180,7 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. so it's just a hack liftover intermediate step.
-%.saige-chip.GRCh38.bed: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output || $$(dir $$@)
+%.saige-chip.GRCh38.bed: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output | $$(dir $$@)
 	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/chr// ; s/:/\t/ ; s/-/\t/' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2"\t"$$8"\t"$$9}' > $(subst .bed,.bim,$@)
 	cp $(subst .bed.success,.fam,$<) $(subst .bed,.fam,$@)
 	cp $(subst .success,,$<) $@
@@ -208,7 +208,7 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover.exclude
 ## Notes: first step to updating plink file with GRCh38 lifted positions: remove variants that failed lift, in order
 %.saige-chip.lift-failures-excluded.bed.success: %.saige-chip.bed.success %.saige-chip.liftover.exclude | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed.success,,$<) --exclude $(subst .bed.success,.exclude,$@) --make-bed --out $(subst .bed.success,,$@))
+	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed.success,,$<) --exclude $(word 2,$^) --make-bed --out $(subst .bed.success,,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover.exclude
@@ -239,7 +239,7 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 ##    input:  {CLEANED_CHIPS_BY_ANCESTRY}/{ANCESTRY}/{CHIP}.step2.pruning.prune.in
 ##    input:  {CLEANED_CHIPS_BY_ANCESTRY}/{ANCESTRY}/{CHIP}.step3.pruning.prune.out
 ## Notes: gets an ancestry-specific LD-pruned (more or less) dataset for SAIGE heritability estimation.
-%.saige-chip.bed.success: $(GENOTYPE_DIR)/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).nohet.autosomes.bed %.saige.samples.plink-format $(GENOTYPE_DIR)/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).step2.pruning.prune.in $(GENOTYPE_DIR)/$$(word 3,$$(subst /, ,$$@))/$$(firstword $$(subst _, ,$$(lastword $$(subst ., ,$$(subst .saige-chip.bed.success,,$$@))))).step3.pruning.prune.out | $$(dir $$@)
+%.saige-chip.bed.success: $(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(firstword $$(subst /, ,$$(call extract_chip,$$(subst .saige-chip.bed.success,,$$@),/))).nohet.autosomes.bed %.saige.samples.plink-format $(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(firstword $$(subst /, ,$$(call extract_chip,$$(subst .saige-chip.bed.success,,$$@),/))).step2.pruning.prune.in $(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(firstword $$(subst /, ,$$(call extract_chip,$$(subst .saige-chip.bed.success,,$$@),/))).step3.pruning.prune.out | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --keep $(word 2,$^) --extract $(word 3,$^) --exclude $(word 4,$^) --make-bed --out $(subst .bed.success,,$@))
 
 ## patterns:
