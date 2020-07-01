@@ -25,14 +25,14 @@ endef
 .SECONDARY:
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
-ALL_TARGETS := $(shell find $(RESULTS_DIR) \( -name "*1.tsv" -o -name "*fastgwa.tsv" -o -name "*boltlmm.tsv" \) -print)
-META_TARGETS := $(filter %1.tsv,$(ALL_TARGETS))
-META_TARGETS := $(subst 1.tsv,.manhattan.jpg.success,$(META_TARGETS))
-$(info $(META_TARGETS))
-NOT_META_TARGETS := $(filter-out %1.tsv %.raw.tsv,$(ALL_TARGETS))
+ALL_TARGETS := $(shell find $(RESULTS_DIR) -iname "*[am].tsv" -print)
+META_TARGETS := $(filter %M.tsv %A.tsv,$(ALL_TARGETS))
+META_TARGETS := $(subst .tsv,.manhattan.jpg.success,$(META_TARGETS))
+
+NOT_META_TARGETS := $(filter %m.tsv %a.tsv,$(ALL_TARGETS))
 ## manipulate non-meta targets to have unambiguous filenames that match the format of the meta plots
 NOT_META_TARGETS := $(foreach target,$(NOT_META_TARGETS),$(dir $(target))$(firstword $(subst ., ,$(notdir $(target)))).$(call extract_ancestry,$(target)).$(call extract_chip,$(target)).$(call extract_method,$(target)).manhattan.jpg.success)
-$(info $(NOT_META_TARGETS))
+
 PLOT_SCRIPT := $(SHARED_SOURCE)/manhattan_loci_colored_launcher.R
 all: $(META_TARGETS) $(NOT_META_TARGETS)
 
@@ -48,8 +48,8 @@ $(META_TARGETS): $(PLOT_SCRIPT) $$(subst .manhattan.jpg.success,.plot_ready,$$@)
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.plot_ready
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}1.tsv
-$(subst .manhattan.jpg.success,.plot_ready,$(META_TARGETS)): $$(subst .plot_ready,1.tsv,$$@)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.tsv
+$(subst .manhattan.jpg.success,.plot_ready,$(META_TARGETS)): $$(subst .plot_ready,.tsv,$$@)
 	awk '{print $$1"\t"$$2"\t"$$3"\t"$$9}' $< | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $@
 
 ## patterns:
