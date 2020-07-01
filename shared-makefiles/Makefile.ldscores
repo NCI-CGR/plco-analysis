@@ -22,7 +22,7 @@ LDSCORE_SUMMARY := $(RESULTS_DIR)/ldscore_summary.tsv
 all: $(ALL_OUTPUT) $(LDSCORE_SUMMARY)
 
 $(LDSCORE_SUMMARY): $(subst .ldsc.log.success,.ldsc.report,$(ALL_OUTPUT))
-	cat $^ | sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 | awk 'NR == 1 {print "phenotype\tplatform\tancestry\tmethod\tinflation_factor\tintercept\terror"} ; NR > 1' > $@
+	cat $^ | sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 | awk 'NR == 1 {print "phenotype\tplatform\tancestry\tmethod\tinflation_factor\tintercept\terror"} ; NR > 1' | sed 's/(// ; s/)//' > $@
 
 %.ldsc.report: %.ldsc.log.success
 	echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log.success// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\t%s\t%s\t%s\t", $$2, $$3, $$1, $$4)}' > $@
