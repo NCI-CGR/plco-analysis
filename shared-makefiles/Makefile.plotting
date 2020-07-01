@@ -1,0 +1,68 @@
+## Cameron Palmer, 01 July 2020
+## workflow for post-analysis QC plotting
+
+include $(PROJECT_BASE_DIR)/Makefile.config
+
+RESULTS_DIR := $(RESULT_OUTPUT_DIR)
+
+define extract_phenotype =
+$(word 1,$(subst /, ,$(subst $(RESULTS_DIR),,$(1))))
+endef
+
+define extract_ancestry =
+$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(1))))
+endef
+
+define extract_method =
+$(word 3,$(subst /, ,$(subst $(RESULTS_DIR),,$(1))))
+endef
+
+define extract_chip =
+$(word 2,$(subst ., ,$(notdir $(1))))
+endef
+
+.PHONY: all
+.SECONDARY:
+.SECONDEXPANSION:
+.DELETE_ON_ERROR:
+ALL_TARGETS := $(shell find $(RESULTS_DIR) \( -name "*1.tsv" -o -name "*fastgwa.tsv" -o -name "*boltlmm.tsv" \) -print)
+META_TARGETS := $(filter %1.tsv,$(ALL_TARGETS))
+META_TARGETS := $(subst 1.tsv,.manhattan.jpg.success,$(META_TARGETS))
+$(info $(META_TARGETS))
+NOT_META_TARGETS := $(filter-out %1.tsv %.raw.tsv,$(ALL_TARGETS))
+## manipulate non-meta targets to have unambiguous filenames that match the format of the meta plots
+NOT_META_TARGETS := $(foreach target,$(NOT_META_TARGETS),$(dir $(target))$(firstword $(subst ., ,$(notdir $(target)))).$(call extract_ancestry,$(target)).$(call extract_chip,$(target)).$(call extract_method,$(target)).manhattan.jpg.success)
+$(info $(NOT_META_TARGETS))
+PLOT_SCRIPT := $(SHARED_SOURCE)/manhattan_loci_colored_launcher.R
+all: $(META_TARGETS) $(NOT_META_TARGETS)
+
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.manhattan.jpg.success
+##    input:  shared-source/manhattan_loci_colored_launcher.R
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.plot_ready
+$(META_TARGETS): $(PLOT_SCRIPT) $$(subst .manhattan.jpg.success,.plot_ready,$$@)
+	if [[ "$(shell wc -l $(word 2,$^) | awk '{print $$1}')" -gt "1" ]] ; then \
+	$(call qsub_handler,$(subst .success,,$@),Rscript $< $(word 2,$^) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@) $(subst .manhattan.jpg.success,,$@) $(SHARED_SOURCE)) ; \
+	fi
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.plot_ready
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}1.tsv
+$(subst .manhattan.jpg.success,.plot_ready,$(META_TARGETS)): $$(subst .plot_ready,1.tsv,$$@)
+	awk '{print $$1"\t"$$2"\t"$$3"\t"$$9}' $< | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $@
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{CHIP}.{method}.manhattan.jpg.success
+##    input:  shared-source/manhattan_loci_colored_launcher.R
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.{method}.plot_ready
+$(NOT_META_TARGETS): $(PLOT_SCRIPT) $$(subst .manhattan.jpg.success,.plot_ready,$$@)
+	if [[ "$(shell wc -l $(word 2,$^) | awk '{print $$1}')" -gt "1" ]] ; then \
+	$(call qsub_handler,$(subst .success,,$@),Rscript $< $(word 2,$^) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/$(call extract_chip,$@) $(subst .manhattan.jpg.success,,$@) $(SHARED_SOURCE)) ; \
+	fi
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{CHIP}.{method}.plot_ready
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.{method}.tsv
+$(subst .manhattan.jpg.success,.plot_ready,$(NOT_META_TARGETS)): $$(dir $$@)$$(call extract_phenotype,$$@).$$(word 3,$$(subst ., ,$$@)).$$(shell echo "$$(call extract_method,$$@)" | tr '[\:upper\:]' '[\:lower\:]').tsv
+	awk '{print $$1"\t"$$2"\t"$$3"\t"$$9}' $< | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $@
