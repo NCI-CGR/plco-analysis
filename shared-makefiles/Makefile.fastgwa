@@ -22,6 +22,11 @@ all: $(ANALYSIS_RESULTS_FASTGWA) | $(dir $(ANALYSIS_RESULTS_FASTGWA))
 
 $(ANALYSIS_RESULTS_FASTGWA): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
+## extract frequency sourcing parameter from config
+define get_frequency_mode =
+$(shell grep -i "frequency_mode" $(1) | cut -f 1 -d ' ' --complement)
+endef
+
 ## model matrix handling for association pipelines
 define check_model_matrix =
 "$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(2)" ]] && [[ "$(strip $(shell awk 'NR > 1 && $$3 != 0 && $$3 != 1' $(1) | wc -l))" -gt "0" || "$(strip $(shell awk 'NR > 1 && $$3 == 1' $(1) | wc -l))" -gt "$(3)"
@@ -48,7 +53,7 @@ endef
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $(ANNOTATE_FREQUENCY) $$(subst .fastgwa.tsv,.fastgwa.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .fastgwa.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $< $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
+	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $(word 2,$^) $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
 	fi
 
 ## patterns:
@@ -61,7 +66,7 @@ $(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $(ANNOTATE_FREQUENCY) $$(subst .f
 ## the model matrix is only required here to enforce a preflight sample size check. frequency is set to NA at this step
 ## and requires a separate processing step
 $(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_FASTGWA)): $$(patsubst %,$$(subst .fastgwa.nofreq.tsv,,$$@).chr%.fastgwa.success,$$(CHRS)) $$(call compute_config,$$@) $$(subst .fastgwa.nofreq.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
-	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 2,$^)))
+	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(filter %.config,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	cat $(filter-out %.model_matrix.success %.config,$(subst .fastgwa.success,.fastGWA,$^)) | awk '! /CHR/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$3"\t"$$2"\t"$$4"\t"$$5"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$8"\t"$$9"\t"$$10"\t"$$6}' > $@ ; \
 	fi

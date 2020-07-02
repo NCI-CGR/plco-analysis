@@ -22,6 +22,11 @@ all: $(ANALYSIS_RESULTS_BOLTLMM) | $(sort $(dir $(ANALYSIS_RESULTS_BOLTLMM)))
 
 $(ANALYSIS_RESULTS_BOLTLMM): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
+## extract frequency sourcing parameter from config
+define get_frequency_mode =
+$(shell grep -i "frequency_mode" $(1) | cut -f 1 -d ' ' --complement)
+endef
+
 ## model matrix handling for association pipelines
 define check_model_matrix =
 "$(strip $(shell wc -l $(1) | awk '{print $$1}'))" -gt "$(2)" ]] && [[ "$(strip $(shell awk 'NR > 1 && $$3 != 0 && $$3 != 1' $(1) | wc -l))" -gt "0" || "$(strip $(shell awk 'NR > 1 && $$3 == 1' $(1) | wc -l))" -gt "$(3)"
@@ -52,7 +57,7 @@ endef
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $(ANNOTATE_FREQUENCY) $$(subst .boltlmm.tsv,.boltlmm.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .boltlmm.tsv,.boltlmm.model_matrix.success,$$@) | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $< $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
+	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $(word 2,$^) $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
 	fi
 
 
@@ -66,7 +71,7 @@ $(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $(ANNOTATE_FREQUENCY) $$(subst .b
 ## the model matrix is only required here to enforce a preflight sample size check. frequency is set to NA at this step
 ## and requires a separate processing step
 $(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $$(patsubst %,$$(subst .boltlmm.nofreq.tsv,,$$@).chr%.boltlmm.success,$$(CHRS)) $$(call compute_config,$$@) $$(subst .boltlmm.nofreq.tsv,,$$@).boltlmm.model_matrix.success | $$(dir $$@)
-	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 2,$^)))
+	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(filter %.config,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	cat $(filter-out %.model_matrix.success %.config,$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$9"\t"$$10"\t"$$11"\t$(strip $(shell wc -l $(subst .success,,$(lastword $^)) | awk '{print $$1}'))"}' | awk 'NR == 1 ; NR > 1 {$$NF = $$NF - 1 ; print $$0}' > $@ ; \
 	fi
