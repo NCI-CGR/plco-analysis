@@ -3,10 +3,13 @@
 ## 
 include Makefile.config
 export
-.PHONY: all $(SUPPORTED_METHODS) bgen meta cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files fastgwa-grm ldscores
+.PHONY: all $(SUPPORTED_METHODS) bgen meta metal meta-analysis metaanalysis cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files fastgwa-grm ldscores plotting
 all: meta
 
-meta: $(SUPPORTED_METHODS)
+plotting:
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.plotting
+
+meta-analysis metaanalysis metal meta: $(SUPPORTED_METHODS)
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.metal
 
 fastgwa: fastgwa-grm
