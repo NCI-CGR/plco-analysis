@@ -1,0 +1,46 @@
+#!/bin/bash
+echo 1..5
+for chip in `echo "GSA Oncoarray OmniX Omni25 Omni5"` ;
+do
+    file_missing=0
+    other_file_missing=0
+    ancestry_discordance_count=0
+    n_subjects=0
+    n_crossover_subjects=0
+
+    target_file="../PLCO_$chip.graf_estimates.txt"
+    if [[ -f "$target_file" ]] ; then
+	n_subjects=`awk 'NR > 1' $target_file | wc -l`
+	for other_chip in `echo "GSA Oncoarray OmniX Omni25 Omni5"`;
+	do
+	    if [[ "$chip" == "$other_chip" ]] ; then
+		continue
+	    fi
+	    other_file="../PLCO_$other_chip.graf_estimates.txt"
+	    if [[ -f "$other_file" ]] ; then
+		n_expected_overlap=`cat $target_file $other_file | awk -F"\t" '! /Self-reported/ {print $1}' | sort | uniq -d | wc -l`
+		((n_crossover_subjects = n_crossover_subjects + n_expected_overlap))
+		n_observed_overlap=`cat $target_file $other_file | awk -F"\t" '! /Self-reported/ {print $1":"$NF}' | sort | uniq -d | wc -l`
+		if [[ "$n_observed_overlap" != "$n_expected_overlap" ]] ; then
+		    ((ancestry_discordance_count = ancestry_discordance_count + n_expected_overlap - n_observed_overlap))
+		fi
+	    else
+		((other_file_missing = other_file_missing + 1))
+	    fi
+	done
+    else
+	file_missing=1
+    fi
+
+    if [[ "$file_missing" -gt "0" ]] ; then
+	echo "not ok - $chip ancestry file $target_file unavailable"
+    elif [[ "$other_file_missing" -gt "0" ]] ; then
+	echo "not ok - $chip in looking for other files for comparison, found $other_file_missing missing"
+    elif [[ "$ancestry_discordance_count" -gt "0" ]] ; then
+	echo "not ok - $chip had $ancestry_discordance_count subjects on multiple platforms with discordant ancestry calls"
+    elif [[ "n_crossover_subjects" -gt "0" ]] ; then
+	echo "ok - $chip has $n_subjects subjects with $n_crossover_subjects [potentially redundant] concordant cross-platform duplicates"
+    else
+	echo "ok - $chip has $n_subjects subjects but no cross-platform subjects"
+    fi
+done

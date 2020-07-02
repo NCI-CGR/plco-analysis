@@ -44,9 +44,9 @@ ldscores:
 
 ## TESTING CONTROLLERS
 
-.PHONY: check bgen-check relatedness-check
+.PHONY: check bgen-check relatedness-check ancestry-check
 
-check: bgen-check relatedness-check
+check: bgen-check relatedness-check ancestry-check
 
 bgen-check: bgen
 	$(MAKE) -C $(BGEN_OUTPUT_DIR) check
@@ -54,3 +54,5 @@ bgen-check: bgen
 relatedness-check: relatedness
 	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR) check
 
+ancestry-check: ancestry
+	$(MAKE) -C $(ANCESTRY_OUTPUT_DIR) check
