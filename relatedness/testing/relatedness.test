@@ -1,0 +1,25 @@
+#!/bin/bash
+echo 1..5
+
+for chip in `echo "GSA Oncoarray OmniX Omni25 Omni5"` ;
+do
+    file_absent=0
+    duplicates=0
+    target_file="../PLCO_$chip.relatedness.txt"
+    if [[ -f "$target_file" ]] ; then
+	identical_subjects=`awk -F"\t" '$13 == "ID"' $target_file | wc -l`
+	if [[ "$identical_subjects" -gt "0" ]] ; then
+	    duplicates=1
+	fi
+    else
+	file_absent=1
+    fi
+
+    if [[ "$file_absent" -gt "0" ]] ; then
+	echo "not ok - $chip file $target_file not available"
+    elif [[ "$duplicates" -gt "0" ]] ; then
+	echo "not ok - $chip contains duplicates"
+    else
+	echo "ok - $chip relatedness file exists and does not contain duplicates"
+    fi
+done

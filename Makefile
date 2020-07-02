@@ -4,7 +4,6 @@
 include Makefile.config
 export
 .PHONY: all $(SUPPORTED_METHODS) bgen meta metal meta-analysis metaanalysis cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files fastgwa-grm ldscores plotting
-.PHONY: check bgen-check
 all: meta
 
 plotting:
@@ -43,7 +42,15 @@ ldscores:
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$@
 
 
-check: bgen-check
+## TESTING CONTROLLERS
+
+.PHONY: check bgen-check relatedness-check
+
+check: bgen-check relatedness-check
 
 bgen-check: bgen
 	$(MAKE) -C $(BGEN_OUTPUT_DIR) check
+
+relatedness-check: relatedness
+	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR) check
+
