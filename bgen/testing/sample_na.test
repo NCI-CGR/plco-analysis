@@ -34,6 +34,6 @@ do
     elif [[ "$chip_failed_lines" -gt "0" ]] ; then
 	echo "not ok - some $chip no-NA sample files have NA entries"
     else
-	echo "ok - $chip no-NA sample files conform"
+	echo "ok - $chip sample files conform to downstream requirements"
     fi
 done
