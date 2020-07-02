@@ -20,7 +20,7 @@ CHIPS := $(CHIP_FREEZE_INPUT_DIR)
 ## if you prefer and it would make things go faster, but as this is only run once, it doesn't
 ## make much of a difference, and removes a step that I'd otherwise be manually manipulating.
 
-all: $(ANC_OUTPUT) $(REL_OUTPUT) $(patsubst %,PLCO_%.relatedness.txt,$(POPS))
+all: $(REL_OUTPUT) $(patsubst %,PLCO_%.relatedness.txt,$(POPS))
 
 ## patterns:
 ##    output: PLCO.relatedness.txt

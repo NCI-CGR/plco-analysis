@@ -19,7 +19,7 @@ ALL_TARGETS := $(foreach ancestry,$(VALID_ANCESTRIES),$(patsubst %,$(ancestry)/c
 .DELETE_ON_ERROR:
 .SECONDARY:
 .SECONDEXPANSION:
-.PHONY: all $(addsuffix /,$(VALID_ANCESTRIES))
+.PHONY: all
 all: $(ALL_TARGETS)
 
 ## patterns:
