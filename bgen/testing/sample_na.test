@@ -1,0 +1,39 @@
+#!/bin/bash
+echo 1..9
+for chip in `echo "GSA/batch1 GSA/batch2 GSA/batch3 GSA/batch4 GSA/batch5 OmniX Omni25 Oncoarray Omni5"`;
+do
+    chip_failed_lines=0
+    chip_file_absent=0
+    chip_directory_absent=0
+    for chr in `seq 1 22`;
+    do
+	if [[ -d "../$chip" ]] ; then
+	    ancestries=`ls -l ../$chip | awk '/^d/ {print $9}'`
+	    for ancestry in $ancestries;
+	    do
+		filename="../$chip/$ancestry/chr$chr-filtered-noNAs.sample"
+		if [[ -f "$filename" ]] ; then
+		    nlines=`awk '\$3 == "NA" || \$4 == "NA"' $filename | wc -l`
+		    if [[ "$nlines" -gt "0" ]] ; then
+			chip_failed_lines=1
+		    fi
+		fi
+	    done
+	else
+	    chip_directory_absent=1
+	fi
+    done
+    if [[ "$chip_directory_absent" -gt "0" ]] ; then
+	if [[ "$chip" == "Omni5" ]] ; then
+	    echo "ok - $chip expected absent from bgen sample data # SKIP"
+	else
+	    echo "not ok - $chip unexpectedly missing from bgen sample data"
+	fi
+    elif [[ "$chip_file_absent" -gt "0" ]] ; then
+	echo "not ok - some $chip no-NA sample files missing"
+    elif [[ "$chip_failed_lines" -gt "0" ]] ; then
+	echo "not ok - some $chip no-NA sample files have NA entries"
+    else
+	echo "ok - $chip no-NA sample files conform"
+    fi
+done

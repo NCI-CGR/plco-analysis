@@ -1,0 +1,4 @@
+#!/bin/bash
+1..5
+## confirm that subject list of each chip in turn matches non-redundancy power ranking
+##    which is GSA > Oncoarray > OmniX > Omni25 [> Omni5, which is completely masked]
