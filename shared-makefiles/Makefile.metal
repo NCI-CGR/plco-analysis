@@ -3,7 +3,7 @@
 
 include $(PROJECT_BASE_DIR)/Makefile.config
 
-ALL_TARGETS := $(sort $(dir $(shell find $(RESULT_OUTPUT_DIR) \( -name "*.boltlmm.tsv.gz" -o -name "*fastgwa.tsv.gz" \) -print)))
+ALL_TARGETS := $(sort $(dir $(shell find $(RESULT_OUTPUT_DIR) -name "*[mae].tsv.gz" -print)))
 ALL_TARGETS := $(foreach target,$(ALL_TARGETS),$(target)$(word 1,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).$(word 2,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).$(word 3,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).tsv)
 METAL := $(METAL_EXECUTABLE)
 
@@ -39,5 +39,5 @@ $(ALL_TARGETS): $$(subst .tsv,1.raw.tsv.success,$$@)
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.par
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.tsv
 ## Notes: barebones configuration for metal. assumes effect estimates in log(OR) space for the moment.
-%.par: $$(shell find $$(dir $$@) -name "*tsv.gz" -print | sed 's/.gz$$$$//')
+%.par: $$(shell find $$(dir $$@) -name "*[eam].tsv.gz" -print | sed 's/.gz$$$$//')
 	echo -e "MARKERLABEL SNP\nALLELELABELS Tested_Allele Other_Allele\nEFFECTLABEL BETA\nSTDERRLABEL SE\nFREQLABEL Freq_Tested_Allele_in_TOPMed\nCUSTOMVARIABLE TotalSampleSize\nLABEL TotalSampleSize as N\nSCHEME STDERR\nGENOMICCONTROL ON\nAVERAGEFREQ ON\nMINMAXFREQ ON\n$(patsubst %,PROCESSFILE %\n,$^)OUTFILE $(subst 1.par,,$@) .raw.tsv\nANALYZE HETEROGENEITY\nQUIT" > $@
