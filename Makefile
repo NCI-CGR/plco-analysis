@@ -44,9 +44,9 @@ ldscores:
 
 ## TESTING CONTROLLERS
 
-.PHONY: check bgen-check relatedness-check ancestry-check
+.PHONY: check bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check
 
-check: bgen-check relatedness-check ancestry-check
+check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check
 
 bgen-check: bgen
 	$(MAKE) -C $(BGEN_OUTPUT_DIR) check
@@ -56,3 +56,6 @@ relatedness-check: relatedness
 
 ancestry-check: ancestry
 	$(MAKE) -C $(ANCESTRY_OUTPUT_DIR) check
+
+cleaned-chips-by-ancestry-check: cleaned-chips-by-ancestry
+	$(MAKE) -C $(CLEANED_CHIP_OUTPUT_DIR) check

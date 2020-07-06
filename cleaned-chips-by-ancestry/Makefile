@@ -32,3 +32,11 @@ $(addsuffix /Makefile,$(CLEANED_ANCESTRY_NAMES)): | $$(dir $$@)
 ##    output: {ANCESTRY}/
 $(addsuffix /,$(CLEANED_ANCESTRY_NAMES)):
 	mkdir -p $@
+
+
+## test set to run after completion
+check: testing/Makefile
+	$(MAKE) -C testing check
+
+testing/Makefile: testing/Makefile.am testing/configure.ac
+	cd testing && autoreconf -vi && ./configure && cd ../
