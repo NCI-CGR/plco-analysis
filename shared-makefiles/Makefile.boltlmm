@@ -159,7 +159,7 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. hack liftover data by taking liftover output and manually swapping in new position data over old.
 %.bolt-chip.GRCh38.bim: %.bolt-chip.lift-failures-excluded.bed.success %.bolt-chip.liftover-output | $$(dir $$@)
-	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/chr// ; s/:/\t/ ; s/-/\t/' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2"\t"$$8"\t"$$9}' > $@
+	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2+1"\t"$$8"\t"$$9}' > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38.fam
@@ -182,21 +182,21 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-output (really liftover-failure)
 ## Notes: convert failed lifts into a plink-format exclude file
 %.bolt-chip.liftover.exclude: %.bolt-chip.liftover-output | $$(dir $$@)
-	awk '! /^#/' $(subst liftover-output,liftover-failure,$<) | sed 's/chr// ; s/-/\t/' | awk '{print $$1}' > $@
+	awk '! /^#/ {print $$1":"$$2+1}' $(subst liftover-output,liftover-failure,$<) > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-output
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-input
 ## Notes: run liftover, chips are in hg19 and imputed data are in GRCh38
 %.bolt-chip.liftover-output: %.bolt-chip.liftover-input | $$(dir $$@)
-	$(LIFTOVER_EXECUTABLE) -positions $< $(LIFTOVER_19_TO_38) $@ $(subst liftover-output,liftover-failure,$@)
+	$(LIFTOVER_EXECUTABLE) $< $(LIFTOVER_19_TO_38) $@ $(subst liftover-output,liftover-failure,$@)
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.liftover-input
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.bed.success
 ## Notes: 
 %.bolt-chip.liftover-input: %.bolt-chip.bed.success | $$(dir $$@)
-	awk '{print "chr"$$1":"$$4"-"$$4}' $(subst .bed.success,.bim,$<) > $@
+	awk '{print $$1"\t"$$4-1"\t"$$4}' $(subst .bed.success,.bim,$<) > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.bed.success
