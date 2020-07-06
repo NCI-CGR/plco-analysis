@@ -186,7 +186,7 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. so it's just a hack liftover intermediate step.
 %.saige-chip.GRCh38.bed: %.saige-chip.lift-failures-excluded.bed.success | $$(dir $$@)
-	cp $(subst .bed,,$<) $@
+	cp $(subst .success,,$<) $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bim
