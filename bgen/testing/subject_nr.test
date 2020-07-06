@@ -17,7 +17,7 @@ do
     subjects_missing_from_input=0
     unexpected_overlap=""
     bgen_dir="../$chip"
-    input_dir="../../../filtered-dosage-data/$chip"
+    input_dir="$FILTERED_DOSAGE_DATA/$chip"
     actual_sample_count=0
     ## first scan across input, making sure everything expected is present in output
     if [[ -d "$input_dir" ]] ; then

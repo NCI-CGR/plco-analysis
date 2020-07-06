@@ -50,7 +50,7 @@ ldscores:
 check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check
 
 bgen-check: bgen
-	$(MAKE) -C $(BGEN_OUTPUT_DIR) check
+	$(MAKE) -C $(BGEN_OUTPUT_DIR) check FILTERED_DOSAGE_DATA=$(FILTERED_IMPUTED_INPUT_DIR)
 
 relatedness-check: relatedness
 	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR) check
