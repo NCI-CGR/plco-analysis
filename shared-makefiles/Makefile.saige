@@ -179,41 +179,22 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bed $< --bim $(word 2,$^) --fam $(word 3,$^) --allow-extra-chr 0 --make-bed --out $(subst .bed.success,,$@))
 
 
+
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bed
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. so it's just a hack liftover intermediate step.
-%.saige-chip.GRCh38.bed: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output | $$(dir $$@)
-	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/chr// ; s/:/\t/ ; s/-/\t/' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2"\t"$$8"\t"$$9}' > $(subst .bed,.bim,$@)
-	cp $(subst .bed.success,.fam,$<) $(subst .bed,.fam,$@)
-	cp $(subst .success,,$<) $@
+%.saige-chip.GRCh38.bed: %.saige-chip.lift-failures-excluded.bed.success | $$(dir $$@)
+	cp $(subst .bed,,$<) $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bim
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success (really bim)
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output
-## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
-## imputed data in GRCh38. hack liftover data by taking liftover output and manually swapping in new position data over old.
-%.saige-chip.GRCh38.bim: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output | $$(dir $$@)
-	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/^chr//' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2+1"\t"$$8"\t"$$9}' > $@
-
-## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.fam
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success (really fam)
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. so it's just a hack liftover intermediate step.
-%.saige-chip.GRCh38.fam: %.saige-chip.lift-failures-excluded.bed.success | $$(dir $$@)
-	cp $(subst .bed.success,.fam,$<) $@
-
-## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bim
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success (really bim)
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output
-## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
-## imputed data in GRCh38. hack liftover data by taking liftover output and manually swapping in new position data over old.
 %.saige-chip.GRCh38.bim: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output | $$(dir $$@)
-	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/chr// ; s/:/\t/ ; s/-/\t/' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2"\t"$$8"\t"$$9}' > $@
+	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/^chr//' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2+1"\t"$$8"\t"$$9}' > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.fam
@@ -236,22 +217,21 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output (really liftover-failure)
 ## Notes: convert failed lifts into a plink-format exclude file
 %.saige-chip.liftover.exclude: %.saige-chip.liftover-output | $$(dir $$@)
-	awk '! /^#/' $(subst liftover-output,liftover-failure,$<) | sed 's/chr// ; s/-/\t/' | awk '{print $$1}' > $@
-
+	awk '! /^#/ {print $$1":"$$2+1}' $(subst liftover-output,liftover-failure,$<) | sed 's/^chr//' > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-input
 ## Notes: run liftover, chips are in hg19 and imputed data are in GRCh38
 %.saige-chip.liftover-output: %.saige-chip.liftover-input | $$(dir $$@)
-	$(LIFTOVER_EXECUTABLE) -positions $< $(LIFTOVER_19_TO_38) $@ $(subst liftover-output,liftover-failure,$@)
+	$(LIFTOVER_EXECUTABLE) $< $(LIFTOVER_19_TO_38) $@ $(subst liftover-output,liftover-failure,$@)
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-input
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed.success
 ## Notes:
 %.saige-chip.liftover-input: %.saige-chip.bed.success | $$(dir $$@)
-	awk '{print "chr"$$1":"$$4"-"$$4}' $(subst .bed.success,.bim,$<) > $@
+	awk '{print "chr"$$1"\t"$$4-1"\t"$$4}' $(subst .bed.success,.bim,$<) > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed.success
