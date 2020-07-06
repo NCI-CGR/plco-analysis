@@ -1,0 +1,22 @@
+## Cameron Palmer, 06 July 2020
+## handle dispatch of check jobs for other pipelines in this shared space
+
+export
+include $(PROJECT_BASE_DIR)/Makefile.config
+
+.DELETE_ON_ERROR:
+.SECONDEXPANSION:
+.PHONY: all check
+## all targets are: each platform, without Omni5 because it has no non-redundant subjects
+all: check
+
+## test set to run after completion of other pipeliens
+check: testing/Makefile
+	$(MAKE) -C testing check
+
+testing/Makefile: testing/Makefile.am testing/configure.ac
+	cd testing && autoreconf -vi && ./configure && cd ../
+
+fastgwa-check boltlmm-check saige-check fastgwa-grm-check ldscores-check: testing/Makefile
+	$(MAKE) -C testing check TESTS='$(subst -check,,$@)'
+

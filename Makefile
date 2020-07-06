@@ -3,6 +3,7 @@
 ## 
 include Makefile.config
 export
+.SECONDEXPANSION:
 .PHONY: all $(SUPPORTED_METHODS) bgen meta metal meta-analysis metaanalysis cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files fastgwa-grm ldscores plotting
 all: meta
 
@@ -44,9 +45,9 @@ ldscores:
 
 ## TESTING CONTROLLERS
 
-.PHONY: check bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check
+.PHONY: check bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check
 
-check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check
+check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check
 
 bgen-check: bgen
 	$(MAKE) -C $(BGEN_OUTPUT_DIR) check
@@ -59,3 +60,6 @@ ancestry-check: ancestry
 
 cleaned-chips-by-ancestry-check: cleaned-chips-by-ancestry
 	$(MAKE) -C $(CLEANED_CHIP_OUTPUT_DIR) check
+
+boltlmm-check fastgwa-check fastgwa-grm-check ldscores-check saige-check: #$$(subst -check,,$$@)
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@
