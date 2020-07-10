@@ -8,7 +8,7 @@ IMPUTED_DIR := $(BGEN_OUTPUT_DIR)
 LDSC_DIRECTORY := $(LDSC_OUTPUT_DIR)
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
-ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
+ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config)
 ## empirical approximate minimum subject count, specific to BOLTLMM
 MINIMUM_VALID_SUBJECT_COUNT := $(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)
 ## construct analysis targets for all config entries that request BOLT
@@ -106,7 +106,7 @@ endef
 ## sample size enforcement.
 $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(result)).chr%.boltlmm.success,$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).bolt-chip.GRCh38-resorted-nochr0.bed.success $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst ., ,$$(subst .boltlmm.success,,$$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst ., ,$$(subst .boltlmm.success,,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).boltlmm.phenotype $$(word 1,$$(subst .chr, ,$$@)).boltlmm.covariates $$(shell $$(SHARED_SOURCE)/resolve_bolt_ldscore.bash $$(call extract_ancestry,$$@) $$(LDSC_DIRECTORY)) $$(word 1,$$(subst .chr, ,$$@)).boltlmm.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(call qsub_handler,$(subst .success,,$@),$(BOLTLMM_EXECUTABLE) --bfile $(subst .bed.success,,$(word 1,$^)) --bgenFile $(word 2,$^) --sampleFile $(word 3,$^) --lmm --LDscoresFile=$(subst .gz,-reformatted.gz,$(word 6,$^)) --statsFile=$(subst .boltlmm.success,.chip_results.boltlmm,$@) --statsFileBgenSnps=$(subst .success,,$@) --phenoFile $(word 4,$^) --phenoCol $(shell head -1 $(word 4,$^) | cut -f 3) $(if $(shell head -1 $(word 5,$^) | cut -f 1-2 --complement),--covarFile $(word 5,$^) --qCovarCol $(shell head -1 $(word 5,$^) | cut -f 1-2 --complement | sed 's/\t/ --qCovarCol /g'),) --LDscoresMatchBp --geneticMapFile /home/palmercd/Development/BOLT-LMM_v2.3.4/tables/genetic_map_hg19_withX.txt.gz > $(subst .success,.log,$@) 2>&1) ; \
+	$(call qsub_handler,$(subst .success,,$@),$(BOLTLMM_EXECUTABLE) --bfile $(subst .bed.success,,$(word 1,$^)) --bgenFile $(word 2,$^) --sampleFile $(word 3,$^) --lmm --LDscoresFile=$(subst .gz,-reformatted.gz,$(word 6,$^)) --statsFile=$(subst .boltlmm.success,.chip_results.boltlmm,$@) --statsFileBgenSnps=$(subst .success,,$@) --phenoFile $(word 4,$^) --phenoCol $(shell head -1 $(word 4,$^) | cut -f 3) $(if $(shell head -1 $(word 5,$^) | cut -f 1-2 --complement),--covarFile $(word 5,$^) --qCovarCol $(shell head -1 $(word 5,$^) | cut -f 1-2 --complement | sed 's/\t/ --qCovarCol /g'),) --LDscoresMatchBp --geneticMapFile $(GRCH38_RECOMBINATION_MAP) > $(subst .success,.log,$@) 2>&1) ; \
 	else \
 	touch $@ ; \
 	fi
@@ -240,6 +240,12 @@ endef
 %.boltlmm.covariates: %.boltlmm.model_matrix.success | $$(dir $$@)
 	cut -f 3 --complement $(subst .success,,$<) > $@
 
+
+## possibly make more complicated later but for now, it's on/off
+define compute_transform =
+$(shell grep "transformation" $(1) | awk '{print $$2}')
+endef
+
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix.success
 ##    input:  config/[relevant config file]
@@ -249,7 +255,7 @@ endef
 ## this is separately submitted to the cluster. Config file dependency guarantees rerun if the file is edited at all, which
 ## is conservative but correct.
 %.boltlmm.model_matrix.success: $$(call compute_config,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@))
+	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@) $(call compute_transform,$<))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/

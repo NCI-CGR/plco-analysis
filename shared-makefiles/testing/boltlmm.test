@@ -1,3 +1,201 @@
 #!/bin/bash
-echo 1..1
-echo "ok - thing"
+
+## receive variables passed from make
+chip_dir="$CHIP_DIR"
+imputed_dir="$IMPUTED_DIR"
+config_dir="$CONFIG_DIR"
+results_dir="$RESULTS_DIR"
+minimum_subjects="$MINIMUM_SUBJECTS"
+
+arbitrary_valid_entry_threshold=5000000
+sampling_count=10001
+
+total_tests=0
+tests_per_analysis=16
+
+## determine how many tests need to be run in the end
+bolt_config_files=`grep boltlmm $config_dir/*config | sed 's/:/\t/g' | awk '{print $1}'`
+bolt_analysis_prefixes=""
+for file in $bolt_config_files ;
+do
+    prefix=`awk '/analysis_prefix/ {print $NF}' $file`
+    bolt_analysis_prefixes="$bolt_analysis_prefixes $prefix"
+    (( total_tests = total_tests + tests_per_analysis ))    
+done
+
+echo "1..$total_tests"
+
+for analysis in $bolt_analysis_prefixes ;
+do
+    ancestries="European East_Asian"
+    for ancestry in $ancestries ;
+    do
+	chips="GSA_batch1 GSA_batch2 GSA_batch3 GSA_batch4 GSA_batch5 Omni25 OmniX Oncoarray"
+	for chip in $chips ;
+	do
+	    expected_absence_no_chip=0
+	    expected_absence_no_imputed=0
+	    analysis_directory_missing=0
+	    analysis_file_missing=0
+	    model_matrix_missing=0
+	    insufficient_chip_subjects=1
+	    insufficient_imputed_subjects=1
+	    insufficient_phenotyped_subjects=1
+	    malformed_phenotype=0
+	    shapiro_p="NA"
+	    analysis_successful=0
+	    frequencies_present=0
+	    frequencies_reference=0
+	    frequencies_requested="reference"
+	    frequency_mismatch=0
+	    pvalues_broken=0
+	    betas_broken=0
+	    stderrs_broken=0
+	    ## assume cleaned-chip-by-ancestry and bgen checks have already been run. then absence means valid exclusion
+	    chip_no_batch=`echo $chip | sed 's/_/ /' | awk '{print $1}'`
+	    chip_slash_batch=`echo $chip | sed 's/_/\//'`
+	    chip_prefix="$chip_dir/$ancestry/$chip_no_batch.nohet.autosomes"
+	    if [[ ! -f "$chip_prefix.bed" || ! -f "$chip_prefix.bim" || ! -f "$chip_prefix.fam" ]] ; then
+		expected_absence_no_chip=1
+	    else
+		chip_subjects=`cat $chip_prefix.fam | wc -l`
+		if [[ "$chip_subjects" -ge "$minimum_subjects" ]] ; then
+		    insufficient_chip_subjects=0
+		fi
+	    fi
+	    if [[ ! -f "$imputed_dir/$chip_slash_batch/$ancestry/chr22-filtered-noNAs.sample" ]] ; then
+		expected_absence_no_imputed=1
+	    else
+		imputed_subjects=`cat $imputed_dir/$chip_slash_batch/$ancestry/chr22-filtered-noNAs.sample | awk 'NR > 2' | wc -l`
+		if [[ "$imputed_subjects" -ge "$minimum_subjects" ]] ; then
+		    insufficient_imputed_subjects=0
+		fi
+	    fi
+	    if [[ ! -d "$results_dir/$analysis/$ancestry/BOLTLMM" ]] ; then
+		analysis_directory_missing=1
+	    else
+		prefix="$results_dir/$analysis/$ancestry/BOLTLMM/$analysis.$chip.boltlmm"
+		output_file="$prefix.tsv.gz"
+		model_matrix="$prefix.model_matrix"
+		if [[ ! -f "$output_file" ]] ; then
+		    ## there are reasons this may be valid, test for them
+		    ##  maybe the overall subject count is ok, but the phenotyped count is not?
+		    if [[ -f "$model_matrix" ]] ; then
+			model_matrix_count=`awk 'NR > 1' $model_matrix | wc -l`
+			if [[ "$model_matrix_count" -ge "$minimum_subjects" ]] ; then
+			    insufficient_phenotyped_subjects=0
+			fi
+		    else
+			model_matrix_missing=1
+		    fi
+		    analysis_file_missing=1
+		else
+		    ## run consistency checks
+		    ## model matrix: at least three columns, third is phenotype, phenotype is normal
+		    if [[ -f "$model_matrix" ]] ; then
+			invalid_row_count=`awk -F"\t" 'NF < 3' $model_matrix | wc -l`
+			if [[ "$invalid_row_count" -gt "0" ]] ; then
+			    malformed_phenotype=1
+			else
+			    ## test column 3 normality
+			    ## so an interesting thing is that apparently INT is not guaranteed to make normal distributions
+			    ##   depending on the way it's implemented. For the moment I'll enforce a hard block but that may
+			    ##   need to be weakened
+			    shapiro_p=`echo "h <- read.table(\"$model_matrix\", header=TRUE) ; print(shapiro.test(sample(h[,3], min(nrow(h), 5000), replace=FALSE))$p.val)" | R --slave --vanilla | awk '{print $2}'`
+			    if [[ "$shapiro_p" -lt "0.05" ]] ; then
+				malformed_phenotype=1
+			    fi
+			fi
+			## analysis file definitely exists. probe it for things
+			## enough entries that it seems like the entire analysis didn't fail!!
+			if [[ "`gunzip -c $output_file | wc -l`" -ge "$arbitrary_valid_entry_threshold" ]] ; then
+			    analysis_successful=1
+			fi
+			## frequencies that exist!!
+			if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $6 != "NA"' | wc -l`" -gt "0" ]] ; then
+			    frequencies_present=1
+			fi
+			## frequencies that seem consistent with the requested frequency mode!!
+			frequency_override=`grep "frequency_mode:" $config_file | awk '{print $2}'`
+			if [[ "$frequency_override" -eq "subject" ]] ; then
+			    frequencies_requested="subject"
+			fi
+			sampled_zero_freq_count=`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $6 == "0" | wc -l`
+			if [[ "$sampled_zero_freq_count" -gt "0" && "$frequencies_requested" -ne "reference" ]] ; then
+			    frequency_mismatch=1
+			elif [[ "$sampled_zero_freq_count" -eq "0" && "$frequencies_requested" -ne "subject" ]] ; then
+			    frequency_mismatch=1
+			fi
+			## p-values that make sense!!
+			if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $9 < 1e-400' | wc -l`" -gt "0" ]] ; then
+			    pvalues_broken=1
+			fi
+			## betas that look like betas!
+			if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $7 < 0' | wc -l`" -eq "0" ]] ; then
+			    betas_broken=1
+			fi
+		    else
+			model_matrix_missing=1
+		    fi
+		fi
+	    fi
+
+	    output_tag="$analysis/$chip/$ancestry"
+	    if [[ "$analysis_directory_missing" -gt "0" ]] ; then
+		if [[ "$analyis_file_missing" -eq "0" ]] ; then
+		    echo "not ok - $output_tag test logic failure: directory absent but file present?"
+		elif [[ "$expected_absence_no_chip" -gt "0" ]] ; then
+		    echo "not ok - $output_tag no corresponding chip data present # TODO"
+		elif [[ "$insufficient_chip_subjects" -gt "0" ]] ; then
+		    echo "ok - $output_tag has chip data but not enough subjects for method # SKIP"
+		elif [[ "$expected_absence_no_imputed" -gt "0" ]] ; then
+		    echo "not ok - $output_tag no corresponding imputed data present # TODO"
+		elif [[ "$insufficient_imputed_subjects" -gt "0" ]] ; then
+		    echo "ok - $output_tag has imputed data but not enough subjects for method # SKIP"
+		elif [[ "$model_matrix_missing" -gt "0" ]] ; then
+		    echo "not ok - $output_tag both output file and model matrix missing"
+		elif [[ "$insufficient_phenotyped_subjects" -gt "0" ]] ; then
+		    echo "ok - $output_tag has data but not enough phenotyped subjects for method # SKIP"
+		else
+		    echo "not ok - $output_tag no results directory detected"
+		fi
+	    elif [[ "$analysis_file_missing" -gt "0" ]] ; then
+		if [[ "$expected_absence_no_chip" -gt "0" ]] ; then
+		    echo "not ok - $output_tag no corresponding chip data present # TODO"
+		elif [[ "$insufficient_chip_subjects" -gt "0" ]] ; then
+		    echo "ok - $output_tag has chip data but not enough subjects for method # SKIP"
+		elif [[ "$expected_absence_no_imputed" -gt "0" ]] ; then
+		    echo "not ok - $output_tag no corresponding imputed data present # TODO"
+		elif [[ "$insufficient_imputed_subjects" -gt "0" ]] ; then
+		    echo "ok - $output_tag has imputed data but not enough subjects for method # SKIP"
+		elif [[ "$model_matrix_missing" -gt "0" ]] ; then
+		    echo "not ok - $output_tag both output file and model matrix missing"
+		elif [[ "$insufficient_phenotyped_subjects" -gt "0" ]] ; then
+		    echo "ok - $output_tag has data but not enough phenotyped subjects for method # SKIP"
+		else
+		    echo "not ok - $output_tag no results file detected"
+		fi
+	    elif [[ "$model_matrix_missing" -gt "0" ]] ; then
+		echo "not ok - $output_tag output file present but model matrix missing"
+	    elif [[ "$malformed_phenotype" -gt "0" ]] ; then
+		if [[ "$shapiro_p" -eq "NA" ]] ; then
+		    echo "not ok - $output_tag model matrix had insufficient columns"
+		else
+		    echo "not ok - $output_tag model matrix phenotype is not normal, Shapiro test p = $shapiro_p"
+		fi
+	    elif [[ "$analysis_successful" -eq "0" ]] ; then
+		echo "not ok - $output_tag output file has fewer than $arbitrary_value_entry_threshold entries, which seems bad"
+	    elif [[ "$frequencies_present" -eq "0" ]] ; then
+		echo "not ok - $output_tag output file does not have annotated frequencies"
+	    elif [[ "$frequency_mismatch" -gt "0" ]] ; then
+		echo "not ok - $output_tag output file seems to have frequencies that do not match the request type"
+	    elif [[ "$betas_broken" -gt "0" ]] ; then
+		echo "not ok - $output_tag output file should be for continuous trait analysis but has OR-like coefficients that are never negative"
+	    elif [[ "$pvalues_broken" -gt "0" ]] ; then
+		echo "not ok - $output_tag output file seems to have divergent p-values"
+	    else
+		echo "ok - $output_tag results present"
+	    fi
+	done
+    done
+done

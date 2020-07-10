@@ -1,7 +1,7 @@
 require(stringr)
 cargs <- commandArgs(trailingOnly = TRUE)
-if (length(cargs) != 7) {
-   stop(paste("Arguments to construct_model_matrix.R: phenotype_filename chip_samplefile ancestry chip phenotype_name covariate_list output_filename (expected 7, received ", length(cargs), sep=""))
+if (length(cargs) < 7) {
+   stop(paste("Arguments to construct_model_matrix.R: phenotype_filename chip_samplefile ancestry chip phenotype_name covariate_list output_filename (expected at least 7, received ", length(cargs), sep=""))
 }
 phenotype.filename <- cargs[1]
 chip.samplefile <- cargs[2]
@@ -12,6 +12,11 @@ phenotype.name <- cargs[5]
 covariate.list <- unlist(strsplit(cargs[6], ","))
 covariate.list <- unique(covariate.list[covariate.list != "NA"])
 output.filename <- cargs[7]
+
+post.split.INT <- FALSE
+if (length(cargs) > 7) {
+    post.split.INT <- TRUE
+}
 
 id.colname <- "plco_id"
 
@@ -41,7 +46,7 @@ if (length(covariate.list) > 0) {
 ## apply inverse normalization to continuous variables
 inverse.normalize <- function(i) {
 ## from SAIGE code https://github.com/weizhouUMICH/SAIGE/blob/master/R/SAIGE_fitGLMM_fast.R
-	qnorm((rank(i, na.last="keep") - 0.5)/sum(!is.na(i)))
+	qnorm((rank(i, na.last="keep", ties.method="random") - 0.5)/sum(!is.na(i)))
 }
 
 ## try to hack diagnose phenotype distribution for mild consistency checking
@@ -97,6 +102,20 @@ h <- h[h[,id.colname] %in% ancestry.combined[,1],]
 chip.samples <- read.table(chip.samplefile, header=FALSE, stringsAsFactors=FALSE)
 chip.samples[,1] <- unlist(lapply(strsplit(chip.samples[,1], "_"), function(i) {i[1]}))
 h <- h[h[,id.colname] %in% chip.samples[,1],]
+
+
+
+## adding a test: partitioning by platform causes substantial deviations from normality even after INT is applied on full phenotype.
+##   so I'm trying out post-dataset-split INT, which has its own problems but guarantees normality
+if (post.split.INT) {
+    ## apply sex-stratified inverse normal transform when: covariate is continuous and not age covariate, or when analysis is FASTGWA or BOLT on the specified non-binary trait
+    for (col.index in which((grepl("_co$", colnames(h)) & !grepl("_age_", colnames(h))) | (grepl("bolt|fastgwa", output.filename, ignore.case=TRUE) & !trait.is.binary & colnames(h) == phenotype.name))) {
+        for (i in 1:2) {
+            h[,col.index][h$sex == i] <- inverse.normalize(h[,col.index][h$sex == i])
+        }
+    }    
+}
+
 
 output.df <- h[,c(rep(id.colname, 2), phenotype.name, covariate.list)]
 

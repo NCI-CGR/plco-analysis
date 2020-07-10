@@ -9,7 +9,7 @@ RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
 
-ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*)
+ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config)
 ## empirical approximate minimum subject count, specific to fastGWA
 MINIMUM_VALID_SUBJECT_COUNT := $(PLINK_MINIMUM_VALID_SUBJECT_COUNT)
 ## construct analysis targets for all config entries that request fastGWA

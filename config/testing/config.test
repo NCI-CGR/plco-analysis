@@ -1,0 +1,134 @@
+#!/bin/bash
+config_dir=..
+#phenotype_file=$PHENOTYPE_FILE
+phenotype_file=../../phenotypes/v7/gsa_qx_v7.with_na.augmented.25june2020.tsv
+expected_test_count=`ls -l $config_dir/*config | wc -l`
+echo "1..$expected_test_count"
+for config_file in `ls $config_dir/*config` ;
+do
+    ## requirements for config file
+    analysis_prefix_present=0
+    analysis_prefix_unique=0
+    
+    phenotype_present=0
+    phenotype_valid=0
+    
+    covariates_present=0
+    requested_covariates=0
+    n_requested_covariates=0
+    pc_covariates=0
+    covariates_valid=0
+    
+    ancestries_present=0
+    ancestries_valid=0
+    
+    algorithm_present=0
+    algorithm_valid=0
+    
+    frequency_mode_present=0
+    frequency_mode_valid=0
+    
+    transformation_present=0
+    transformation_valid=0
+
+    ## exactly one "analysis_prefix:" line
+    analysis_prefix_present=`grep "analysis_prefix:" $config_file | wc -l`
+    ## analysis prefix value is present only one time in all config files
+    if [[ "$analysis_prefix_present" -eq "1" ]] ; then
+	value=`grep "analysis_prefix" $config_file | awk '{print $2}'`
+	analysis_prefix_unique=`grep "analysis_prefix:" $config_dir/*config | grep -w "$value" | wc -l`
+    fi
+    ## exactly one "phenotype:" line
+    phenotype_present=`grep "phenotype:" $config_file | wc -l`
+    ## phenotype matches values in phenotype header
+    if [[ "$phenotype_present" -eq "1" ]] ; then
+	value=`grep "phenotype:" $config_file | awk '{print $2}'`
+	phenotype_valid=`head -1 $phenotype_file | sed 's/\t/\n/g' | grep -w $value | wc -l`
+    fi
+    ## at most one "covariates:" line
+    covariates_present=`grep "covariates:" $config_file | wc -l`
+    ## if present, covariates match values in phenotype header OR are PC1-10
+    if [[ "$covariates_present" -eq "1" ]] ; then
+	requested_covariates=`grep "covariates:" $config_file | sed 's/\t/\n/g ; s/ /\n/g' | awk '! /covariates:/'`
+	n_requested_covariates=`echo $requested_covariates | wc -l`
+	pc_covariates=`echo $requested_covariates | awk '/PC[1-9]/ || /PC10/' | wc -l`
+	pheno_header=`head -1 $phenotype_file | sed 's/\t/\n/g'`
+	covariates_valid=`echo $requested_covariates $pheno_header | sort | uniq -d | wc -l`
+	if [[ " $(( covariates_valid + pc_covariates )) " -eq "$n_requested_covariates" ]] ; then
+	    covariates_valid=1
+	else
+	    covariates_valid=0
+	fi
+    fi
+    ## exactly one "ancestries:" line
+    ancestries_present=`grep "ancestries:" $config_file | wc -l`
+    ## ancestries are recognized GRAF ancestries, minus two groups that were removed, with '_' instead of ' '
+    if [[ "$ancestries_present" -eq "1" ]] ; then
+	ancestries_requested=`grep "ancestries:" $config_file | sed 's/\t/\n/g ; s/ /\n/g' | awk '! /ancestries:/'`
+	n_ancestries_requested=`echo $ancestries_requested | wc -l`
+	valid_ancestries=`echo $ancestries_requested | awk '$1 == "East_Asian" || $1 == "European" || $1 == "African American" || $1 == "Other" || $1 == "Hispanic1" || $1 == "Hispanic2" || $1 == "South_Asian"' | wc -l`
+	if [[ "`echo $valid_ancestries | wc -l`" -eq "$n_ancestries_requested" ]] ; then
+	    ancestries_valid=1
+	fi
+    fi
+    ## exactly one "algorithm:" line
+    algorithm_present=`grep "algorithm:" $config_file | wc -l`
+    ## algorithms are of "saige" "boltlmm" "fastgwa" "plink"
+    if [[ "$algorithm_present" -eq "1" ]] ; then
+	algorithms_requested=`grep "algorithm:" $config_file | sed 's/\t/\n/g ; s/ /\n/g' | awk '! /algorithm:/'`
+	n_algorithms_requested=`echo $algorithms_requested | wc -l`
+	valid_algorithms=`echo $algorithms_requested | awk '$1 == "saige" || $1 == "boltlmm" || $1 == "plink" || $1 == "fastgwa"' | wc -l`
+	if [[ "$valid_algorithms" -eq "$n_algorithms_requested" ]] ; then
+	    algorithm_valid=1
+	fi
+    fi
+    ## at most one "frequency_mode:" line
+    frequency_mode_present=`grep "frequency_mode:" $config_file | wc -l`
+    ## frequency_mode entry is either "reference" (default) or "subject"
+    if [[ "$frequency_mode_present" -eq "1" ]] ; then
+	requested_mode=`grep "frequency_mode:" $config_file | awk '{print $2}'`
+	if [[ "$requested_mode" -eq "reference" || "$requested_mode" -eq "subject" ]] ; then
+	    frequency_mode_valid=1
+	fi
+    fi
+    ## at most one "transformation:" line
+    transformation_present=`grep "transformation:" $config_file | wc -l`
+    ## the transformation line isn't formalized yet, so just ensure that there's literally anything else on the line
+    if [[ "$transformation_present" -eq "1" ]] ; then
+	if [[ "`awk '/transformation:/ {print NF}' $config_file`" -gt "1" ]] ; then
+	    transformation_valid=1
+	fi
+    fi
+
+    if [[ "$analysis_prefix_present" -ne "1" ]] ; then
+	echo "not ok - $config_file: key \"analysis_prefix:\" must be present exactly once in the file"
+    elif [[ "$analysis_prefix_unique" -ne "1" ]] ; then
+	echo "not ok - $config_file: value \"analysis_prefix:\" must be unique across all configured analyses"
+    elif [[ "$phenotype_present" -ne "1" ]] ; then
+	echo "not ok - $config_file: key \"phenotype:\" must be present exactly once in the file"
+    elif [[ "$phenotype_valid" -ne "1" ]] ; then
+	echo "not ok - $config_file: value \"phenotype:\" must be present and unique in the corresponding phenotypes $phenotype_file"
+    elif [[ "$covariates_present" -gt "1" ]] ; then
+	echo "not ok - $config_file: key \"covariates:\" cannot be present more than once in the file"
+    elif [[ "$covariates_present" -eq "1" && "$covariates_valid" -eq "0" ]] ; then
+	echo "not ok - $config_file: value \"covariates:\" must contain either PC1-10, or unique entries in $phenotype_file"
+    elif [[ "$ancestries_present" -ne "1" ]] ; then
+	echo "not ok - $config_file: key \"ancestries:\" must be present exactly once in the file"
+    elif [[ "$ancestries_valid" -ne "1" ]] ; then
+	echo "not ok - $config_file: value \"ancestries:\" must be unique and from: \"African_American,East_Asian,European,Hispanic1,Hispanic2,Other,South_Asian\""
+    elif [[ "$algorithm_present" -ne "1" ]] ; then
+	echo "not ok - $config_file: key \"algorithm:\" must be present exactly once in the file"
+    elif [[ "$algorithm_valid" -ne "1" ]] ; then
+	echo "not ok - $config_file: value \"algorithm:\" must be unique and from: \"boltlmm,fastgwa,plink,saige\""
+    elif [[ "$frequency_mode_present" -gt "1" ]] ; then
+	echo "not ok - $config_file: key \"frequency_mode:\" cannot be present more than once in the file"
+    elif [[ "$frequency_mode_present" -eq "1" && "$frequency_mode_valid" -ne "1" ]] ; then
+	echo "not ok - $config_file: value \"frequency_mode:\" must be uniquely one of: \"reference,subject\""
+    elif [[ "$transformation_present" -gt "1" ]] ; then
+	echo "not ok - $config_file: key \"transformation:\" cannot be present more than once in the file"
+    elif [[ "$transformation_present" -eq "1" && "$transformation_valid" -ne "1" ]] ; then
+	echo "not ok - $config_file: key \"transformation:\" must have a value for it to do anything at this time"
+    else
+	echo "ok - $config_file: all required entries present and values acceptable"
+    fi
+done

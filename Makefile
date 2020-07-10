@@ -4,7 +4,7 @@
 include Makefile.config
 export
 .SECONDEXPANSION:
-.PHONY: all $(SUPPORTED_METHODS) bgen meta metal meta-analysis metaanalysis cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files fastgwa-grm ldscores plotting
+.PHONY: all $(SUPPORTED_METHODS) bgen meta metal meta-analysis metaanalysis cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files fastgwa-grm ldscores plotting flat-dosages
 all: meta
 
 plotting:
@@ -42,12 +42,15 @@ ldsc: 1KG_files
 ldscores:
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$@
 
+flat-dosages: # bgen
+	$(MAKE) -C $(POLMM_FLAT_DOSAGE_OUTPUT_DIR)
+
 
 ## TESTING CONTROLLERS
 
-.PHONY: check bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check
+.PHONY: check bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check
 
-check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check
+check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check
 
 bgen-check: bgen
 	$(MAKE) -C $(BGEN_OUTPUT_DIR) check FILTERED_DOSAGE_DATA=$(FILTERED_IMPUTED_INPUT_DIR)
@@ -61,5 +64,17 @@ ancestry-check: ancestry
 cleaned-chips-by-ancestry-check: cleaned-chips-by-ancestry
 	$(MAKE) -C $(CLEANED_CHIP_OUTPUT_DIR) check
 
-boltlmm-check fastgwa-check fastgwa-grm-check ldscores-check saige-check: #$$(subst -check,,$$@)
-	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@
+boltlmm-check: config-check #$$(subst -check,,$$@)
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ CONFIG_DIR=$(CONFIG_INPUT_DIR) CHIP_DIR=$(CLEANED_CHIP_OUTPUT_DIR) IMPUTED_DIR=$(BGEN_OUTPUT_DIR) RESULTS_DIR=$(RESULT_OUTPUT_DIR) MINIMUM_SUBJECTS=$(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)
+
+fastgwa-check: config-check #$$(subst -check,,$$@)
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ CONFIG_DIR=$(CONFIG_INPUT_DIR) CHIP_DIR=$(CLEANED_CHIP_OUTPUT_DIR) IMPUTED_DIR=$(BGEN_OUTPUT_DIR) RESULTS_DIR=$(RESULT_OUTPUT_DIR) MINIMUM_SUBJECTS=$(FASTGWA_MINIMUM_VALID_SUBJECT_COUNT)
+
+saige-check: config-check #$$(subst -check,,$$@)
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ CONFIG_DIR=$(CONFIG_INPUT_DIR) CHIP_DIR=$(CLEANED_CHIP_OUTPUT_DIR) IMPUTED_DIR=$(BGEN_OUTPUT_DIR) RESULTS_DIR=$(RESULT_OUTPUT_DIR) MINIMUM_SUBJECTS=$(SAIGE_MINIMUM_VALID_SUBJECT_COUNT) MINIMUM_CASES=$(MINIMUM_VALID_CASE_COUNT)
+
+config-check:
+	$(MAKE) -C $(CONFIG_INPUT_DIR) PHENOTYPE_FILE=$(PHENOTYPE_FILENAME)
+
+meta-check:
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ CONFIG_DIR=$(CONFIG_INPUT_DIR) RESULTS_DIR=$(RESULT_OUTPUT_DIR)
