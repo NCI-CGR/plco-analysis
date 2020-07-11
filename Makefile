@@ -42,9 +42,6 @@ ldsc: 1KG_files
 ldscores:
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$@
 
-flat-dosages: # bgen
-	$(MAKE) -C $(POLMM_FLAT_DOSAGE_OUTPUT_DIR)
-
 
 ## TESTING CONTROLLERS
 
