@@ -1,7 +1,7 @@
 require(stringr)
 cargs <- commandArgs(trailingOnly = TRUE)
-if (length(cargs) < 7) {
-   stop(paste("Arguments to construct_model_matrix.R: phenotype_filename chip_samplefile ancestry chip phenotype_name covariate_list output_filename (expected at least 7, received ", length(cargs), sep=""))
+if (length(cargs) != 9) {
+   stop(paste("Arguments to construct_model_matrix.R: phenotype_filename chip_samplefile ancestry chip phenotype_name covariate_list output_filename transformation(or none) sex-specific(or combined) (expected 9, received ", length(cargs), sep=""))
 }
 phenotype.filename <- cargs[1]
 chip.samplefile <- cargs[2]
@@ -12,11 +12,12 @@ phenotype.name <- cargs[5]
 covariate.list <- unlist(strsplit(cargs[6], ","))
 covariate.list <- unique(covariate.list[covariate.list != "NA"])
 output.filename <- cargs[7]
+transformation <- cargs[8]
+sex.specific <- cargs[9]
 
-post.split.INT <- FALSE
-if (length(cargs) > 7) {
-    post.split.INT <- TRUE
-}
+## do some mild error checking on the transformation and sex.specific freetext options
+stopifnot(transformation == "none" | transformation == "post.split.INT")
+stopifnot(sex.specific == "female" | sex.specific == "male" | sex.specific == "combined")
 
 id.colname <- "plco_id"
 
@@ -114,7 +115,7 @@ h <- h[h[,id.colname] %in% chip.samples[,1],]
 
 ## adding a test: partitioning by platform causes substantial deviations from normality even after INT is applied on full phenotype.
 ##   so I'm trying out post-dataset-split INT, which has its own problems but guarantees normality
-if (post.split.INT) {
+if (transformation == "post.split.INT") {
     ## apply sex-stratified inverse normal transform when: covariate is continuous and not age covariate, or when analysis is FASTGWA or BOLT on the specified non-binary trait
     for (col.index in which((grepl("_co$", colnames(h)) & !grepl("_age_", colnames(h))) | (grepl("bolt|fastgwa", output.filename, ignore.case=TRUE) & !trait.is.binary & colnames(h) == phenotype.name))) {
         for (i in 1:2) {
@@ -122,6 +123,17 @@ if (post.split.INT) {
         }
     }    
 }
+
+
+## for sex-specific analyses: split here, after the combined dataset processing and before the variable colinearity dropout stuff below
+if (sex.specific != "combined") {
+    if (sex.specific == "female") {
+        h <- h[h[,"sex"] == 2,]
+    } else if (sex.specific == "male") {
+        h <- h[h[,"sex"] == 1,]
+    }
+}
+
 
 
 output.df <- h[,c(rep(id.colname, 2), phenotype.name, covariate.list)]
