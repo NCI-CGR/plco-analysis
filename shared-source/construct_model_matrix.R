@@ -53,13 +53,6 @@ inverse.normalize <- function(i) {
 unique.outcomes <- unique(h[,phenotype.name][!is.na(h[,phenotype.name])])
 trait.is.binary <- length(unique.outcomes) == 2 & length(c(0,1) %in% unique.outcomes) == 2
 
-## apply sex-stratified inverse normal transform when: covariate is continuous and not age covariate, or when analysis is FASTGWA or BOLT on the specified non-binary trait
-for (col.index in which((grepl("_co$", colnames(h)) & !grepl("_age_", colnames(h))) | (grepl("bolt|fastgwa", output.filename, ignore.case=TRUE) & !trait.is.binary & colnames(h) == phenotype.name))) {
-    for (i in 1:2) {
-    	h[,col.index][h$sex == i] <- inverse.normalize(h[,col.index][h$sex == i])
-    }
-}
-
 # load PCs for ANC/CHIP combo
 pc.filename <- paste("/CGF/GWAS/Scans/PLCO/builds/1/cleaned-chips-by-ancestry/", ancestry, "/", chip.nosubsets, ".step7.evec", sep="")
 pc.data <- data.frame()
@@ -98,6 +91,20 @@ ancestry.combined <- ancestry.combined[,c(1, ncol(ancestry.combined))]
 ancestry.combined[,2] <- str_replace_all(ancestry.combined[,2], " ", "_")
 ancestry.combined <- ancestry.combined[ancestry.combined[,2] == ancestry,]
 h <- h[h[,id.colname] %in% ancestry.combined[,1],]
+
+
+
+
+## apply sex-stratified inverse normal transform when: covariate is continuous and not age covariate, or when analysis is FASTGWA or BOLT on the specified non-binary trait
+for (col.index in which((grepl("_co$", colnames(h)) & !grepl("_age_", colnames(h))) | (grepl("bolt|fastgwa", output.filename, ignore.case=TRUE) & !trait.is.binary & colnames(h) == phenotype.name))) {
+    for (i in 1:2) {
+    	h[,col.index][h$sex == i] <- inverse.normalize(h[,col.index][h$sex == i])
+    }
+}
+
+
+
+
 
 chip.samples <- read.table(chip.samplefile, header=FALSE, stringsAsFactors=FALSE)
 chip.samples[,1] <- unlist(lapply(strsplit(chip.samples[,1], "_"), function(i) {i[1]}))

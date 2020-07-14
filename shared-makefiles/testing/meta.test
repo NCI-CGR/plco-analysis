@@ -1,20 +1,17 @@
 #!/bin/bash
 
 ## receive variables passed from make
-#config_dir="$CONFIG_DIR"
-#results_dir="$RESULTS_DIR"
-
-config_dir=../../config
-results_dir=../../results
+config_dir="$CONFIG_DIR"
+results_dir="$RESULTS_DIR"
 
 arbitrary_valid_entry_threshold=2000000
 sampling_count=10001
 
 total_tests=0
-tests_per_analysis=2
+tests_per_analysis=6
 
 ## determine how many tests need to be run in the end
-meta_config_files=`grep -E "saige" $config_dir/*config | sed 's/:/\t/g' | awk '{print $1}'`
+meta_config_files=`grep -E "saige|fastgwa|boltlmm" $config_dir/*config | sed 's/:/\t/g' | awk '{print $1}'`
 meta_analysis_prefixes=""
 for file in $meta_config_files ;
 do
@@ -30,7 +27,8 @@ do
     ancestries="European East_Asian"
     for ancestry in $ancestries ;
     do
-	for method in "SAIGE" ;
+	methods="BOLTLMM FASTGWA SAIGE"
+	for method in $methods ;
 	do
 	    expected_absence_no_inputs=1
 	    analysis_directory_missing=0
@@ -84,13 +82,13 @@ do
 		    fi
 		    ## heterogeneity outliers
 		    ## note: since this is likely the only place it will happen, test the entire file
-		    heterogeneity_broken="`gunzip -c $output_file | awk 'NR > 1 && $11 < 5e-8' | wc -l`"
+		    heterogeneity_broken="`gunzip -c $output_file | awk 'NR > 1 && $11 < 5e-10' | wc -l`"
 		fi
 	    fi
 
 	    output_tag="$analysis/$ancestry/$method"
 	    if [[ "$expected_absence_no_inputs" -gt "0" ]] ; then
-		echo "ok - $output_tag ancestry/method combination not requested # SKIP"
+		echo "ok - $output_tag ancestry/method combination not requested or insufficient cases in all subsets # SKIP"
 	    elif [[ "$analysis_file_missing" -gt "0" ]] ; then
 		echo "not ok - $output_tag no meta-analysis file detected"
 	    elif [[ "$analysis_successful" -eq "0" ]] ; then
@@ -106,7 +104,7 @@ do
 	    elif [[ "$heterogeneity_broken" -gt "0" ]] ; then
 		echo "not ok - $output_tag output file had $heterogeneity_broken outlier p-values; this cutoff is currently very stringent"
 	    else
-		echo "ok - $output_tag results: trait is binary; output exists; frequencies, p-values, betas, stderrs ok; variant count acceptable"
+		echo "ok - $output_tag results: output exists; p-values, betas, stderrs ok; no extreme heterogeneity; variant count acceptable"
 	    fi
 	done
     done

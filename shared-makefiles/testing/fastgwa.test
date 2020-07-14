@@ -1,5 +1,11 @@
 #!/bin/bash
 
+#chip_dir=../../cleaned-chips-by-ancestry
+#imputed_dir=../../bgen
+#config_dir=../../config
+#results_dir=../../results
+#minimum_subjects=3000
+
 ## receive variables passed from make
 chip_dir="$CHIP_DIR"
 imputed_dir="$IMPUTED_DIR"
@@ -7,7 +13,7 @@ config_dir="$CONFIG_DIR"
 results_dir="$RESULTS_DIR"
 minimum_subjects="$MINIMUM_SUBJECTS"
 
-arbitrary_valid_entry_threshold=5000000
+arbitrary_valid_entry_threshold=2000000
 sampling_count=10001
 
 total_tests=0
@@ -36,13 +42,14 @@ do
 	    expected_absence_no_chip=0
 	    expected_absence_no_imputed=0
 	    analysis_directory_missing=0
+	    analysis_not_requested=0
 	    analysis_file_missing=0
 	    model_matrix_missing=0
 	    insufficient_chip_subjects=1
 	    insufficient_imputed_subjects=1
 	    insufficient_phenotyped_subjects=1
 	    malformed_phenotype=0
-	    shapiro_p="NA"
+	    shapiro_p=0
 	    analysis_successful=0
 	    frequencies_present=0
 	    frequencies_reference=0
@@ -71,16 +78,22 @@ do
 		    insufficient_imputed_subjects=0
 		fi
 	    fi
+	    prefix="$results_dir/$analysis/$ancestry/FASTGWA/$analysis.$chip.fastgwa"
+	    output_file="$prefix.tsv.gz"
+	    model_matrix="$prefix.model_matrix"
 	    if [[ ! -d "$results_dir/$analysis/$ancestry/FASTGWA" ]] ; then
 		analysis_directory_missing=1
 	    else
-		prefix="$results_dir/$analysis/$ancestry/FASTGWA/$analysis.$chip.fastgwa"
-		output_file="$prefix.tsv.gz"
-		model_matrix="$prefix.model_matrix"
 		if [[ ! -f "$output_file" ]] ; then
 		    ## there are reasons this may be valid, test for them
+		    ##  maybe the user doesn't want this ancestry/chip combination?
+		    config_file=`grep -l $analysis $config_dir/*config`
+		    if [[ "`grep -w \"ancestries:\" $config_file | grep -w \"$ancestry\" | wc -l`" -eq "0" ]] ; then
+			analysis_not_requested=1
+		    elif [[ "`grep -w \"chips:\" $config_file | grep -w \"$chip\" | wc -l`" -eq "0" ]] ; then
+			analysis_not_requested=1
 		    ##  maybe the overall subject count is ok, but the phenotyped count is not?
-		    if [[ -f "$model_matrix" ]] ; then
+		    elif [[ -f "$model_matrix" ]] ; then
 			model_matrix_count=`awk 'NR > 1' $model_matrix | wc -l`
 			if [[ "$model_matrix_count" -ge "$minimum_subjects" ]] ; then
 			    insufficient_phenotyped_subjects=0
@@ -101,10 +114,7 @@ do
 			    ## so an interesting thing is that apparently INT is not guaranteed to make normal distributions
 			    ##   depending on the way it's implemented. For the moment I'll enforce a hard block but that may
 			    ##   need to be weakened
-			    shapiro_p=`echo "h <- read.table(\"$model_matrix\", header=TRUE) ; print(shapiro.test(sample(h[,3], min(nrow(h), 5000), replace=FALSE))$p.val)" | R --slave --vanilla | awk '{print $2}'`
-			    if [[ "$shapiro_p" -lt "0.05" ]] ; then
-				malformed_phenotype=1
-			    fi
+			    shapiro_p=`echo "h <- read.table(\"$model_matrix\", header=TRUE) ; print(shapiro.test(sample(h[,3], min(nrow(h),5000), replace=FALSE))[[\"p.value\"]])" | R --slave --vanilla | awk '{print \$2}'`
 			fi
 			## analysis file definitely exists. probe it for things
 			## enough entries that it seems like the entire analysis didn't fail!!
@@ -116,11 +126,12 @@ do
 			    frequencies_present=1
 			fi
 			## frequencies that seem consistent with the requested frequency mode!!
+			config_file=`grep -l $analysis $config_dir/*config`
 			frequency_override=`grep "frequency_mode:" $config_file | awk '{print $2}'`
 			if [[ "$frequency_override" -eq "subject" ]] ; then
 			    frequencies_requested="subject"
 			fi
-			sampled_zero_freq_count=`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $6 == "0" | wc -l`
+			sampled_zero_freq_count=`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $6 == "0"' | wc -l`
 			if [[ "$sampled_zero_freq_count" -gt "0" && "$frequencies_requested" -ne "reference" ]] ; then
 			    frequency_mismatch=1
 			elif [[ "$sampled_zero_freq_count" -eq "0" && "$frequencies_requested" -ne "subject" ]] ; then
@@ -134,6 +145,10 @@ do
 			if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $7 < 0' | wc -l`" -eq "0" ]] ; then
 			    betas_broken=1
 			fi
+			## stderrs that look like stderrs!
+			if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $8 < 1e-10' | wc -l`" -gt "0" ]] ; then
+			    stderrs_broken=1
+			fi
 		    else
 			model_matrix_missing=1
 		    fi
@@ -141,7 +156,9 @@ do
 	    fi
 
 	    output_tag="$analysis/$chip/$ancestry"
-	    if [[ "$analysis_directory_missing" -gt "0" ]] ; then
+	    if [[ "$analysis_not_requested" -gt "0" ]] ; then
+		echo "ok - $output_tag ancestry/chip combination not requested # SKIP"
+	    elif [[ "$analysis_directory_missing" -gt "0" ]] ; then
 		if [[ "$analyis_file_missing" -eq "0" ]] ; then
 		    echo "not ok - $output_tag test logic failure: directory absent but file present?"
 		elif [[ "$expected_absence_no_chip" -gt "0" ]] ; then
@@ -178,23 +195,21 @@ do
 	    elif [[ "$model_matrix_missing" -gt "0" ]] ; then
 		echo "not ok - $output_tag output file present but model matrix missing"
 	    elif [[ "$malformed_phenotype" -gt "0" ]] ; then
-		if [[ "$shapiro_p" -eq "NA" ]] ; then
-		    echo "not ok - $output_tag model matrix had insufficient columns"
-		else
-		    echo "not ok - $output_tag model matrix phenotype is not normal, Shapiro test p = $shapiro_p"
-		fi
+		echo "not ok - $output_tag model matrix had insufficient columns"
 	    elif [[ "$analysis_successful" -eq "0" ]] ; then
-		echo "not ok - $output_tag output file has fewer than $arbitrary_value_entry_threshold entries, which seems bad"
+		echo "not ok - $output_tag output file has fewer than $arbitrary_valid_entry_threshold entries, which seems bad"
 	    elif [[ "$frequencies_present" -eq "0" ]] ; then
 		echo "not ok - $output_tag output file does not have annotated frequencies"
 	    elif [[ "$frequency_mismatch" -gt "0" ]] ; then
 		echo "not ok - $output_tag output file seems to have frequencies that do not match the request type"
 	    elif [[ "$betas_broken" -gt "0" ]] ; then
-		echo "not ok - $output_tag output file should be for continuous trait analysis but has OR-like coefficients that are never negative"
+		echo "not ok - $output_tag output file is for binary trait analysis but needs to convert from OR->logIR; currently has OR-like coefficients that are never negative"
+	    elif [[ "$stderrs_broken" -gt "0" ]] ; then
+		echo "not ok - $output_tag output file has extremely unlikely standard errors"
 	    elif [[ "$pvalues_broken" -gt "0" ]] ; then
 		echo "not ok - $output_tag output file seems to have divergent p-values"
 	    else
-		echo "ok - $output_tag results present"
+		echo "ok - $output_tag results: trait Shapiro test p=$shapiro_p; output exists; frequencies, p-values, betas, stderrs ok; variant count acceptable"
 	    fi
 	done
     done

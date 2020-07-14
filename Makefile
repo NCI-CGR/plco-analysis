@@ -7,7 +7,7 @@ export
 .PHONY: all $(SUPPORTED_METHODS) bgen meta metal meta-analysis metaanalysis cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files fastgwa-grm ldscores plotting flat-dosages
 all: meta
 
-plotting:
+plotting: $(SUPPORTED_METHODS) meta
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.plotting
 
 meta-analysis metaanalysis metal meta: $(SUPPORTED_METHODS)
@@ -39,7 +39,7 @@ ldsc: 1KG_files
 1KG_files:
 	$(MAKE) -C $(KG_REFERENCE_INPUT_DIR)
 
-ldscores:
+ldscores: $(SUPPORTED_METHODS) meta
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$@
 
 
@@ -49,25 +49,25 @@ ldscores:
 
 check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check
 
-bgen-check: bgen
+bgen-check:
 	$(MAKE) -C $(BGEN_OUTPUT_DIR) check FILTERED_DOSAGE_DATA=$(FILTERED_IMPUTED_INPUT_DIR)
 
-relatedness-check: relatedness
+relatedness-check:
 	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR) check
 
-ancestry-check: ancestry
+ancestry-check:
 	$(MAKE) -C $(ANCESTRY_OUTPUT_DIR) check
 
-cleaned-chips-by-ancestry-check: cleaned-chips-by-ancestry
+cleaned-chips-by-ancestry-check:
 	$(MAKE) -C $(CLEANED_CHIP_OUTPUT_DIR) check
 
-boltlmm-check: config-check #$$(subst -check,,$$@)
+boltlmm-check: config-check
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ CONFIG_DIR=$(CONFIG_INPUT_DIR) CHIP_DIR=$(CLEANED_CHIP_OUTPUT_DIR) IMPUTED_DIR=$(BGEN_OUTPUT_DIR) RESULTS_DIR=$(RESULT_OUTPUT_DIR) MINIMUM_SUBJECTS=$(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)
 
-fastgwa-check: config-check #$$(subst -check,,$$@)
+fastgwa-check: config-check
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ CONFIG_DIR=$(CONFIG_INPUT_DIR) CHIP_DIR=$(CLEANED_CHIP_OUTPUT_DIR) IMPUTED_DIR=$(BGEN_OUTPUT_DIR) RESULTS_DIR=$(RESULT_OUTPUT_DIR) MINIMUM_SUBJECTS=$(FASTGWA_MINIMUM_VALID_SUBJECT_COUNT)
 
-saige-check: config-check #$$(subst -check,,$$@)
+saige-check: config-check
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ CONFIG_DIR=$(CONFIG_INPUT_DIR) CHIP_DIR=$(CLEANED_CHIP_OUTPUT_DIR) IMPUTED_DIR=$(BGEN_OUTPUT_DIR) RESULTS_DIR=$(RESULT_OUTPUT_DIR) MINIMUM_SUBJECTS=$(SAIGE_MINIMUM_VALID_SUBJECT_COUNT) MINIMUM_CASES=$(MINIMUM_VALID_CASE_COUNT)
 
 config-check:

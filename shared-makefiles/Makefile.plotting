@@ -25,7 +25,7 @@ endef
 .SECONDARY:
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
-ALL_TARGETS := $(shell find $(RESULTS_DIR) -iname "*[e].tsv" -print)
+ALL_TARGETS := $(shell find $(RESULTS_DIR) -iname "*[ame].tsv" -print)
 META_TARGETS := $(filter %M.tsv %A.tsv %E.tsv,$(ALL_TARGETS))
 META_TARGETS := $(subst .tsv,.manhattan.jpg.success,$(META_TARGETS))
 
