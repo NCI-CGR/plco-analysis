@@ -87,7 +87,7 @@ do
     ## frequency_mode entry is either "reference" (default) or "subject"
     if [[ "$frequency_mode_present" -eq "1" ]] ; then
 	requested_mode=`grep "frequency_mode:" $config_file | awk '{print $2}'`
-	if [[ "$requested_mode" -eq "reference" || "$requested_mode" -eq "subject" ]] ; then
+	if [[ "$requested_mode" == "reference" || "$requested_mode" == "subject" ]] ; then
 	    frequency_mode_valid=1
 	fi
     fi

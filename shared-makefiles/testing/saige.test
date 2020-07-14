@@ -138,13 +138,13 @@ do
 			## frequencies that seem consistent with the requested frequency mode!!
 			config_file=`grep -l $analysis $config_dir/*config`
 			frequency_override=`grep "frequency_mode:" $config_file | awk '{print $2}'`
-			if [[ "$frequency_override" -eq "subject" ]] ; then
+			if [[ "$frequency_override" == "subject" ]] ; then
 			    frequencies_requested="subject"
 			fi
 			sampled_zero_freq_count=`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $6 == "0"' | wc -l`
-			if [[ "$sampled_zero_freq_count" -gt "0" && "$frequencies_requested" -ne "reference" ]] ; then
+			if [[ "$sampled_zero_freq_count" -gt "0" && "$frequencies_requested" != "reference" ]] ; then
 			    frequency_mismatch=1
-			elif [[ "$sampled_zero_freq_count" -eq "0" && "$frequencies_requested" -ne "subject" ]] ; then
+			elif [[ "$sampled_zero_freq_count" -eq "0" && "$frequencies_requested" != "subject" ]] ; then
 			    frequency_mismatch=1
 			fi
 			## p-values that make sense!!
