@@ -25,11 +25,11 @@ endef
 .SECONDARY:
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
-ALL_TARGETS := $(shell find $(RESULTS_DIR) -iname "*[am].tsv" -print)
-META_TARGETS := $(filter %M.tsv %A.tsv,$(ALL_TARGETS))
+ALL_TARGETS := $(shell find $(RESULTS_DIR) -iname "*[ame].tsv" -print)
+META_TARGETS := $(filter %M.tsv %A.tsv %E.tsv,$(ALL_TARGETS))
 META_TARGETS := $(subst .tsv,.manhattan.jpg.success,$(META_TARGETS))
 
-NOT_META_TARGETS := $(filter %m.tsv %a.tsv,$(ALL_TARGETS))
+NOT_META_TARGETS := $(filter %m.tsv %a.tsv %e.tsv,$(ALL_TARGETS))
 ## manipulate non-meta targets to have unambiguous filenames that match the format of the meta plots
 NOT_META_TARGETS := $(foreach target,$(NOT_META_TARGETS),$(dir $(target))$(firstword $(subst ., ,$(notdir $(target)))).$(call extract_ancestry,$(target)).$(call extract_chip,$(target)).$(call extract_method,$(target)).manhattan.jpg.success)
 

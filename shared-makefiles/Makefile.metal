@@ -3,7 +3,7 @@
 
 include $(PROJECT_BASE_DIR)/Makefile.config
 
-ALL_TARGETS := $(sort $(dir $(shell find $(RESULT_OUTPUT_DIR) -name "*[mae].tsv.gz" -print)))
+ALL_TARGETS := $(sort $(dir $(shell find $(RESULT_OUTPUT_DIR) -name "*[aem].tsv.gz" -print)))
 ALL_TARGETS := $(foreach target,$(ALL_TARGETS),$(target)$(word 1,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).$(word 2,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).$(word 3,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).tsv)
 METAL := $(METAL_EXECUTABLE)
 

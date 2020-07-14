@@ -15,7 +15,7 @@ OUTPUT_DIR := $(FASTGWA_GRM_OUTPUT_DIR)
 VALID_INPUTS := $(shell find $(INPUT_DIR) -maxdepth 2 -iname "*step3.pruning.bed" -print)
 VALID_OUTPUTS := $(foreach input,$(VALID_INPUTS),$(subst .step3.pruning.bed,-sp.grm.sp.success,$(subst $(INPUT_DIR),$(OUTPUT_DIR),$(input))))
 
-.PHONY: all $(sort $(foreach output,$(VALID_OUTPUTS),$(dir $(output))))
+.PHONY: all
 all: $(VALID_OUTPUTS)
 
 ## patterns:

@@ -1,0 +1,25 @@
+#!/bin/bash
+echo 1..5
+for chip in `echo "GSA Oncoarray OmniX Omni25 Omni5"` ;
+do
+    file_missing=0
+    merged_groups_present=0
+    
+    target_file="../PLCO_$chip.graf_estimates.txt"
+    if [[ -f "$target_file" ]] ; then
+	merged_group_count=`awk -F"\t" '$NF == "Other Asian or Pacific Islander" || $NF == "African"' $target_file | wc -l`
+	if [[ "$merged_group_count" -gt "0" ]] ; then
+	    merged_groups_present=1
+	fi
+    else
+	file_missing=1
+    fi
+
+    if [[ "$file_missing" -gt "0" ]] ; then
+	echo "not ok - $chip ancestry file $target_file not available"
+    elif [[ "$merged_groups_present" -gt "0" ]] ; then
+	echo "not ok - $chip ancestry file contains GRAF groups that should have been merged away"
+    else
+	echo "ok - $chip ancestry file present and contains the correct GRAF groups"
+    fi
+done

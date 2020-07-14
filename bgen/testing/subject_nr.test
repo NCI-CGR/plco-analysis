@@ -1,0 +1,123 @@
+#!/bin/bash
+echo 1..9
+## confirm that subject list of each chip in turn matches non-redundancy power ranking
+##    which is GSA > Oncoarray > OmniX > Omni25 [> Omni5, which is completely masked]
+
+## the pipeline uses the meta-info pre-resolved file to determine subject overlap.
+##    for confirmation, don't use that; instead compute lists from subject sets
+##    in vcf or sample files
+for chip in `echo "GSA/batch1 GSA/batch2 GSA/batch3 GSA/batch4 GSA/batch5 Oncoarray OmniX Omni25 Omni5"` ;
+do
+    bgen_dir_missing=""
+    input_dir_missing=""
+    output_file_missing=""
+    sample_file_missing=""
+    other_sample_file_missing=""
+    vcf_file_missing=""
+    subjects_missing_from_input=0
+    unexpected_overlap=""
+    bgen_dir="../$chip"
+    input_dir="$FILTERED_DOSAGE_DATA/$chip"
+    actual_sample_count=0
+    ## first scan across input, making sure everything expected is present in output
+    if [[ -d "$input_dir" ]] ; then
+	ancestries=`ls -l "$input_dir" | awk '/^d/ {print $9}'`
+	for ancestry in $ancestries ;
+	do
+	    target_file="$input_dir/$ancestry/chr22-filtered.dose.vcf.gz"
+	    if [[ -f "$target_file" ]] ; then
+		output_file="$bgen_dir/$ancestry/chr22-filtered-noNAs.sample"
+		if ! [[ -f "$output_file" ]] ; then
+		    output_file_missing="$output_file_missing $output_file"
+		fi
+	    else
+		vcf_file_missing="$vcf_file_missing $target_file"
+	    fi
+	done
+    else
+	input_dir_missing="$input_dir_missing $input_dir"
+    fi
+    if [[ -d "$bgen_dir" ]] ; then
+	ancestries=`ls -l "$bgen_dir" | awk '/^d/ {print $9}'`
+	for ancestry in $ancestries ;
+	do
+	    ## get bgen subjects
+	    bgen_samples=""
+	    vcf_samples=""
+	    sample_file="$bgen_dir/$ancestry/chr22-filtered-noNAs.sample"
+	    if [[ -f "$sample_file" ]] ; then
+		bgen_samples=`awk 'NR > 2 {print $1}' $sample_file`
+	    else
+		sample_file_missing="$sample_file_missing $sample_file"
+	    fi
+	    current_sample_count=`echo $bgen_samples | sed 's/ /\n/g ; s/\t/\n/g' | wc -l`
+	    ((actual_sample_count = actual_sample_count + current_sample_count))
+	    ## get subjects from comparable files in input
+	    vcf_dir="$input_dir/$ancestry"
+	    if [[ -d "$vcf_dir" ]] ; then
+		vcf_file="$vcf_dir/chr22-filtered.dose.vcf.gz"
+		if [[ -f "$vcf_file" ]] ; then
+		    vcf_samples=`gunzip -c $vcf_file | head -100 | awk '/^CHROM/' | cut -f 1-9 --complement | sed 's/\t/\n/g' | sed 's/_/\t/g' | awk '{print $1}'`
+		else
+		    vcf_file_missing="$vcf_file_missing $vcf_file"
+		fi
+
+		overlap_subject_count=`echo "$bgen_samples" "$vcf_samples" | sed 's/ /\n/g ; s/\t/\n/g' | sort | uniq -d | wc -l`
+		expected_subject_count=`echo "$bgen_samples" | sed 's/ /\n/g ; s/\t/\n/g' | wc -l`
+		if [[ "$overlap_subject_count" != "$expected_subject_count" ]] ; then
+		    (( subjects_missing_from_input = subjects_missing_from_input + subject_count ))
+		fi
+	    else
+		input_dir_missing="$input_dir_missing $vcf_dir"
+	    fi
+
+	    ## there needs to be no overlap whatsoever with other chips
+	    for other_chip in "$chips" ;
+	    do
+		if [[ "$chip" != "$other_chip" ]] ; then
+		    target_dir="../$other_chip/$ancestry"
+		    if [[ -d "$target_dir" ]] ; then
+			target_file="$target_dir/chr22-filtered-noNAs.sample"
+			if [[ -f "$target_file" ]] ; then
+			    target_samples=`awk 'NR > 2 {print $1}' $target_file`
+			    overlap_count=`echo "$bgen_samples" "$target_samples" | sed 's/ /\n/g ; s/\t/\n/g' | sort | uniq -d | wc -l`
+			    if [[ "$overlap_count" -gt "0" ]] ; then
+				unexpected_overlap="$unexpected_overlap $target_file"
+			    fi
+			else
+			    other_sample_file_missing="$other_sample_file_missing $target_file"
+			fi
+		    fi
+		fi
+	    done
+	done
+    else
+	bgen_dir_missing="$bgen_dir_missing $bgen_dir"
+    fi
+
+    if [[ "$chip" == "Omni5" ]] ; then
+	if [[ "$bgen_dir_missing" != "" ]] ; then
+	    echo "ok - $chip expected absent from bgen sample data # SKIP"
+	else
+	    echo "not ok - $chip present in output files when expected absent due to priority list"
+	fi
+    elif [[ "$bgen_dir_missing" != "" ]] ; then
+	echo "not ok - $chip unexpectedly missing from bgen output: $bgen_dir_missing"
+    elif [[ "$output_file_missing" != "" ]] ; then
+	echo "not ok - $chip missing output file expected from input: $output_file_missing"
+    elif [[ "$sample_file_missing" != "" ]] ; then
+	echo "not ok - $chip unexpectedly missing sample file: $sample_file_missing"
+    elif [[ "$input_dir_missing" != "" ]] ; then
+	echo "not ok - $chip unexpectedly missing corresponding input directory: $input_dir_missing"
+    elif [[ "$vcf_file_missing" != "" ]] ; then
+	echo "not ok - $chip unexpectedly missing corresponding input vcf: $vcf_file_missing"
+    elif [[ "$subjects_missing_from_input" -gt "0" ]] ; then
+	echo "not ok - $chip unexpectedly contains $subjects_missing_from_input not present in input files"
+    elif [[ "$other_sample_file_missing" != "" ]] ; then
+	echo "not ok - during scanning for $chip, another platform was missing its expected sample file: $other_sample_file_missing"
+    elif [[ "$unexpected_overlap" != "" ]] ; then
+	echo "not ok - detected overlap when scanning $chip which is incompatible with non-redundant analysis design: $unexpected_overlap"
+    else
+	echo "ok - $chip: $actual_sample_count subjects present and no redundancy detected"
+    fi
+done

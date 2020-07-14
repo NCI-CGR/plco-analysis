@@ -8,7 +8,7 @@ UNIQUE_PLATFORMS := $(subst _,/,$(filter-out Omni5,$(PLATFORMS)))
 
 .DELETE_ON_ERROR:
 .SECONDEXPANSION:
-.PHONY: all $(UNIQUE_PLATFORMS)
+.PHONY: all $(UNIQUE_PLATFORMS) check
 ## all targets are: each platform, without Omni5 because it has no non-redundant subjects
 all: $(UNIQUE_PLATFORMS)
 
@@ -23,3 +23,10 @@ $(addsuffix /Makefile,$(UNIQUE_PLATFORMS)): | $$(dir $$@)
 ## create platform directory if needed
 $(addsuffix /,$(UNIQUE_PLATFORMS)):
 	mkdir -p $@
+
+## test set to run after completion
+check: testing/Makefile
+	$(MAKE) -C testing check
+
+testing/Makefile: testing/Makefile.am testing/configure.ac
+	cd testing && autoreconf -vi && ./configure && cd ../

@@ -4,7 +4,7 @@ if [ "$#" -ne 2 ]; then
 elif [[ -d "$2" ]]; then
     PREFIX="$1"
     CONFIG_DIR="$2"
-    CONFIG_FILE=`grep -Pl "analysis_prefix[[:space:]]*:[[:space:]]*$PREFIX[[:space:]]*$" $CONFIG_DIR/*`
+    CONFIG_FILE=`grep -Pl "analysis_prefix[[:space:]]*:[[:space:]]*$PREFIX[[:space:]]*$" $CONFIG_DIR/*config`
     COVARIATES=`grep -i covariate $CONFIG_FILE | cut -f 1 -d ' ' --complement | sed 's/ /,/g'`
     if [ -z "$COVARIATES" ]; then
 	COVARIATES=NA

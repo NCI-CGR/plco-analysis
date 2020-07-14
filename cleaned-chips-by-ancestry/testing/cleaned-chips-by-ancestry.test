@@ -1,0 +1,125 @@
+#!/bin/bash
+echo 1..35
+
+for chip in `echo "GSA Oncoarray OmniX Omni25 Omni5"`;
+do
+    ancestry_filename="../../ancestry/PLCO_$chip.graf_estimates.txt"
+    for ancestry in `echo "European East_Asian African_American Hispanic1 Hispanic2 South_Asian Other"`;
+    do
+	ancestry_file_missing=""
+	ancestry_directory_missing=""
+	expected_missing_low_count=0
+	ancestry_actual_count=0
+	autosomes_missing=0
+	step0_missing=0
+	step1_missing=0
+	step2_missing=0
+	step3_missing=0
+	step4_missing=0
+	step4_nonempty=0
+	step5_missing=0
+	step7_missing=0
+	step7_discordant_subjects=0
+	if [[ -f "$ancestry_filename" ]] ; then
+	    ancestry_actual_count=`awk -F"\t" '$NF == "$ancestry"' $ancestry_filename | wc -l`
+	else
+	    ancestry_file_missing="$ancestry_file_missing $ancestry_filename"
+	fi
+	ancestry_directory="../$ancestry"
+	if [[ -d "$ancestry_directory" ]] ; then
+	    target_prefix="$ancestry_directory/$chip"
+	    ## required output files: nohet.autosomes.bed/bim/fam
+	    target_stem="$target_prefix.nohet.autosomes"
+	    if [[ ! -f "$target_stem.bed" || ! -f "$target_stem.bim" || ! -f "$target_stem.fam" ]] ; then
+		## this may possibly be tolerable, but only if the sample size for this chip/ancestry combination is < 10
+		if [[ "$ancestry_actual_count" -lt 10 ]] ; then
+		    expected_missing_low_count=1
+		else
+		    autosomes_missing=1
+		fi
+	    fi
+	    ## required output files: step0.ancestry.bed/bim/fam
+	    target_stem="$target_prefix.step0.ancestry"
+	    if [[ ! -f "$target_stem.bed" || ! -f "$target_stem.bim" || ! -f "$target_stem.fam" ]] ; then
+		step0_missing=1
+	    fi
+	    ## required output files: step1.maf.geno.hwe.bed/bim/fam
+	    target_stem="$target_prefix.step1.maf.geno.hwe"
+	    if [[ ! -f "$target_stem.bed" || ! -f "$target_stem.bim" || ! -f "$target_stem.fam" ]] ; then
+		step1_missing=1
+	    fi
+	    ## required output files: step2.pruning.prune.in/out
+	    target_stem="$target_prefix.step2.pruning"
+	    if [[ ! -f "$target_stem.prune.in" || ! -f "$target_stem.prune.out" ]] ; then
+		step2_missing=1
+	    fi
+	    ## required output files: step3.prune.in.out
+	    target_stem="$target_prefix.step3.pruning"
+	    if [[ ! -f "$target_stem.prune.in" || ! -f "$target_stem.prune.out" ]] ; then
+		step3_missing=1
+	    fi
+	    ## required output files: step4.het
+	    target_stem="$target_prefix.step4"
+	    if [[ ! -f "$target_stem.het" ]] ; then
+		step4_missing=1
+	    else
+		## required condition: step4.het should not contain any entries with |F|>0.2
+		het_outlier_count=`awk 'NR > 1 && $$NF^2 > 0.2^2' $target_stem.het | wc -l`
+		if [[ "$het_outlier_count" -gt "0" ]] ; then
+		    step4_nonempty=1
+		fi
+	    fi
+	    ## required output files: step5.genome.gz
+	    target_stem="$target_prefix.step5"
+	    if [[ ! -f "$target_stem.ibs-split.genome.gz" && ! -f "$target_stem.ibs-normal.genome.gz" ]] ; then
+		step5_missing=1
+	    fi
+	    ## required output files: step7.evec
+	    target_stem="$target_prefix.step7"
+	    if [[ ! -f "$target_stem.evec" ]] ; then
+		step7_missing=1
+	    else
+		## required condition: evec has exactly the same subjects as .nohet.autosomes.fam
+		if [[ "$autosomes_missing" -eq "0" ]] ; then
+		    discordant_subjects=`awk 'NR > 1' $target_stem.evec | cat - $target_prefix.nohet.autosomes.fam | awk '{print $1}' | sort | uniq -u | wc -l`
+		    if [[ "$discordant_subjects" -gt "0" ]] ; then
+			step7_discordant_subjects="$discordant_subjects"
+		    fi
+		fi
+	    fi
+	else
+	    ancestry_directory_missing="$ancestry_directory_missing $ancestry_directory"
+	fi
+
+	## report test results for this combination
+	if [[ "$ancestry_file_missing" != "" ]] ; then
+	    echo "not ok - $chip/$ancestry missing file $ancestry_file_missing"
+	elif [[ "$ancestry_directory_missing" != "" ]] ; then
+	    echo "not ok - $chip/$ancestry missing directory $ancestry_directory_missing"
+	elif [[ "$expected_missing_low_count" -gt "0" ]] ; then
+	    echo "ok - $chip/$ancestry insufficient sample size # SKIP"
+	elif [[ "$autosomes_missing" -gt "0" ]] ; then
+	    echo "not ok - $chip/$ancestry missing $chip.nohet.autosomes plink files"
+	elif [[ "$step0_missing" -gt "0" ]] ; then
+	    echo "not ok - $chip/$ancestry missing $chip.step0.ancestry plink files"
+	elif [[ "$step1_missing" -gt "0" ]] ; then
+	    echo "not ok - $chip/$ancestry missing $chip.step1.maf.geno.hwe plink files"
+	elif [[ "$step2_missing" -gt "0" ]] ; then
+	    echo "not ok - $chip/$ancestry missing $chip.step2.pruning files"
+	elif [[ "$step3_missing" -gt "0" ]] ; then
+	    echo "not ok - $chip/$ancestry missing $chip.step3.pruning files"
+	elif [[ "$step4_missing" -gt "0" ]] ; then
+	    echo "not ok - $chip/$ancestry missing $chip.step4 heterozygosity files"
+	elif [[ "$step4_nonempty" -gt "0" ]] ; then
+	    echo "not ok - $chip/$ancestry contains heterozygosity outliers"
+	elif [[ "$step5_missing" -gt "0" ]] ; then
+	    echo "not ok - $chip/$ancestry missing $chip.step5 IBS/IBD estimation files"
+	elif [[ "$step7_missing" -gt "0" ]] ; then
+	    echo "not ok - $chip/$ancestry missing $chip.step7 eigenvector output files"
+	elif [[ "$step7_discordant_subjects" -gt "0" ]] ; then
+	    echo "not ok - $chip/$ancestry eigenvector subject list contains $step7_discordant_subjects discordant subjects for this combination"
+	else
+	    echo "ok - chip cleaning files available and eigenvectors consistent"
+	fi
+    done
+done

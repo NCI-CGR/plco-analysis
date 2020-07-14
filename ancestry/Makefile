@@ -54,3 +54,10 @@ PLCO_Oncoarray.graf_estimates.modified.txt: $$(subst .modified.txt,.raw.txt,$$@)
 ## Notes: input is the output of the relatedness pipeline, which needs to complete before this pipeline is run.
 PLCO_%.graf_pop: $(REL_DIR)/PLCO_%.fpg
 	-$(GRAF_EXECUTABLE) -geno $< -pop $@
+
+## test set to run after completion
+check: testing/Makefile
+	$(MAKE) -C testing check
+
+testing/Makefile: testing/Makefile.am testing/configure.ac
+	cd testing && autoreconf -vi && ./configure && cd ../

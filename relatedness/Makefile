@@ -73,3 +73,11 @@ PLCO_%.relatedness.txt: PLCO_%.fpg
 ##    input:  PLCO_{CHIP}_rsids.bed
 PLCO_%.fpg: PLCO_%_rsids.bed
 	-$(GRAF_EXECUTABLE) -exfp $(subst .bed,,$<) -out $@ -type 4
+
+
+## test set to run after completion
+check: testing/Makefile
+	$(MAKE) -C testing check
+
+testing/Makefile: testing/Makefile.am testing/configure.ac
+	cd testing && autoreconf -vi && ./configure && cd ../

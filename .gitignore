@@ -29,3 +29,15 @@ ldsc/*
 *gz
 *tbi
 liftOver*
+configure
+config.status
+*trs
+*/testing/Makefile
+Makefile.in
+autom4te.cache
+build-aux
+*.m4
+globus/*
+results
+export_plots
+export_results
