@@ -3,9 +3,15 @@
 
 include $(PROJECT_BASE_DIR)/Makefile.config
 
-ALL_TARGETS := $(sort $(dir $(shell find $(RESULT_OUTPUT_DIR) -name "*[aem].tsv.gz" -print)))
+ALL_TARGETS := $(sort $(dir $(shell find $(RESULT_OUTPUT_DIR) -name "*[ame].tsv.gz" -print)))
 ALL_TARGETS := $(foreach target,$(ALL_TARGETS),$(target)$(word 1,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).$(word 2,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).$(word 3,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).tsv)
 METAL := $(METAL_EXECUTABLE)
+
+$(if $(EXCLUDE_SAIGE),$(eval ALL_TARGETS:=$(filter-out %.SAIGE.tsv %.saige.tsv,$(ALL_TARGETS))),)
+$(if $(EXCLUDE_BOLTLMM),$(eval ALL_TARGETS:=$(filter-out %.BOLTLMM.tsv %.boltlmm.tsv,$(ALL_TARGETS))),)
+$(if $(EXCLUDE_FASTGWA),$(eval ALL_TARGETS:=$(filter-out %.FASTGWA.tsv %.fastgw.tsv,$(ALL_TARGETS))),)
+
+$(info $(ALL_TARGETS))
 
 .DELETE_ON_ERROR:
 .SECONDARY:

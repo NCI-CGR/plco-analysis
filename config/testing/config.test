@@ -31,6 +31,9 @@ do
     transformation_present=0
     transformation_valid=0
 
+    sex_specific_present=0
+    sex_specific_valid=0
+
     ## exactly one "analysis_prefix:" line
     analysis_prefix_present=`grep "analysis_prefix:" $config_file | wc -l`
     ## analysis prefix value is present only one time in all config files
@@ -87,16 +90,25 @@ do
     ## frequency_mode entry is either "reference" (default) or "subject"
     if [[ "$frequency_mode_present" -eq "1" ]] ; then
 	requested_mode=`grep "frequency_mode:" $config_file | awk '{print $2}'`
-	if [[ "$requested_mode" -eq "reference" || "$requested_mode" -eq "subject" ]] ; then
+	if [[ "$requested_mode" == "reference" || "$requested_mode" == "subject" ]] ; then
 	    frequency_mode_valid=1
 	fi
     fi
     ## at most one "transformation:" line
     transformation_present=`grep "transformation:" $config_file | wc -l`
-    ## the transformation line isn't formalized yet, so just ensure that there's literally anything else on the line
+    ## the transformation line has very limited support, currently only for "post.split.INT" for continuous traits, or default "none"
     if [[ "$transformation_present" -eq "1" ]] ; then
-	if [[ "`awk '/transformation:/ {print NF}' $config_file`" -gt "1" ]] ; then
+	if [[ "`awk '/transformation:/ {print $2}' $config_file | awk '$1 == \"none\" || $1 == \"post.split.INT\"' | wc -l`" -eq "1" ]] ; then
 	    transformation_valid=1
+	fi
+    fi
+    
+    ## at most one "sex-specific:" line
+    sex_specific_present=`grep "sex-specific:" $config_file | wc -l`
+    ## the sex-specific line can specify: "female" "male" or "combined", and defaults to "combined"
+    if [[ "$sex_specific_present" -eq "1" ]] ; then
+	if [[ "`awk '/sex-specific:/ {print $2}' $config_file | awk '$1 == \"female\" || $1 == \"male\" || $1 == \"combined\"' | wc -l`" -eq "1" ]] ; then
+	   sex_specific_valid=1
 	fi
     fi
 
@@ -127,7 +139,11 @@ do
     elif [[ "$transformation_present" -gt "1" ]] ; then
 	echo "not ok - $config_file: key \"transformation:\" cannot be present more than once in the file"
     elif [[ "$transformation_present" -eq "1" && "$transformation_valid" -ne "1" ]] ; then
-	echo "not ok - $config_file: key \"transformation:\" must have a value for it to do anything at this time"
+	echo "not ok - $config_file: key \"transformation:\" must have value \"none\" or \"post.split.INT\""
+    elif [[ "$sex_specific_present" -gt "1" ]] ; then
+	echo "not ok - $config_file: key \"sex-specific:\" cannot be present more than once in the file"
+    elif [[ "$sex_specific_present" -eq "1" && "$sex_specific_valid" -ne "1" ]] ; then
+	echo "not ok - $config_file: key \"transformation:\" must have value \"combined\" or \"female\" or \"male\""
     else
 	echo "ok - $config_file: all required entries present and values acceptable"
     fi

@@ -55,7 +55,7 @@ endef
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $(ANNOTATE_FREQUENCY) $$(subst .fastgwa.tsv,.fastgwa.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .fastgwa.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $(word 2,$^) $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
+	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(word 2,$^) $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
 	fi
 
 ## patterns:
@@ -138,9 +138,14 @@ endef
 	cut -f 3 --complement $(subst .success,,$<) > $@
 
 
-## possibly make more complicated later but for now, it's on/off
+## enable the user to define analysis-specific transformations (but only "post.split.INT" is currently recognized)
 define compute_transform =
-$(shell grep "transformation" $(1) | awk '{print $$2}')
+$(shell res="`grep \"transformation\" $(1) | awk '{print $$2}'`" ; if [[ "$$res" == "" ]] ; then res="none" ; fi ; echo "$$res")
+endef
+
+## enable the user to define a sex-specific condition for the analysis
+define compute_sex_specific =
+$(shell res="`grep \"sex-specific\" $(1) | awk '{print $$2}'`" ; if [[ "$$res" == "" ]] ; then res="combined" ; fi ; echo "$$res")
 endef
 
 ## patterns:
@@ -152,7 +157,7 @@ endef
 ## this is separately submitted to the cluster. Config file dependency guarantees rerun if the file is edited at all, which
 ## is conservative but correct.
 %.fastgwa.model_matrix.success: $$(call compute_config,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .fastgwa.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@) $(call compute_transform,$<))
+	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .fastgwa.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@) $(call compute_transform,$<) $(call compute_sex_specific,$<))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/

@@ -4,14 +4,28 @@
 include Makefile.config
 export
 .SECONDEXPANSION:
-.PHONY: all $(SUPPORTED_METHODS) bgen meta metal meta-analysis metaanalysis cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files fastgwa-grm ldscores plotting flat-dosages
+.PHONY: all $(SUPPORTED_METHODS) bgen meta metal meta-analysis metaanalysis cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files fastgwa-grm ldscores plotting flat-dosages globus
 all: meta
 
-plotting: $(SUPPORTED_METHODS) meta
+plotting: #$(SUPPORTED_METHODS) meta
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.plotting
 
-meta-analysis metaanalysis metal meta: $(SUPPORTED_METHODS)
+
+## meta-analysis targets
+##   this understands EXCLUDE_{METHOD} parameters to restrict the meta to certain analyses over others
+META_ALIASES := meta-analysis metaanalysis metal meta
+$(META_ALIASES): ##$(SUPPORTED_METHODS)
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.metal
+
+$(addsuffix -saige,$(META_ALIASES)):
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.metal EXCLUDE_BOLTLMM=1 EXCLUDE_FASTGWA=1
+
+$(addsuffix -fastgwa,$(META_ALIASES)):
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.metal EXCLUDE_BOLTLMM=1 EXCLUDE_SAIGE=1
+
+$(addsuffix -boltlmm,$(META_ALIASES)):
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.metal EXCLUDE_FASTGWA=1 EXCLUDE_SAIGE=1
+
 
 fastgwa: fastgwa-grm
 
@@ -39,9 +53,12 @@ ldsc: 1KG_files
 1KG_files:
 	$(MAKE) -C $(KG_REFERENCE_INPUT_DIR)
 
-ldscores: $(SUPPORTED_METHODS) meta
+ldscores: ##$(SUPPORTED_METHODS) meta
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$@
 
+
+globus: # meta
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$@
 
 ## TESTING CONTROLLERS
 

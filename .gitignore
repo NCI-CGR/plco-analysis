@@ -41,3 +41,5 @@ globus/*
 results
 export_plots
 export_results
+*.o
+*.out
