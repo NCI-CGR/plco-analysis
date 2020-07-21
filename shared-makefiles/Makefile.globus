@@ -1,0 +1,46 @@
+## Cameron Palmer, 14 July 2020
+## prepare files for use with the NCI/DCEG Atlas website
+##    basically, merge everything under a single phenotype into a single output file (per algorithm)
+include $(PROJECT_BASE_DIR)/Makefile.config
+
+CONFIG_DIR := $(CONFIG_INPUT_DIR)
+RESULTS_DIR := $(RESULT_OUTPUT_DIR)
+OUTPUT_DIR := $(GLOBUS_OUTPUT_DIR)
+MERGE_SOFTWARE := $(SHARED_SOURCE)/merge_files_for_globus.out
+.DELETE_ON_ERROR:
+.PHONY: all
+.SECONDARY:
+.SECONDEXPANSION:
+
+CONFIG_FILES := $(shell ls $(CONFIG_DIR)/*config)
+## determine a unique set of phenotype/algorithm targets from the config directory
+ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell res="`grep \"exclude_from_atlas:\" $(file) | wc -l`"; if [[ "$$res" -eq "0" ]] ; then echo "`awk '/phenotype:/ || /algorithm:/' $(file) | sort -r | awk '{$$1 = ""; printf(\"%s\t\",$$0)}' | awk '{for (i = 2 ; i <= NF ; ++i) print $$1\".\"toupper($$i)}'`" ; fi)))
+
+## remove plink targets
+ALL_TARGETS := $(filter-out %.PLINK,$(ALL_TARGETS))
+
+## temporarily only select FASTGWA targets
+## ALL_TARGETS := $(filter %.FASTGWA,$(ALL_TARGETS))
+
+## add prefixes and suffixes appropriately
+ALL_TARGETS := $(addprefix $(OUTPUT_DIR)/,$(addsuffix .tsv.gz.success,$(ALL_TARGETS)))
+
+all: $(ALL_TARGETS)
+
+## this rule is a minor nightmare, because there's no guarantee what files are going to be present for any particular analysis, regardless of the request
+## patterns:
+##    output: globus/{PHENOTYPE}.{METHOD}.tsv.gz.success
+##    input(s):  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.tsv.gz
+## Notes: arbitrarily large number of inputs depending on what flavor of analysis has been run
+##        for reasons, leave it to the merge software to figure out what is what
+$(OUTPUT_DIR)/%.tsv.gz.success: $$(shell find $$(RESULTS_DIR) -path "*/$$(firstword $$(subst ., ,$$(notdir $$@)))*/*/$$(lastword $$(subst ., ,$$(subst .tsv.gz.success,,$$(notdir $$@))))/*.$$(lastword $$(subst ., ,$$(subst .tsv.gz.success,,$$(notdir $$@)))).tsv.gz" -print)
+	if [[ -d "$(RESULTS_DIR)/$(firstword $(subst ., ,$(notdir $@)))_female" ]] ; then \
+	$(call qsub_handler,$(subst .success,,$@),$(MERGE_SOFTWARE) $^ $(subst .success,,$@) yes) ; \
+	else \
+	$(call qsub_handler,$(subst .success,,$@),$(MERGE_SOFTWARE) $^ $(subst .success,,$@) no) ; \
+	fi
+$(sort $(dir $(ALL_TARGETS))):
+	mkdir -p $@
+
+
+#$$(shell if [[ -d $$(RESULTS_DIR)/$$(firstword $$(subst ., ,$$(subst $$(OUTPUT_DIR)/,,$$@)))_male ]] ; then find $$(RESULTS_DIR)/$$(firstword $$(subst ., ,$$(subst $$(OUTPUT_DIR)/,,$$@)))_male -name "*.$$(lastword $$(subst ., ,$$(subst .tsv,,$$(subst $$(OUTPUT_DIR)/,,$$@)))).tsv.gz" -print ; fi) | $$(dir $$@)
