@@ -16,7 +16,7 @@ minimum_cases="$MINIMUM_CASES"
 #minimum_cases=30
 
 arbitrary_valid_entry_threshold=2000000
-sampling_count=10001
+sampling_count=100001
 
 total_tests=0
 tests_per_analysis=16
@@ -53,6 +53,9 @@ do
 	    insufficient_cases=1
 	    malformed_phenotype=0
 	    binary_outcome_failure=0
+	    sex_specific=0
+	    sex_alternate_missing=0
+	    sex_disjoint_subjects=0
 	    analysis_successful=0
 	    frequencies_present=0
 	    frequencies_reference=0
@@ -120,12 +123,32 @@ do
 			if [[ "$invalid_row_count" -gt "0" ]] ; then
 			    malformed_phenotype=1
 			else
-			    ## test column 3 normality
-			    ## so an interesting thing is that apparently INT is not guaranteed to make normal distributions
-			    ##   depending on the way it's implemented. For the moment I'll enforce a hard block but that may
-			    ##   need to be weakened
+			    ## test column 3 binary case/control status
 			    binary_outcome_failure=`awk 'NR > 1 && $3 != "0" && $3 != "1" && $3 != "NA"' $model_matrix | wc -l` 
 			fi
+
+			if [[ "$analysis" =~ ^.*_female$ || "$analysis" =~ ^.*_male$ ]] ; then
+			    sex_specific=1
+			fi
+
+			if [[ "$sex_specific" -eq "1" ]] ; then
+			    other_analysis="$analysis"
+			    if [[ "$other_analysis" =~ ^.*_female$ ]] ; then
+				other_analysis=`echo $other_analysis | sed 's/_female/_male/'`
+			    else
+				other_analysis=`echo $other_analysis | sed 's/_male/_female/'`
+			    fi
+			    other_model_matrix="$results_dir/$other_analysis/$ancestry/FASTGWA/$other_analysis.$chip.fastgwa.model_matrix"
+			    if [[ -f "$other_model_matrix" ]] ; then
+				duplicate_lines=`cat $model_matrix $other_model_matrix | awk 'NR > 1 {print $2}' | sort | uniq -d | wc -l`
+				if [[ "$duplicate_lines" -eq "0" ]] ; then
+				    sex_disjoint_subjects=1
+				fi
+			    else
+				sex_alternate_missing=1
+			    fi
+			fi
+
 			## analysis file definitely exists. probe it for things
 			## enough entries that it seems like the entire analysis didn't fail!!
 			if [[ "`gunzip -c $output_file | wc -l`" -ge "$arbitrary_valid_entry_threshold" ]] ; then
@@ -141,10 +164,10 @@ do
 			if [[ "$frequency_override" == "subject" ]] ; then
 			    frequencies_requested="subject"
 			fi
-			sampled_zero_freq_count=`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $6 == "0"' | wc -l`
-			if [[ "$sampled_zero_freq_count" -gt "0" && "$frequencies_requested" != "reference" ]] ; then
+			sampled_long_freq_count=`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && length($6) > 10' | wc -l`
+			if [[ "$sampled_long_freq_count" -eq "0" && "$frequencies_requested" != "reference" ]] ; then
 			    frequency_mismatch=1
-			elif [[ "$sampled_zero_freq_count" -eq "0" && "$frequencies_requested" != "subject" ]] ; then
+			elif [[ "$sampled_long_freq_count" -gt "0" && "$frequencies_requested" != "subject" ]] ; then
 			    frequency_mismatch=1
 			fi
 			## p-values that make sense!!
@@ -212,6 +235,10 @@ do
 		echo "not ok - $output_tag model matrix had insufficient columns"
 	    elif [[ "$binary_outcome_failure" -gt "0" ]] ; then
 		echo "not ok - $output_tag model matrix phenotype not binary"
+	    elif [[ "$sex_specific" -gt "0" && "$sex_alternate_missing" -gt "0" ]] ; then
+		echo "not ok - $output_tag missing corresponding sex-specific analysis"
+	    elif [[ "$sex_specific" -gt "0" && "$sex_disjoint_subjects" -eq "0" ]] ; then
+		echo "not ok - $output_tag subjects present in both this and other sex-specific analysis"
 	    elif [[ "$analysis_successful" -eq "0" ]] ; then
 		echo "not ok - $output_tag output file has fewer than $arbitrary_valid_entry_threshold entries, which seems bad"
 	    elif [[ "$frequencies_present" -eq "0" ]] ; then

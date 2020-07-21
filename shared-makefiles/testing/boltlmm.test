@@ -50,6 +50,9 @@ do
 	    insufficient_phenotyped_subjects=1
 	    malformed_phenotype=0
 	    shapiro_p=0
+	    sex_specific=0
+	    sex_alternate_missing=0
+	    sex_disjoint_subjects=0
 	    analysis_successful=0
 	    frequencies_present=0
 	    frequencies_reference=0
@@ -116,6 +119,29 @@ do
 			    ##   need to be weakened
 			    shapiro_p=`echo "h <- read.table(\"$model_matrix\", header=TRUE) ; print(shapiro.test(sample(h[,3], min(nrow(h),5000), replace=FALSE))[[\"p.value\"]])" | R --slave --vanilla | awk '{print \$2}'`
 			fi
+
+			if [[ "$analysis" =~ ^.*_female$ || "$analysis" =~ ^.*_male$ ]] ; then
+			    sex_specific=1
+			fi
+
+			if [[ "$sex_specific" -eq "1" ]] ; then
+			    other_analysis="$analysis"
+			    if [[ "$other_analysis" =~ ^.*_female$ ]] ; then
+				other_analysis=`echo $other_analysis | sed 's/_female/_male/'`
+			    else
+				other_analysis=`echo $other_analysis | sed 's/_male/_female/'`
+			    fi
+			    other_model_matrix="$results_dir/$other_analysis/$ancestry/FASTGWA/$other_analysis.$chip.fastgwa.model_matrix"
+			    if [[ -f "$other_model_matrix" ]] ; then
+				duplicate_lines=`cat $model_matrix $other_model_matrix | awk 'NR > 1 {print $2}' | sort | uniq -d | wc -l`
+				if [[ "$duplicate_lines" -eq "0" ]] ; then
+				    sex_disjoint_subjects=1
+				fi
+			    else
+				sex_alternate_missing=1
+			    fi
+			fi
+
 			## analysis file definitely exists. probe it for things
 			## enough entries that it seems like the entire analysis didn't fail!!
 			if [[ "`gunzip -c $output_file | wc -l`" -ge "$arbitrary_valid_entry_threshold" ]] ; then
@@ -196,6 +222,10 @@ do
 		echo "not ok - $output_tag output file present but model matrix missing"
 	    elif [[ "$malformed_phenotype" -gt "0" ]] ; then
 		echo "not ok - $output_tag model matrix had insufficient columns"
+	    elif [[ "$sex_specific" -gt "0" && "$sex_alternate_missing" -gt "0" ]] ; then
+		echo "not ok - $output_tag missing corresponding sex-specific analysis"
+	    elif [[ "$sex_specific" -gt "0" && "$sex_disjoint_subjects" -eq "0" ]] ; then
+		echo "not ok - $output_tag subjects present in both this and other sex-specific analysis"
 	    elif [[ "$analysis_successful" -eq "0" ]] ; then
 		echo "not ok - $output_tag output file has fewer than $arbitrary_valid_entry_threshold entries, which seems bad"
 	    elif [[ "$frequencies_present" -eq "0" ]] ; then
