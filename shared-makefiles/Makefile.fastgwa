@@ -55,7 +55,7 @@ endef
 $(addsuffix .tsv,$(ANALYSIS_RESULTS_FASTGWA)): $(ANNOTATE_FREQUENCY) $$(subst .fastgwa.tsv,.fastgwa.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .fastgwa.tsv,.fastgwa.model_matrix.success,$$@) | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -s $(word 2,$^) $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
+	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(word 2,$^) $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
 	fi
 
 ## patterns:

@@ -33,7 +33,7 @@ all: $(ALL_OUTPUT) $(LDSCORE_SUMMARY)
 ##    input:  results/{PHENOTYPES}/European/{METHODS}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report
 ## Notes: combine summary results from all runs into a single top-level file
 $(LDSCORE_SUMMARY): $(subst .ldsc.log.success,.ldsc.report,$(ALL_OUTPUT))
-	cat $^ | sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 | awk 'NR == 1 {print "phenotype\tplatform\tancestry\tmethod\tinflation_factor\tintercept\terror"} ; NR > 1' | sed 's/(// ; s/)//' > $@
+	cat $^ | sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 | awk 'NR == 1 {print "phenotype\tplatform\tancestry\tmethod\tinflation_factor\tintercept\terror"} ; {print $$0}' | sed 's/(// ; s/)//' > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report
