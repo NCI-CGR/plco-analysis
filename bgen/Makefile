@@ -8,9 +8,9 @@ UNIQUE_PLATFORMS := $(subst _,/,$(filter-out Omni5,$(PLATFORMS)))
 
 .DELETE_ON_ERROR:
 .SECONDEXPANSION:
-.PHONY: all $(UNIQUE_PLATFORMS) check
+.PHONY: all $(UNIQUE_PLATFORMS) check secondary-clean $(addsuffix -secondary-clean,$(UNIQUE_PLATFORMS))
 ## all targets are: each platform, without Omni5 because it has no non-redundant subjects
-all: $(UNIQUE_PLATFORMS)
+all: $(UNIQUE_PLATFORMS) $(addsuffix /Makefile,$(UNIQUE_PLATFORMS))
 
 ## phony platform recursive target controls creation of platform's makefile
 $(UNIQUE_PLATFORMS): $$@/Makefile
@@ -30,3 +30,8 @@ check: testing/Makefile
 
 testing/Makefile: testing/Makefile.am testing/configure.ac
 	cd testing && autoreconf -vi && ./configure && cd ../
+
+secondary-clean: $(addsuffix -secondary-clean,$(UNIQUE_PLATFORMS))
+
+$(addsuffix -secondary-clean,$(UNIQUE_PLATFORMS)): #$$(subst -secondary-clean,/Makefile,$$@) | $$(dir $$@)
+	$(MAKE) -C $(subst -secondary-clean,,$@) secondary-clean
