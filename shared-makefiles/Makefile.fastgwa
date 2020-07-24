@@ -17,7 +17,7 @@ ANALYSIS_RESULTS_FASTGWA := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALY
 .SECONDEXPANSION:
 .SECONDARY:
 .DELETE_ON_ERROR:
-.PHONY: all $(ANALYSIS_RESULTS_FASTGWA)
+.PHONY: all $(ANALYSIS_RESULTS_FASTGWA) secondary-clean
 all: $(ANALYSIS_RESULTS_FASTGWA)
 
 $(ANALYSIS_RESULTS_FASTGWA): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
@@ -164,3 +164,14 @@ endef
 ## Notes: build the output directory tree if needed.
 $(sort $(dir $(ANALYSIS_RESULTS_FASTGWA))):
 	mkdir -p $@
+
+## phony target for removing intermediate files. Somewhat dangerous but extremely helpful for disk usage
+secondary-clean:
+	for dir in $(dir $(ANALYSIS_RESULTS_FASTGWA)) ; \
+	do \
+	rm -f $$dir/*output ; \
+	rm -f $$dir/*error ; \
+	rm -f $$dir/*fastGWA ; \
+	rm -f $$dir/*plot_ready ; \
+	rm -f $$dir/*tsv ; \
+	done

@@ -17,7 +17,7 @@ ANALYSIS_RESULTS_BOLTLMM := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALY
 .SECONDEXPANSION:
 .SECONDARY:
 .DELETE_ON_ERROR:
-.PHONY: all $(ANALYSIS_RESULTS_BOLTLMM)
+.PHONY: all $(ANALYSIS_RESULTS_BOLTLMM) secondary-clean
 all: $(ANALYSIS_RESULTS_BOLTLMM)
 
 $(ANALYSIS_RESULTS_BOLTLMM): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
@@ -267,3 +267,17 @@ endef
 ## Notes: build the output directory tree if needed.
 $(sort $(dir $(ANALYSIS_RESULTS_BOLTLMM))):
 	mkdir -p $@
+
+## phony target for removing intermediate files. Somewhat dangerous but extremely helpful for disk usage
+secondary-clean:
+	for dir in $(dir $(ANALYSIS_RESULTS_BOLTLMM)) ; \
+	do \
+	rm -f $$dir/*output ; \
+	rm -f $$dir/*error ; \
+	rm -f $$dir/*boltlmm ; \
+	rm -f $$dir/*bed ; \
+	rm -f $$dir/*bim ; \
+	rm -f $$dir/*fam ; \
+	rm -f $$dir/*plot_ready ; \
+	rm -f $$dir/*tsv ; \
+	done

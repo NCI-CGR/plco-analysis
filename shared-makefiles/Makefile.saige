@@ -16,7 +16,7 @@ ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSI
 .SECONDEXPANSION:
 .SECONDARY:
 .DELETE_ON_ERROR:
-.PHONY: all $(ANALYSIS_RESULTS_SAIGE)
+.PHONY: all $(ANALYSIS_RESULTS_SAIGE) secondary-clean
 all: $(ANALYSIS_RESULTS_SAIGE)
 
 $(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
@@ -255,3 +255,17 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 ## Notes: take single column subject ID list and duplicate it into two columns, for plink --keep convention.
 %.saige.samples.plink-format: %.saige.samples | $$(dir $$@)
 	awk '{print $$1"\t"$$1}' $< > $@
+
+## phony target for removing intermediate files. Somewhat dangerous but extremely helpful for disk usage
+secondary-clean:
+	for dir in $(dir $(ANALYSIS_RESULTS_SAIGE)) ; \
+	do \
+	rm -f $$dir/*output ; \
+	rm -f $$dir/*error ; \
+	rm -f $$dir/*saige.txt ; \
+	rm -f $$dir/*bed ; \
+	rm -f $$dir/*bim ; \
+	rm -f $$dir/*fam ; \
+	rm -f $$dir/*plot_ready ; \
+	rm -f $$dir/*tsv ; \
+	done
