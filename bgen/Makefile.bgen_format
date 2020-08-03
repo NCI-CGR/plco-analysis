@@ -30,8 +30,6 @@ secondary-clean:
 	rm -f $(addsuffix /*.output,$(VALID_ANCESTRIES))
 	rm -f $(addsuffix /*.error,$(VALID_ANCESTRIES))
 	rm -f $(addsuffix /*.command.bash,$(VALID_ANCESTRIES))
-	rm -f $(addsuffix /*.success,$(VALID_ANCESTRIES))
-	rm -f $(addsuffix /*.fail,$(VALID_ANCESTRIES))
 
 ## patterns:
 ##    output: {ANCESTRY}/chr{CHR}-filtered-noNAs.sample
