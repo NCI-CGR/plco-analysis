@@ -1,6 +1,6 @@
 #!/bin/bash
-if [ "$#" -ne 15 ]; then
-    echo "the command 'construct_output_filenames.bash' requires fifteen command line arguments: the name of the config file, the software (saige, bolt, fastgwa) requested, the minimum sample count for the software, the directory prefix for all bgen files, the pipeline results toplevel directory, the phenotype file currently in use, the column extractor program, the phenotype file used tracker file, the frequency mode tracker file, the phenotype model tracker file, the covariate model tracker file, the phenotype transformation tracker file, the sex-specific analysis selection tracker file, the finalized analysis tracker file, and a binary indicator of whether the run should be forced to update"
+if [ "$#" -ne 16 ]; then
+    echo "the command 'construct_output_filenames.bash' requires sixteen command line arguments: the name of the config file, the software (saige, bolt, fastgwa) requested, the minimum sample count for the software, the directory prefix for all bgen files, the pipeline results toplevel directory, the phenotype file currently in use, the column extractor program, the phenotype file used tracker file, the frequency mode tracker file, the phenotype model tracker file, the covariate model tracker file, the phenotype transformation tracker file, the sex-specific analysis selection tracker file, the finalized analysis tracker file, binary indicator of whether make -B is in effect, and a binary indicator of whether make -n is in effect"
 else
     CONFIG_FILE="$1"
     REQUESTED_SOFTWARE="$2"
@@ -17,6 +17,7 @@ else
     SEX_SPECIFIC_TRACKER_SUFFIX="${13}"
     FINALIZED_ANALYSIS_TRACKER_SUFFIX="${14}"
     FORCE_RUN="${15}"
+    PRETEND_RUN="${16}"
     ANALYSIS_PREFIX=`grep -i analysis_prefix $CONFIG_FILE | awk '{print $2}'`
     REQUESTED_CHIPS=`grep -i chips $CONFIG_FILE | cut -f 1 -d ' ' --complement`
     REQUESTED_ANCESTRIES=`grep -i ancestries $CONFIG_FILE | cut -f 1 -d ' ' --complement`
@@ -59,7 +60,7 @@ else
 		    ## specifically if make was invoked with -B
 		    UPDATE_BUNDLE="$FORCE_RUN"
 		    ## run phenotype tracking/version difference testing
-		    if [[ -f "$PHENOTYPE_USED_TRACKER" ]] ; then
+		    if [[ -f "$PHENOTYPE_USED_TRACKER" && "$PRETEND_RUN" -eq "0" ]] ; then
 			## if the current phenotype filename is different than the one in use
 			USED_FILENAME=`cat "$PHENOTYPE_USED_TRACKER"`
 			if [[ "$USED_FILENAME" != "$PHENOTYPE_FILENAME" ]] ; then
@@ -90,7 +91,7 @@ else
 				fi
 			    fi
 			fi
-		    else
+		    elif [[ "$PRETEND_RUN" -eq "0" ]] ; then
 			## the tracker didn't exist. This should conceptually trigger the model matrix build, and everything else
 			echo "$PHENOTYPE_FILENAME" > "$PHENOTYPE_USED_TRACKER.history"
 			UPDATE_BUNDLE="1"
@@ -122,24 +123,25 @@ else
 		    fi
 		    
 		    ## run frequency reporting mode tracking/version difference testing
-		    FREQUENCY_MODE=`grep -w "frequency_mode:" "$CONFIG_FILE" | awk '{print $NF}'`
-		    if [[ -z "$FREQUENCY_MODE" ]] ; then
-			FREQUENCY_MODE="reference"
-		    fi
-		    if [[ -f "$FREQUENCY_MODE_TRACKER" ]] ; then
-			EXISTING_FREQUENCY_MODE=`cat $FREQUENCY_MODE_TRACKER`
-			if [[ "$EXISTING_FREQUENCY_MODE" != "$FREQUENCY_MODE" ]] ; then
+		    if [[ "$PRETEND_RUN" -eq "0" ]] ; then
+			FREQUENCY_MODE=`grep -w "frequency_mode:" "$CONFIG_FILE" | awk '{print $NF}'`
+			if [[ -z "$FREQUENCY_MODE" ]] ; then
+			    FREQUENCY_MODE="reference"
+			fi
+			if [[ -f "$FREQUENCY_MODE_TRACKER" ]] ; then
+			    EXISTING_FREQUENCY_MODE=`cat $FREQUENCY_MODE_TRACKER`
+			    if [[ "$EXISTING_FREQUENCY_MODE" != "$FREQUENCY_MODE" ]] ; then
+				echo "$FREQUENCY_MODE" > "$FREQUENCY_MODE_TRACKER"
+			    fi
+			else
+			    echo "$FREQUENCY_MODE" > "$FREQUENCY_MODE_TRACKER"
+			    rm -f "$FINALIZED_ANALYSIS_TRACKER"
+			fi
+			## allow manual override
+			if [[ "$FORCE_RUN" -gt "0" ]] ; then
 			    echo "$FREQUENCY_MODE" > "$FREQUENCY_MODE_TRACKER"
 			fi
-		    else
-			echo "$FREQUENCY_MODE" > "$FREQUENCY_MODE_TRACKER"
-			rm -f "$FINALIZED_ANALYSIS_TRACKER"
 		    fi
-		    ## allow manual override
-		    if [[ "$FORCE_RUN" -gt "0" ]] ; then
-			echo "$FREQUENCY_MODE" > "$FREQUENCY_MODE_TRACKER"
-		    fi
-		    
 		    ## run phenotype transformation mode tracking/version difference testing
 		    TRANSFORMATION=`grep -w "transformation:" "$CONFIG_FILE" | awk '{print $NF}'`
 		    if [[ -z "$TRANSFORMATION" ]] ; then
@@ -171,6 +173,9 @@ else
 
 		    ## if any of the model matrix configuration options need updating,
 		    ## update all of them to ensure synchronicity.
+		    if [[ "$PRETEND_RUN" -gt "0" ]] ; then
+			UPDATE_BUNDLE="0"
+		    fi
 		    if [[ "$UPDATE_BUNDLE" -gt "0" ]] ; then
 			echo "$PHENOTYPE_FILENAME" > "$PHENOTYPE_USED_TRACKER"
 			echo "$PHENOTYPE" > "$PHENOTYPE_SELECTED_TRACKER"

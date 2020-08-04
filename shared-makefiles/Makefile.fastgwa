@@ -12,7 +12,7 @@ ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config)
 ## empirical approximate minimum subject count, specific to fastGWA
 MINIMUM_VALID_SUBJECT_COUNT := $(FASTGWA_MINIMUM_VALID_SUBJECT_COUNT)
 ## construct analysis targets for all config entries that request fastGWA
-ANALYSIS_RESULTS_FASTGWA := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) fastgwa $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash .phenotype_dataset .frequency_mode .phenotype_selected .covariates_selected .transform .sex-specific .finalized $(if $(findstring B,$(firstword -$(MAKEFLAGS))),$(if $(findstring n,$(firstword -$(MAKEFLAGS))),0,1),0))))
+ANALYSIS_RESULTS_FASTGWA := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) fastgwa $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash .phenotype_dataset .frequency_mode .phenotype_selected .covariates_selected .transform .sex-specific .finalized $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
 
 .SECONDEXPANSION:
 .SECONDARY:

@@ -11,7 +11,7 @@ ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config)
 ## empirical approximate minimum subject count (+1), specific to SAIGE
 MINIMUM_VALID_SUBJECT_COUNT := $(SAIGE_MINIMUM_VALID_SUBJECT_COUNT)
 
-ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) saige $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash .phenotype_dataset .frequency_mode .phenotype_selected .covariates_selected .transform .sex-specific .finalized $(if $(findstring B,$(firstword -$(MAKEFLAGS))),$(if $(findstring n,$(firstword -$(MAKEFLAGS))),0,1),0))))
+ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) saige $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash .phenotype_dataset .frequency_mode .phenotype_selected .covariates_selected .transform .sex-specific .finalized $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
 
 .SECONDEXPANSION:
 .SECONDARY:
@@ -121,11 +121,12 @@ endef
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.round1.success
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted-nochr0.bed.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.phenotype_selected
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
-%.saige.round1.success: $$(firstword $$(subst .saige.round1.success,,$$@)).saige-chip.GRCh38-resorted-nochr0.bed.success %.saige.model_matrix.success | $$(dir $$@)
+%.saige.round1.success: $$(firstword $$(subst .saige.round1.success,,$$@)).saige-chip.GRCh38-resorted-nochr0.bed.success %.saige.phenotype_selected %.saige.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed.success,,$<) $(subst .success,,$(word 2,$^)) $(call get_phenotype,$@) $(if $(call get_covariates_from_model_matrix,$(subst .success,,$(word 2,$^))),$(call get_covariates_from_model_matrix,$(subst .success,,$(word 2,$^))),NA) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst .success,,$@)) ; \
+	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed.success,,$<) $(subst .success,,$(word 2,$^)) $(call get_tracked_parameter,$(word 2,$^)) $(if $(call get_covariates_from_model_matrix,$(subst .success,,$(word 3,$^))),$(call get_covariates_from_model_matrix,$(subst .success,,$(word 3,$^))),NA) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst .success,,$@)) ; \
 	else \
 	touch $@ ; \
 	fi
@@ -139,7 +140,7 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.sex-specific
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
-%.saige.model_matrix.success: $$(subst .model_matrix.success,.phenotype_dataset,$$@) $$(subst .model_matrix.success,.phenotype_selected,$$@) $$(subst .model_matrix.success,.covariates_selected,$$@) $$(subst .model_matrix.success,.sex-specific,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
+%.saige.model_matrix.success: %.saige.phenotype_dataset %.saige.phenotype_selected %.saige.covariates_selected %.saige.sex-specific %.saige.samples | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst .success,,$@) none $(call get_tracked_parameter,$(word 4,$^)))
 
 ## patterns:
