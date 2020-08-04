@@ -18,18 +18,33 @@ else
     FINALIZED_ANALYSIS_TRACKER_SUFFIX="${14}"
     FORCE_RUN="${15}"
     PRETEND_RUN="${16}"
-    ANALYSIS_PREFIX=`grep -i analysis_prefix $CONFIG_FILE | awk '{print $2}'`
-    REQUESTED_CHIPS=`grep -i chips $CONFIG_FILE | cut -f 1 -d ' ' --complement`
-    REQUESTED_ANCESTRIES=`grep -i ancestries $CONFIG_FILE | cut -f 1 -d ' ' --complement`
-    REQUESTED_ALGORITHM=`grep -i algorithm $CONFIG_FILE | grep -i $REQUESTED_SOFTWARE -`
+
+    ## python yaml helper function
+    yaml() {
+	VALUE=`python3 -c "import yaml; print(yaml.safe_load(open('$1'))['$2'])"`
+	echo "$VALUE" | sed "s/\[//g ; s/\]//g ; s/'//g ; s/,//g"
+    }
+    yaml_check_exists() {
+	VALUE=`python3 -c "import yaml; print(\"$2\" in yaml.safe_load(open('$1')))"`
+	if [[ "$VALUE" == "True" ]] ; then
+	    echo "1"
+	fi
+    }
+    ANALYSIS_PREFIX=$(yaml "$CONFIG_FILE" "analysis_prefix")
+    REQUESTED_CHIPS=$(yaml "$CONFIG_FILE" "chips")
+    REQUESTED_ANCESTRIES=$(yaml "$CONFIG_FILE" "ancestries")
+    REQUESTED_ALGORITHM=$(yaml "$CONFIG_FILE" "algorithm")
+    echo "$REQUESTED_ALGORITHM"
+    echo "$REQUESTED_SOFTWARE"
     for chip in $REQUESTED_CHIPS;
     do
 	for ancestry in $REQUESTED_ANCESTRIES;
 	do
-	    if [[ ! -z "$REQUESTED_ALGORITHM" ]] && [ -d "$BGEN_PREFIX/${chip/_//}/${ancestry}" ] && [ -f "$BGEN_PREFIX/${chip/_//}/${ancestry}/chr22-filtered-noNAs.sample" ] ; then \
+	    if [[ "$REQUESTED_ALGORITHM" == *"$REQUESTED_SOFTWARE"* ]] &&
+		   [ -d "$BGEN_PREFIX/${chip/_//}/${ancestry}" ] &&
+		   [ -f "$BGEN_PREFIX/${chip/_//}/${ancestry}/chr22-filtered-noNAs.sample" ] ; then \
                 PLINK_TAG=".assoc.linear"
-                CONFIG_FILE_MENTIONS_SAIGE=`grep -i "saige" $CONFIG_FILE | wc -l | awk '{print $1}'`
-                if [[ "$CONFIG_FILE_MENTIONS_SAIGE" -gt "0" ]] ; then
+                if [[ "${REQUESTED_ALGORITHM^^}" == *"SAIGE"* ]] ; then
                     PLINK_TAG=".assoc.logistic" ;
                 fi
                 REPORT_SUFFIX=""
@@ -98,7 +113,7 @@ else
 		    fi
 
 		    ## run phenotype selection tracking/version difference testing
-		    PHENOTYPE=`grep -w "phenotype:" $CONFIG_FILE | cut -f 1 -d ' ' --complement`
+		    PHENOTYPE=$(yaml "$CONFIG_FILE" "phenotype")
 		    if [[ -f "$PHENOTYPE_SELECTED_TRACKER" ]] ; then
 			USED_PHENOTYPE=`cat $PHENOTYPE_SELECTED_TRACKER`
 			if [[ "$PHENOTYPE" != "$USED_PHENOTYPE" ]] ; then
@@ -109,9 +124,10 @@ else
 		    fi
 
 		    ## run covariate selection tracking/version difference testing
-		    COVARIATES=`grep -w "covariates:" $CONFIG_FILE | cut -f 1 -d ' ' --complement | sed 's/ /,/g'`
-		    if [[ -z "$COVARIATES" ]] ; then
-			COVARIATES="NA"
+		    COVARIATES="NA"
+		    if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "covariates") ]] ; then
+			COVARIATES=$(yaml "$CONFIG_FILE" "covariates")
+			COVARIATES=${COVARIATES// /,}
 		    fi
 		    if [[ -f "$COVARIATES_SELECTED_TRACKER" ]] ; then
 			USED_COVARIATES=`cat "$COVARIATES_SELECTED_TRACKER"`
@@ -124,9 +140,9 @@ else
 		    
 		    ## run frequency reporting mode tracking/version difference testing
 		    if [[ "$PRETEND_RUN" -eq "0" ]] ; then
-			FREQUENCY_MODE=`grep -w "frequency_mode:" "$CONFIG_FILE" | awk '{print $NF}'`
-			if [[ -z "$FREQUENCY_MODE" ]] ; then
-			    FREQUENCY_MODE="reference"
+			FREQUENCY_MODE="reference"
+			if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "frequency_mode") ]] ; then
+			    FREQUENCY_MODE=$(yaml "$CONFIG_FILE" "frequency_mode")
 			fi
 			if [[ -f "$FREQUENCY_MODE_TRACKER" ]] ; then
 			    EXISTING_FREQUENCY_MODE=`cat $FREQUENCY_MODE_TRACKER`
@@ -143,9 +159,9 @@ else
 			fi
 		    fi
 		    ## run phenotype transformation mode tracking/version difference testing
-		    TRANSFORMATION=`grep -w "transformation:" "$CONFIG_FILE" | awk '{print $NF}'`
-		    if [[ -z "$TRANSFORMATION" ]] ; then
-			TRANSFORMATION="none"
+		    TRANSFORMATION="none"
+		    if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "transformation") ]] ; then
+			TRANSFORMATION=$(yaml "$CONFIG_FILE" "transformation")
 		    fi
 		    if [[ -f "$TRANSFORMATION_TRACKER" ]] ; then
 			EXISTING_TRANSFORMATION=`cat $TRANSFORMATION_TRACKER`
@@ -158,9 +174,9 @@ else
 
 
 		    ## run phenotype transformation mode tracking/version difference testing
-		    SEX_SPECIFIC=`grep -w "sex-specific:" "$CONFIG_FILE" | awk '{print $NF}'`
-		    if [[ -z "$SEX_SPECIFIC" ]] ; then
-			SEX_SPECIFIC="combined"
+		    SEX_SPECIFIC="combined"
+		    if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "sex-specific") ]] ; then
+			SEX_SPECIFIC=$(yaml "$CONFIG_FILE" "sex-specific")
 		    fi
 		    if [[ -f "$SEX_SPECIFIC_TRACKER" ]] ; then
 			EXISTING_SEX_SPECIFIC=`cat $SEX_SPECIFIC_TRACKER`
@@ -195,6 +211,8 @@ else
 			echo "$RESULT$REPORT_SUFFIX"
 		    fi
 		fi
+	    else
+		echo "algorithm pattern match failure"
 	    fi
 	done
     done
