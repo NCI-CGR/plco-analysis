@@ -67,7 +67,7 @@ endef
 ## Notes: combine results from per-chromosome fastGWA runs into a single genome-wide file, suitable for meta-analysis.
 ## the model matrix is only required here to enforce a preflight sample size check. frequency is set to NA at this step
 ## and requires a separate processing step
-%.fastgwa.nofreq.tsv: $$(patsubst %,$$(subst .fastgwa.nofreq.tsv,,$$@).chr%.fastgwa.success,$$(CHRS)) %$(FREQUENCY_MODE_TRACKER_SUFFIX) %.fastgwa.model_matrix.success | $$(dir $$@)
+%.fastgwa.nofreq.tsv: $$(foreach chr,$$(CHRS),%.chr$$(chr).fastgwa.success) %.fastgwa$(FREQUENCY_MODE_TRACKER_SUFFIX) %.fastgwa.model_matrix.success | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(filter %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	cat $(filter-out %.model_matrix.success %$(FREQUENCY_MODE_TRACKER_SUFFIX),$(subst .fastgwa.success,.fastGWA,$^)) | awk '! /CHR/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$3"\t"$$2"\t"$$4"\t"$$5"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$8"\t"$$9"\t"$$10"\t"$$6}' > $@ ; \
