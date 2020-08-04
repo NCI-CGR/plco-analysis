@@ -141,6 +141,9 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.sex-specific
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
+## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
+## this is separately submitted to the cluster. Direct config file dependency has been removed to prevent
+## repeated reruns due to version control, unrelated database updates, and other trivial issues.
 %.saige.model_matrix.success: %.saige.phenotype_dataset %.saige.phenotype_selected %.saige.covariates_selected %.saige.sex-specific %.saige.samples | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst .success,,$@) none $(call get_tracked_parameter,$(word 4,$^)))
 
