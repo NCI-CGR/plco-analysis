@@ -31,7 +31,6 @@ ancestries:
   - European
   - East_Asian
   - South_Asian
-  - Other_Asian_or_Pacific_Islander
 algorithm:
   - boltlmm
   - plink

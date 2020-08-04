@@ -30,7 +30,6 @@ covariates:
 ancestries:
   - European
   - East_Asian
-  - Other_Asian_or_Pacific_Islander
   - South_Asian
 algorithm:
   - boltlmm
