@@ -29,7 +29,7 @@ $(addsuffix -boltlmm,$(META_ALIASES)):
 
 fastgwa: fastgwa-grm
 
-$(SUPPORTED_METHODS): cleaned-chips-by-ancestry ldsc bgen
+$(SUPPORTED_METHODS): #cleaned-chips-by-ancestry ldsc
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$@
 
 bgen:
@@ -92,3 +92,16 @@ config-check:
 
 meta-check:
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ CONFIG_DIR=$(CONFIG_INPUT_DIR) RESULTS_DIR=$(RESULT_OUTPUT_DIR)
+
+
+
+
+
+## CLEANING INTERMEDIATES
+
+bgen-secondary-clean:
+	$(MAKE) -C $(BGEN_OUTPUT_DIR) secondary-clean
+
+$(addsuffix -secondary-clean,$(SUPPORTED_METHODS)):
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$(subst -secondary-clean,,$@) secondary-clean
+

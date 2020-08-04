@@ -8,23 +8,23 @@ IMPUTED_DIR := $(BGEN_OUTPUT_DIR)
 LDSC_DIRECTORY := $(LDSC_OUTPUT_DIR)
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
-ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config)
+ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## empirical approximate minimum subject count, specific to BOLTLMM
 MINIMUM_VALID_SUBJECT_COUNT := $(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)
 ## construct analysis targets for all config entries that request BOLT
-ANALYSIS_RESULTS_BOLTLMM := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) boltlmm $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR))))
+ANALYSIS_RESULTS_BOLTLMM := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) boltlmm $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash $(PHENOTYPE_DATASET_TRACKER_SUFFIX) $(FREQUENCY_MODE_TRACKER_SUFFIX) $(PHENOTYPE_NAME_TRACKER_SUFFIX) $(COVARIATE_NAME_TRACKER_SUFFIX) $(TRANSFORMATION_TRACKER_SUFFIX) $(SEX_SPECIFIC_TRACKER_SUFFIX) $(FINALIZATION_TRACKER_SUFFIX) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
 
 .SECONDEXPANSION:
 .SECONDARY:
 .DELETE_ON_ERROR:
-.PHONY: all $(ANALYSIS_RESULTS_BOLTLMM)
+.PHONY: all $(ANALYSIS_RESULTS_BOLTLMM) secondary-clean
 all: $(ANALYSIS_RESULTS_BOLTLMM)
 
 $(ANALYSIS_RESULTS_BOLTLMM): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
 
-## extract frequency sourcing parameter from config
-define get_frequency_mode =
-$(shell grep -i "frequency_mode" $(1) | cut -f 1 -d ' ' --complement)
+## get a saved config parameter setting from a tracking file
+define get_tracked_parameter =
+$(shell cat $(1))
 endef
 
 ## model matrix handling for association pipelines
@@ -50,12 +50,12 @@ endef
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.tsv
 ##    input:  [frequency annotation software]
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.nofreq.tsv
-##            config/[relevant config file]
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(FREQUENCY_MODE_TRACKER_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix.success
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
-$(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $(ANNOTATE_FREQUENCY) $$(subst .boltlmm.tsv,.boltlmm.nofreq.tsv,$$@) $$(call compute_config,$$@) $$(subst .boltlmm.tsv,.boltlmm.model_matrix.success,$$@) | $$(dir $$@)
-	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(word 3,$^)))
+%.boltlmm.tsv: $(ANNOTATE_FREQUENCY) %.boltlmm.nofreq.tsv %.boltlmm$(FREQUENCY_MODE_TRACKER_SUFFIX) %.boltlmm.model_matrix.success | $$(dir $$@)
+	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(word 3,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(word 2,$^) $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
 	fi
@@ -64,16 +64,16 @@ $(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $(ANNOTATE_FREQUENCY) $$(subst .b
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.nofreq.tsv
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.boltlmm.success
-##    input:  config/[relevant config file]
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(FREQUENCY_MODE_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix.success
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: combine results from per-chromosome BOLTLMM runs into a single genome-wide file, suitable for meta-analysis.
 ## the model matrix is only required here to enforce a preflight sample size check. frequency is set to NA at this step
 ## and requires a separate processing step
-$(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $$(patsubst %,$$(subst .boltlmm.nofreq.tsv,,$$@).chr%.boltlmm.success,$$(CHRS)) $$(call compute_config,$$@) $$(subst .boltlmm.nofreq.tsv,,$$@).boltlmm.model_matrix.success | $$(dir $$@)
-	$(eval SUBJECT_FREQUENCIES := $(call get_frequency_mode,$(filter %.config,$^)))
+%.boltlmm.nofreq.tsv: $$(foreach chr,$$(CHRS),%.chr$$(chr).boltlmm.success) %.boltlmm$(FREQUENCY_MODE_TRACKER_SUFFIX) %.boltlmm.model_matrix.success | $$(dir $$@)
+	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(filter %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	cat $(filter-out %.model_matrix.success %.config,$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$9"\t"$$10"\t"$$11"\t$(strip $(shell wc -l $(subst .success,,$(lastword $^)) | awk '{print $$1}'))"}' | awk 'NR == 1 ; NR > 1 {$$NF = $$NF - 1 ; print $$0}' > $@ ; \
+	cat $(filter-out %.model_matrix.success %$(FREQUENCY_MODE_TRACKER_SUFFIX),$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$9"\t"$$10"\t"$$11"\t$(strip $(shell wc -l $(subst .success,,$(lastword $^)) | awk '{print $$1}'))"}' | awk 'NR == 1 ; NR > 1 {$$NF = $$NF - 1 ; print $$0}' > $@ ; \
 	fi
 
 ## phony clean target to eliminate all BOLT analysis directories
@@ -215,16 +215,6 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 %.boltlmm.samples.plink-format: %.boltlmm.samples | $$(dir $$@)
 	awk '{print $$1}' $< | sed 's/_/\t/g' > $@
 
-## utility function to just grab the name of a phenotype from config files with an analysis name {PHENOTYPE}.{CHIP}
-define get_phenotype
-$(shell $(SHARED_SOURCE)/construct_phenotype.bash $(firstword $(subst /, ,$(subst $(RESULTS_DIR), ,$(1)))) $(CONFIG_DIR))
-endef
-
-## utility function to just grab comma-delimited covariates from config files with an analysis name {PHENOTYPE}.{CHIP}
-define get_covariates
-$(shell $(SHARED_SOURCE)/construct_covariates.bash $(firstword $(subst /, ,$(subst $(RESULTS_DIR), ,$(1)))) $(CONFIG_DIR))
-endef
-
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.phenotype
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix.success
@@ -240,30 +230,41 @@ endef
 %.boltlmm.covariates: %.boltlmm.model_matrix.success | $$(dir $$@)
 	cut -f 3 --complement $(subst .success,,$<) > $@
 
-
-## enable the user to define analysis-specific transformations (but only "post.split.INT" is currently recognized)
-define compute_transform =
-$(shell res="`grep \"transformation\" $(1) | awk '{print $$2}'`" ; if [[ "$$res" == "" ]] ; then res="none" ; fi ; echo "$$res")
-endef
-
-## enable the user to define a sex-specific condition for the analysis
-define compute_sex_specific =
-$(shell res="`grep \"sex-specific\" $(1) | awk '{print $$2}'`" ; if [[ "$$res" == "" ]] ; then res="combined" ; fi ; echo "$$res")
-endef
-
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix.success
-##    input:  config/[relevant config file]
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(PHENOTYPE_DATASET_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(PHENOTYPE_NAME_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(COVARIATE_NAME_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(TRANSFORMATION_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(SEX_SPECIFIC_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.samples
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
-## this is separately submitted to the cluster. Config file dependency guarantees rerun if the file is edited at all, which
-## is conservative but correct.
-%.boltlmm.model_matrix.success: $$(call compute_config,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix.success,,$@))) $(call get_phenotype,$@) $(call get_covariates,$@) $(subst .success,,$@) $(call compute_transform,$<) $(call compute_sex_specific,$<))
+## this is separately submitted to the cluster. Direct config file dependency has been removed to prevent
+## repeated reruns due to version control, unrelated database updates, and other trivial issues.
+%.boltlmm.model_matrix.success: %.boltlmm$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.boltlmm$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.boltlmm$(COVARIATE_NAME_TRACKER_SUFFIX) %.boltlmm$(TRANSFORMATION_TRACKER_SUFFIX) %.boltlmm$(SEX_SPECIFIC_TRACKER_SUFFIX) %.boltlmm.samples | $$(dir $$@)
+	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix.success,,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst .success,,$@) $(call get_tracked_parameter,$(word 4,$^)) $(call get_tracked_parameter,$(word 5,$^)))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: build the output directory tree if needed.
 $(sort $(dir $(ANALYSIS_RESULTS_BOLTLMM))):
 	mkdir -p $@
+
+## phony target for removing intermediate files. Somewhat dangerous but extremely helpful for disk usage
+secondary-clean:
+	for analysis in $(ANALYSIS_RESULTS_BOLTLMM) ; \
+	do \
+	touch $$analysis$(FINALIZATION_TRACKER_SUFFIX) ; \
+	done
+	for dir in $(dir $(ANALYSIS_RESULTS_BOLTLMM)) ; \
+	do \
+	rm -f $$dir/*output ; \
+	rm -f $$dir/*error ; \
+	rm -f $$dir/*boltlmm ; \
+	rm -f $$dir/*bed ; \
+	rm -f $$dir/*bim ; \
+	rm -f $$dir/*fam ; \
+	rm -f $$dir/*plot_ready ; \
+	rm -f $$dir/*tsv ; \
+	done

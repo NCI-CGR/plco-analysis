@@ -19,8 +19,17 @@ ALL_TARGETS := $(foreach ancestry,$(VALID_ANCESTRIES),$(patsubst %,$(ancestry)/c
 .DELETE_ON_ERROR:
 .SECONDARY:
 .SECONDEXPANSION:
-.PHONY: all
+.PHONY: all secondary-clean
 all: $(ALL_TARGETS)
+
+secondary-clean:
+	rm -f $(addsuffix /*.pvar,$(VALID_ANCESTRIES))
+	rm -f $(addsuffix /*.psam,$(VALID_ANCESTRIES))
+	rm -f $(addsuffix /*-filtered.sample,$(VALID_ANCESTRIES))
+	rm -f $(addsuffix /*.pgen,$(VALID_ANCESTRIES))
+	rm -f $(addsuffix /*.output,$(VALID_ANCESTRIES))
+	rm -f $(addsuffix /*.error,$(VALID_ANCESTRIES))
+	rm -f $(addsuffix /*.command.bash,$(VALID_ANCESTRIES))
 
 ## patterns:
 ##    output: {ANCESTRY}/chr{CHR}-filtered-noNAs.sample
