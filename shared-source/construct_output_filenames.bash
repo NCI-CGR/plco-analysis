@@ -1,11 +1,22 @@
 #!/bin/bash
-if [ "$#" -ne 4 ]; then
-    echo "the command 'construct_output_filenames.bash' requires four command line arguments: the name of the config file, the software (saige, bolt, fastgwa) requested, the minimum sample count for the software, and the directory prefix for all bgen files"
+if [ "$#" -ne 15 ]; then
+    echo "the command 'construct_output_filenames.bash' requires fifteen command line arguments: the name of the config file, the software (saige, bolt, fastgwa) requested, the minimum sample count for the software, the directory prefix for all bgen files, the pipeline results toplevel directory, the phenotype file currently in use, the column extractor program, the phenotype file used tracker file, the frequency mode tracker file, the phenotype model tracker file, the covariate model tracker file, the phenotype transformation tracker file, the sex-specific analysis selection tracker file, the finalized analysis tracker file, and a binary indicator of whether the run should be forced to update"
 else
     CONFIG_FILE="$1"
     REQUESTED_SOFTWARE="$2"
     SAMPLE_MIN_COUNT="$3"
     BGEN_PREFIX="$4"
+    RESULTS_PREFIX="$5"
+    PHENOTYPE_FILENAME="$6"
+    COLUMN_EXTRACTOR="$7"
+    PHENOTYPE_USED_TRACKER_SUFFIX="$8"
+    FREQUENCY_MODE_TRACKER_SUFFIX="$9"
+    PHENOTYPE_SELECTED_TRACKER_SUFFIX="${10}"
+    COVARIATES_SELECTED_TRACKER_SUFFIX="${11}"
+    TRANSFORMATION_TRACKER_SUFFIX="${12}"
+    SEX_SPECIFIC_TRACKER_SUFFIX="${13}"
+    FINALIZED_ANALYSIS_TRACKER_SUFFIX="${14}"
+    FORCE_RUN="${15}"
     ANALYSIS_PREFIX=`grep -i analysis_prefix $CONFIG_FILE | awk '{print $2}'`
     REQUESTED_CHIPS=`grep -i chips $CONFIG_FILE | cut -f 1 -d ' ' --complement`
     REQUESTED_ANCESTRIES=`grep -i ancestries $CONFIG_FILE | cut -f 1 -d ' ' --complement`
@@ -24,7 +35,161 @@ else
                 if [[ "${REQUESTED_SOFTWARE^^}" == "PLINK" ]] ; then
                     REPORT_SUFFIX="$PLINK_TAG" ;
                 fi
-		LINE_COUNT=`wc -l $BGEN_PREFIX/${chip/_//}/${ancestry}/chr22-filtered-noNAs.sample | awk '{print $1}'` ; if [[ "$LINE_COUNT" -gt "$SAMPLE_MIN_COUNT" ]] ; then echo $ANALYSIS_PREFIX/${ancestry}/${REQUESTED_SOFTWARE^^}/$ANALYSIS_PREFIX.$chip.$REQUESTED_SOFTWARE$REPORT_SUFFIX ; fi
+		LINE_COUNT=`wc -l $BGEN_PREFIX/${chip/_//}/${ancestry}/chr22-filtered-noNAs.sample | awk '{print $1}'`
+		if [[ "$LINE_COUNT" -gt "$SAMPLE_MIN_COUNT" ]] ; then
+		    RESULTDIR="$ANALYSIS_PREFIX/${ancestry}/${REQUESTED_SOFTWARE^^}"
+		    RESULT="$RESULTDIR/$ANALYSIS_PREFIX.$chip.$REQUESTED_SOFTWARE"
+
+
+		    PHENOTYPE_USED_TRACKER="$RESULTS_PREFIX/$RESULT$PHENOTYPE_USED_TRACKER_SUFFIX"
+		    FREQUENCY_MODE_TRACKER="$RESULTS_PREFIX/$RESULT$FREQUENCY_MODE_TRACKER_SUFFIX"
+		    PHENOTYPE_SELECTED_TRACKER="$RESULTS_PREFIX/$RESULT$PHENOTYPE_SELECTED_TRACKER_SUFFIX"
+		    COVARIATES_SELECTED_TRACKER="$RESULTS_PREFIX/$RESULT$COVARIATES_SELECTED_TRACKER_SUFFIX"
+		    TRANSFORMATION_TRACKER="$RESULTS_PREFIX/$RESULT$TRANSFORMATION_TRACKER_SUFFIX"
+		    SEX_SPECIFIC_TRACKER="$RESULTS_PREFIX/$RESULT$SEX_SPECIFIC_TRACKER_SUFFIX"
+		    FINALIZED_ANALYSIS_TRACKER="$RESULTS_PREFIX/$RESULT$FINALIZED_ANALYSIS_TRACKER_SUFFIX"
+		    
+
+		    ## for tracking reasons, be certain this directory exists
+		    if [[ ! -d "$RESULTS_PREFIX/$RESULTDIR" ]] ; then
+			mkdir -p "$RESULTS_PREFIX/$RESULTDIR"
+		    fi
+
+		    ## tracking whether the indicators should be updated in bulk. Allows manual override as well,
+		    ## specifically if make was invoked with -B
+		    UPDATE_BUNDLE="$FORCE_RUN"
+		    ## run phenotype tracking/version difference testing
+		    if [[ -f "$PHENOTYPE_USED_TRACKER" ]] ; then
+			## if the current phenotype filename is different than the one in use
+			USED_FILENAME=`cat "$PHENOTYPE_USED_TRACKER"`
+			if [[ "$USED_FILENAME" != "$PHENOTYPE_FILENAME" ]] ; then
+			    ## actually running the full model matrix comparison is slow due to the size of the phenotype file
+			    ## so check the log of compatible phenotype files to see if this one has been scanned previously
+			    RESCAN_REQUIRED="0"
+			    if [[ -f "$PHENOTYPE_USED_TRACKER.history" ]] ; then
+				PREVIOUSLY_OK=`grep -w "$PHENOTYPE_FILENAME" $PHENOTYPE_USED_TRACKER.history`
+				if [[ -z "$PREVIOUSLY_OK" ]] ; then
+				    RESCAN_REQUIRED="1"
+				fi
+			    else
+				RESCAN_REQUIRED="2"
+			    fi
+			    if [[ "$RESCAN_REQUIRED" -gt "0" ]] ; then
+				## get phenotype and covariates requested for this analysis
+				"$COLUMN_EXTRACTOR" "$CONFIG_FILE" "$PHENOTYPE_FILENAME" "$RESULT.raw_phenotypes_new"
+				"$COLUMN_EXTRACTOR" "$CONFIG_FILE" "$USED_FILENAME" "$RESULT.raw_phenotypes_current"
+				PHENOTYPE_DIFFERENCE=`diff "$RESULT.raw_phenotypes_new" "$RESULT.raw_phenotypes_current" | wc -l`
+				rm "$RESULT.raw_phenotypes_new" "$RESULT.raw_phenotypes_current"
+				if [[ "$PHENOTYPE_DIFFERENCE" -gt "0" ]] ; then
+				    ## change between versions. Emit output prefix
+				    echo "$PHENOTYPE_FILENAME" > "$PHENOTYPE_USED_TRACKER.history"
+				    UPDATE_BUNDLE="1"
+				else
+				    ## new version but compatible with old
+				    echo "$PHENOTYPE_FILENAME" >> "$PHENOTYPE_USED_TRACKER.history"
+				fi
+			    fi
+			fi
+		    else
+			## the tracker didn't exist. This should conceptually trigger the model matrix build, and everything else
+			echo "$PHENOTYPE_FILENAME" > "$PHENOTYPE_USED_TRACKER.history"
+			UPDATE_BUNDLE="1"
+		    fi
+
+		    ## run phenotype selection tracking/version difference testing
+		    PHENOTYPE=`grep -w "phenotype:" $CONFIG_FILE | cut -f 1 -d ' ' --complement`
+		    if [[ -f "$PHENOTYPE_SELECTED_TRACKER" ]] ; then
+			USED_PHENOTYPE=`cat $PHENOTYPE_SELECTED_TRACKER`
+			if [[ "$PHENOTYPE" != "$USED_PHENOTYPE" ]] ; then
+			    UPDATE_BUNDLE="1"
+			fi
+		    else
+			UPDATE_BUNDLE="1"
+		    fi
+
+		    ## run covariate selection tracking/version difference testing
+		    COVARIATES=`grep -w "covariates:" $CONFIG_FILE | cut -f 1 -d ' ' --complement | sed 's/ /,/g'`
+		    if [[ -z "$COVARIATES" ]] ; then
+			COVARIATES="NA"
+		    fi
+		    if [[ -f "$COVARIATES_SELECTED_TRACKER" ]] ; then
+			USED_COVARIATES=`cat "$COVARIATES_SELECTED_TRACKER"`
+			if [[ "$COVARIATES" != "$USED_COVARIATES" ]] ; then
+			    UPDATE_BUNDLE="1"
+			fi
+		    else
+			UPDATE_BUNDLE="1"
+		    fi
+		    
+		    ## run frequency reporting mode tracking/version difference testing
+		    FREQUENCY_MODE=`grep -w "frequency_mode:" "$CONFIG_FILE" | awk '{print $NF}'`
+		    if [[ -z "$FREQUENCY_MODE" ]] ; then
+			FREQUENCY_MODE="reference"
+		    fi
+		    if [[ -f "$FREQUENCY_MODE_TRACKER" ]] ; then
+			EXISTING_FREQUENCY_MODE=`cat $FREQUENCY_MODE_TRACKER`
+			if [[ "$EXISTING_FREQUENCY_MODE" != "$FREQUENCY_MODE" ]] ; then
+			    echo "$FREQUENCY_MODE" > "$FREQUENCY_MODE_TRACKER"
+			fi
+		    else
+			echo "$FREQUENCY_MODE" > "$FREQUENCY_MODE_TRACKER"
+			rm -f "$FINALIZED_ANALYSIS_TRACKER"
+		    fi
+		    ## allow manual override
+		    if [[ "$FORCE_RUN" -gt "0" ]] ; then
+			echo "$FREQUENCY_MODE" > "$FREQUENCY_MODE_TRACKER"
+		    fi
+		    
+		    ## run phenotype transformation mode tracking/version difference testing
+		    TRANSFORMATION=`grep -w "transformation:" "$CONFIG_FILE" | awk '{print $NF}'`
+		    if [[ -z "$TRANSFORMATION" ]] ; then
+			TRANSFORMATION="none"
+		    fi
+		    if [[ -f "$TRANSFORMATION_TRACKER" ]] ; then
+			EXISTING_TRANSFORMATION=`cat $TRANSFORMATION_TRACKER`
+			if [[ "$EXISTING_TRANSFORMATION" != "$TRANSFORMATION" ]] ; then
+			    UPDATE_BUNDLE="1"
+			fi
+		    else
+			UPDATE_BUNDLE="1"
+		    fi
+
+
+		    ## run phenotype transformation mode tracking/version difference testing
+		    SEX_SPECIFIC=`grep -w "sex-specific:" "$CONFIG_FILE" | awk '{print $NF}'`
+		    if [[ -z "$SEX_SPECIFIC" ]] ; then
+			SEX_SPECIFIC="combined"
+		    fi
+		    if [[ -f "$SEX_SPECIFIC_TRACKER" ]] ; then
+			EXISTING_SEX_SPECIFIC=`cat $SEX_SPECIFIC_TRACKER`
+			if [[ "$EXISTING_SEX_SPECIFIC" != "$SEX_SPECIFIC" ]] ; then
+			    UPDATE_BUNDLE="1"
+			fi
+		    else
+			UPDATE_BUNDLE="1"
+		    fi
+
+		    ## if any of the model matrix configuration options need updating,
+		    ## update all of them to ensure synchronicity.
+		    if [[ "$UPDATE_BUNDLE" -gt "0" ]] ; then
+			echo "$PHENOTYPE_FILENAME" > "$PHENOTYPE_USED_TRACKER"
+			echo "$PHENOTYPE" > "$PHENOTYPE_SELECTED_TRACKER"
+			echo "$COVARIATES" > "$COVARIATES_SELECTED_TRACKER"
+			echo "$TRANSFORMATION" > "$TRANSFORMATION_TRACKER"
+			echo "$SEX_SPECIFIC" > "$SEX_SPECIFIC_TRACKER"
+			rm -f "$FINALIZED_ANALYSIS_TRACKER"
+		    fi
+
+		    ## for storage efficiency reasons an analysis can be in a "finalized" state, which
+		    ## is triggered externally. This program can however remove the finalized condition if
+		    ## configuration options have changed. A finalized analysis has a very aggressive set of
+		    ## removed files that likely breaks dependency tracking; so if the analysis is finalized
+		    ## and none of the configuration tracking files have changed, then do not report this
+		    ## analysis as a tracking candidate to the workflow unless make -B has been invoked.
+		    if [[ ! -f "$FINALIZED_ANALYSIS_TRACKER" ]] ; then
+			echo "$RESULT$REPORT_SUFFIX"
+		    fi
+		fi
 	    fi
 	done
     done
