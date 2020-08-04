@@ -34,8 +34,6 @@ else
     REQUESTED_CHIPS=$(yaml "$CONFIG_FILE" "chips")
     REQUESTED_ANCESTRIES=$(yaml "$CONFIG_FILE" "ancestries")
     REQUESTED_ALGORITHM=$(yaml "$CONFIG_FILE" "algorithm")
-    echo "$REQUESTED_ALGORITHM"
-    echo "$REQUESTED_SOFTWARE"
     for chip in $REQUESTED_CHIPS;
     do
 	for ancestry in $REQUESTED_ANCESTRIES;
