@@ -54,7 +54,7 @@ endef
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix.success
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
-$(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $(ANNOTATE_FREQUENCY) $$(subst .boltlmm.tsv,.boltlmm.nofreq.tsv,$$@) $$(subst .tsv,.frequency_mode,$$@) $$(subst .boltlmm.tsv,.boltlmm.model_matrix.success,$$@) | $$(dir $$@)
+%.boltlmm.tsv: $(ANNOTATE_FREQUENCY) %.boltlmm.nofreq.tsv %.frequency_mode %.boltlmm.model_matrix.success | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(word 3,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(word 2,$^) $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
@@ -70,7 +70,7 @@ $(addsuffix .tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $(ANNOTATE_FREQUENCY) $$(subst .b
 ## Notes: combine results from per-chromosome BOLTLMM runs into a single genome-wide file, suitable for meta-analysis.
 ## the model matrix is only required here to enforce a preflight sample size check. frequency is set to NA at this step
 ## and requires a separate processing step
-$(addsuffix .nofreq.tsv,$(ANALYSIS_RESULTS_BOLTLMM)): $$(patsubst %,$$(subst .boltlmm.nofreq.tsv,,$$@).chr%.boltlmm.success,$$(CHRS)) $$(subst .nofreq.tsv,.frequency_mode,$$@) $$(subst .boltlmm.nofreq.tsv,,$$@).boltlmm.model_matrix.success | $$(dir $$@)
+%.boltlmm.nofreq.tsv: $$(patsubst %,$$(subst .boltlmm.nofreq.tsv,,$$@).chr%.boltlmm.success,$$(CHRS)) %.boltlmm.frequency_mode %.boltlmm.model_matrix.success | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(filter %.frequency_mode,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	cat $(filter-out %.model_matrix.success %.frequency_mode,$(subst .boltlmm.success,.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$9"\t"$$10"\t"$$11"\t$(strip $(shell wc -l $(subst .success,,$(lastword $^)) | awk '{print $$1}'))"}' | awk 'NR == 1 ; NR > 1 {$$NF = $$NF - 1 ; print $$0}' > $@ ; \
@@ -242,7 +242,7 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster. Direct config file dependency has been removed to prevent
 ## repeated reruns due to version control, unrelated database updates, and other trivial issues.
-%.boltlmm.model_matrix.success: $$(subst .model_matrix.success,.phenotype_dataset,$$@) $$(subst .model_matrix.success,.phenotype_selected,$$@) $$(subst .model_matrix.success,.covariates_selected,$$@) $$(subst .model_matrix.success,.transform,$$@) $$(subst .model_matrix.success,.sex-specific,$$@) $$(subst .model_matrix.success,.samples,$$@) | $$(dir $$@)
+%.boltlmm.model_matrix.success: %.boltlmm.phenotype_dataset %.boltlmm.phenotype_selected %.boltlmm.covariates_selected %.boltlmm.transform %.boltlmm.sex-specific %.boltlmm.samples | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix.success,,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst .success,,$@) $(call get_tracked_parameter,$(word 4,$^)) $(call get_tracked_parameter,$(word 5,$^)))
 
 ## patterns:
