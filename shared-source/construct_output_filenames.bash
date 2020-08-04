@@ -209,8 +209,6 @@ else
 			echo "$RESULT$REPORT_SUFFIX"
 		    fi
 		fi
-	    else
-		echo "algorithm pattern match failure"
 	    fi
 	done
     done
