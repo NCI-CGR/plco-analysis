@@ -12,7 +12,7 @@ ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## empirical approximate minimum subject count, specific to fastGWA
 MINIMUM_VALID_SUBJECT_COUNT := $(FASTGWA_MINIMUM_VALID_SUBJECT_COUNT)
 ## construct analysis targets for all config entries that request fastGWA
-ANALYSIS_RESULTS_FASTGWA := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) fastgwa $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash .phenotype_dataset .frequency_mode .phenotype_selected .covariates_selected .transform .sex-specific .finalized $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
+ANALYSIS_RESULTS_FASTGWA := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) fastgwa $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash $(PHENOTYPE_DATASET_TRACKER_SUFFIX) $(FREQUENCY_MODE_TRACKER_SUFFIX) $(PHENOTYPE_NAME_TRACKER_SUFFIX) $(COVARIATE_NAME_TRACKER_SUFFIX) $(TRANSFORMATION_TRACKER_SUFFIX) $(SEX_SPECIFIC_TRACKER_SUFFIX) $(FINALIZATION_TRACKER_SUFFIX) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
 
 .SECONDEXPANSION:
 .SECONDARY:
@@ -48,11 +48,11 @@ endef
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.tsv
 ##    input:  [frequency annotation software]
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.nofreq.tsv
-##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.frequency_mode
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa$(FREQUENCY_MODE_TRACKER_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.model_matrix.success
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
-%.fastgwa.tsv: $(ANNOTATE_FREQUENCY) %.fastgwa.nofreq.tsv %.fastgwa.frequency_mode %.fastgwa.model_matrix.success | $$(dir $$@)
+%.fastgwa.tsv: $(ANNOTATE_FREQUENCY) %.fastgwa.nofreq.tsv %.fastgwa$(FREQUENCY_MODE_TRACKER_SUFFIX) %.fastgwa.model_matrix.success | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(word 3,$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(word 2,$^) $@,$< $(word 2,$^) $(TOPMED_FREQUENCY_FILE) $(call resolve_ancestry,$@) $@) ; \
@@ -61,16 +61,16 @@ endef
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.nofreq.tsv
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.fastgwa.success
-##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.frequency_mode
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa$(FREQUENCY_MODE_TRACKER_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.model_matrix.success
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: combine results from per-chromosome fastGWA runs into a single genome-wide file, suitable for meta-analysis.
 ## the model matrix is only required here to enforce a preflight sample size check. frequency is set to NA at this step
 ## and requires a separate processing step
-%.fastgwa.nofreq.tsv: $$(patsubst %,$$(subst .fastgwa.nofreq.tsv,,$$@).chr%.fastgwa.success,$$(CHRS)) %.frequency_mode %.fastgwa.model_matrix.success | $$(dir $$@)
-	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(filter %.frequency_mode,$^)))
+%.fastgwa.nofreq.tsv: $$(patsubst %,$$(subst .fastgwa.nofreq.tsv,,$$@).chr%.fastgwa.success,$$(CHRS)) %$(FREQUENCY_MODE_TRACKER_SUFFIX) %.fastgwa.model_matrix.success | $$(dir $$@)
+	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(filter %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	cat $(filter-out %.model_matrix.success %.frequency_mode,$(subst .fastgwa.success,.fastGWA,$^)) | awk '! /CHR/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$3"\t"$$2"\t"$$4"\t"$$5"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$8"\t"$$9"\t"$$10"\t"$$6}' > $@ ; \
+	cat $(filter-out %.model_matrix.success %$(FREQUENCY_MODE_TRACKER_SUFFIX),$(subst .fastgwa.success,.fastGWA,$^)) | awk '! /CHR/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$3"\t"$$2"\t"$$4"\t"$$5"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$8"\t"$$9"\t"$$10"\t"$$6}' > $@ ; \
 	fi
 
 
@@ -130,17 +130,17 @@ $(foreach result,$(ANALYSIS_RESULTS_FASTGWA),$(patsubst %,$(subst .fastgwa,,$(re
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.model_matrix.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.phenotype_dataset
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.phenotype_selected
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.covariates_selected
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.transform
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.sex-specific
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa$(PHENOTYPE_DATASET_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa$(PHENOTYPE_NAME_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa$(COVARIATE_NAME_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa$(TRANSFORMATION_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa$(SEX_SPECIFIC_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.fastgwa.samples
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster. Direct config file dependency has been removed to prevent
 ## repeated reruns due to version control, unrelated database updates, and other trivial issues.
-%.fastgwa.model_matrix.success: %.fastgwa.phenotype_dataset %.fastgwa.phenotype_selected %.fastgwa.covariates_selected %.fastgwa.transform %.fastgwa.sex-specific %.fastgwa.samples | $$(dir $$@)
+%.fastgwa.model_matrix.success: %.fastgwa$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.fastgwa$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.fastgwa$(COVARIATE_NAME_TRACKER_SUFFIX) %.fastgwa$(TRANSFORMATION_TRACKER_SUFFIX) %.fastgwa$(SEX_SPECIFIC_TRACKER_SUFFIX) %.fastgwa.samples | $$(dir $$@)
 	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .fastgwa.model_matrix.success,,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst .success,,$@) $(call get_tracked_parameter,$(word 4,$^)) $(call get_tracked_parameter,$(word 5,$^)))
 
 ## patterns:
@@ -153,7 +153,7 @@ $(sort $(dir $(ANALYSIS_RESULTS_FASTGWA))):
 secondary-clean:
 	for analysis in $(ANALYSIS_RESULTS_FASTGWA) ; \
 	do \
-	touch $$analysis.finalized ; \
+	touch $$analysis$(FINALIZATION_TRACKER_SUFFIX) ; \
 	done
 	for dir in $(dir $(ANALYSIS_RESULTS_FASTGWA)) ; \
 	do \
