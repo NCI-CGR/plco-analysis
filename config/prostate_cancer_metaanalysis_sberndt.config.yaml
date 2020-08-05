@@ -33,3 +33,4 @@ algorithm:
   - saige
   - plink
 frequency_mode: subject
+id_mode: rsid

@@ -35,3 +35,4 @@ algorithm:
   - saige
   - plink
 sex-specific: female
+id_mode: rsid

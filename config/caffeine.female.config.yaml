@@ -35,3 +35,4 @@ algorithm:
   - plink
   - fastgwa
 sex-specific: female
+id_mode: rsid
