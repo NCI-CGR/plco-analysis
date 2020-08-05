@@ -1,6 +1,6 @@
 #!/bin/bash
-if [ "$#" -ne 16 ]; then
-    echo "the command 'construct_output_filenames.bash' requires sixteen command line arguments: the name of the config file, the software (saige, bolt, fastgwa) requested, the minimum sample count for the software, the directory prefix for all bgen files, the pipeline results toplevel directory, the phenotype file currently in use, the column extractor program, the phenotype file used tracker file suffix, the frequency mode tracker file suffix, the phenotype model tracker file suffix, the covariate model tracker file suffix, the phenotype transformation tracker file suffix, the sex-specific analysis selection tracker file suffix, the finalized analysis tracker file suffix, binary indicator of whether make -B is in effect, and a binary indicator of whether make -n is in effect"
+if [ "$#" -ne 17 ]; then
+    echo "the command 'construct_output_filenames.bash' requires sixteen command line arguments: the name of the config file, the software (saige, bolt, fastgwa) requested, the minimum sample count for the software, the directory prefix for all bgen files, the pipeline results toplevel directory, the phenotype file currently in use, the column extractor program, the phenotype file used tracker file suffix, the frequency mode tracker file suffix, the id mode tracker file suffix, the phenotype model tracker file suffix, the covariate model tracker file suffix, the phenotype transformation tracker file suffix, the sex-specific analysis selection tracker file suffix, the finalized analysis tracker file suffix, binary indicator of whether make -B is in effect, and a binary indicator of whether make -n is in effect"
 else
     CONFIG_FILE="$1"
     REQUESTED_SOFTWARE="$2"
@@ -11,13 +11,14 @@ else
     COLUMN_EXTRACTOR="$7"
     PHENOTYPE_USED_TRACKER_SUFFIX="$8"
     FREQUENCY_MODE_TRACKER_SUFFIX="$9"
-    PHENOTYPE_SELECTED_TRACKER_SUFFIX="${10}"
-    COVARIATES_SELECTED_TRACKER_SUFFIX="${11}"
-    TRANSFORMATION_TRACKER_SUFFIX="${12}"
-    SEX_SPECIFIC_TRACKER_SUFFIX="${13}"
-    FINALIZED_ANALYSIS_TRACKER_SUFFIX="${14}"
-    FORCE_RUN="${15}"
-    PRETEND_RUN="${16}"
+    ID_MODE_TRACKER_SUFFIX="${10}"
+    PHENOTYPE_SELECTED_TRACKER_SUFFIX="${11}"
+    COVARIATES_SELECTED_TRACKER_SUFFIX="${12}"
+    TRANSFORMATION_TRACKER_SUFFIX="${13}"
+    SEX_SPECIFIC_TRACKER_SUFFIX="${14}"
+    FINALIZED_ANALYSIS_TRACKER_SUFFIX="${15}"
+    FORCE_RUN="${16}"
+    PRETEND_RUN="${17}"
 
     ## python yaml helper function
     yaml() {
@@ -57,6 +58,7 @@ else
 
 		    PHENOTYPE_USED_TRACKER="$RESULTS_PREFIX/$RESULT$PHENOTYPE_USED_TRACKER_SUFFIX"
 		    FREQUENCY_MODE_TRACKER="$RESULTS_PREFIX/$RESULT$FREQUENCY_MODE_TRACKER_SUFFIX"
+		    ID_MODE_TRACKER="$RESULTS_PREFIX/$RESULT$ID_MODE_TRACKER_SUFFIX"
 		    PHENOTYPE_SELECTED_TRACKER="$RESULTS_PREFIX/$RESULT$PHENOTYPE_SELECTED_TRACKER_SUFFIX"
 		    COVARIATES_SELECTED_TRACKER="$RESULTS_PREFIX/$RESULT$COVARIATES_SELECTED_TRACKER_SUFFIX"
 		    TRANSFORMATION_TRACKER="$RESULTS_PREFIX/$RESULT$TRANSFORMATION_TRACKER_SUFFIX"
@@ -156,6 +158,28 @@ else
 			    echo "$FREQUENCY_MODE" > "$FREQUENCY_MODE_TRACKER"
 			fi
 		    fi
+
+		    ## run ID reporting mode tracking/version difference testing
+		    if [[ "$PRETEND_RUN" -eq "0" ]] ; then
+			ID_MODE="chrpos"
+			if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "id_mode") ]] ; then
+			    ID_MODE=$(yaml "$CONFIG_FILE" "id_mode")
+			fi
+			if [[ -f "$ID_MODE_TRACKER" ]] ; then
+			    EXISTING_ID_MODE=`cat $ID_MODE_TRACKER`
+			    if [[ "$EXISTING_ID_MODE" != "$ID_MODE" ]] ; then
+				echo "$ID_MODE" > "$ID_MODE_TRACKER"
+			    fi
+			else
+			    echo "$ID_MODE" > "$ID_MODE_TRACKER"
+			    rm -f "$FINALIZED_ANALYSIS_TRACKER"
+			fi
+			## allow manual override
+			if [[ "$FORCE_RUN" -gt "0" ]] ; then
+			    echo "$ID_MODE" > "$ID_MODE_TRACKER"
+			fi
+		    fi
+
 		    ## run phenotype transformation mode tracking/version difference testing
 		    TRANSFORMATION="none"
 		    if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "transformation") ]] ; then
