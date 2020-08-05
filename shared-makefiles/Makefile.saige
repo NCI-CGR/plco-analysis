@@ -126,7 +126,7 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 %.saige.round1.success: %.saige-chip.GRCh38-resorted-nochr0.bed.success %.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.saige.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	rm -f $@.varianceRatio.txt $@.rda ; \
+	rm -f $@.varianceRatio.txt $@.rda ; sleep 2 ; \
 	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed.success,,$<) $(subst .success,,$(lastword $^)) $(call get_tracked_parameter,$(word 2,$^)) $(if $(call get_covariates_from_model_matrix,$(subst .success,,$(word 3,$^))),$(call get_covariates_from_model_matrix,$(subst .success,,$(word 3,$^))),NA) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst .success,,$@)) ; \
 	else \
 	touch $@ ; \
