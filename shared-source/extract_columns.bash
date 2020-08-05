@@ -2,7 +2,7 @@
 if [ "$#" -ne 3 ]; then
     echo "this command requires three command line arguments, a config file, a phenotype with_na file, and an output filename"
 else
-awk 'BEGIN {f = 0; keys["plco_id"]}
+awk -F"\t" 'BEGIN {f = 0; keys["plco_id"]}
         FNR == 1 {f++}
 	f == 1 && /^phenotype:/ {keys[$2] ; next}
 	f == 1 && /^covariates:/ {
