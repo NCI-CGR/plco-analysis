@@ -11,7 +11,7 @@ ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## empirical approximate minimum subject count (+1), specific to SAIGE
 MINIMUM_VALID_SUBJECT_COUNT := $(SAIGE_MINIMUM_VALID_SUBJECT_COUNT)
 
-ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) saige $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash $(PHENOTYPE_DATASET_TRACKER_SUFFIX) $(FREQUENCY_MODE_TRACKER_SUFFIX) $(ID_MODE_TRACKER_SUFFIX) $(PHENOTYPE_NAME_TRACKER_SUFFIX) $(COVARIATE_NAME_TRACKER_SUFFIX) $(TRANSFORMATION_TRACKER_SUFFIX) $(SEX_SPECIFIC_TRACKER_SUFFIX) $(FINALIZATION_TRACKER_SUFFIX) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
+ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) saige $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash $(PHENOTYPE_DATASET_TRACKER_SUFFIX) $(FREQUENCY_MODE_TRACKER_SUFFIX) $(ID_MODE_TRACKER_SUFFIX) $(PHENOTYPE_NAME_TRACKER_SUFFIX) $(COVARIATE_NAME_TRACKER_SUFFIX) $(CATEGORY_TRACKER_SUFFIX) $(TRANSFORMATION_TRACKER_SUFFIX) $(SEX_SPECIFIC_TRACKER_SUFFIX) $(FINALIZATION_TRACKER_SUFFIX) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
 
 .SECONDEXPANSION:
 .SECONDARY:
@@ -154,14 +154,15 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(PHENOTYPE_DATASET_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(COVARIATE_NAME_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(CATEGORY_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(SEX_SPECIFIC_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster. Direct config file dependency has been removed to prevent
 ## repeated reruns due to version control, unrelated database updates, and other trivial issues.
-%.saige.model_matrix.success: %.saige$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.saige$(COVARIATE_NAME_TRACKER_SUFFIX) %.saige$(SEX_SPECIFIC_TRACKER_SUFFIX) %.saige.samples | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst .success,,$@) none $(call get_tracked_parameter,$(word 4,$^)))
+%.saige.model_matrix.success: %.saige$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.saige$(COVARIATE_NAME_TRACKER_SUFFIX) %.saige$(CATEGORY_TRACKER_SUFFIX) %.saige$(SEX_SPECIFIC_TRACKER_SUFFIX) %.saige.samples | $$(dir $$@)
+	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst .success,,$@) $(word 4,$^) none $(call get_tracked_parameter,$(word 5,$^)))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/

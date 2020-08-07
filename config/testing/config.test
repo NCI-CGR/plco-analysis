@@ -53,6 +53,9 @@ do
     sex_specific_present=0
     sex_specific_valid=0
 
+    id_mode_present=0
+    id_mode_valid=0
+
     ## exactly one (unique across all files) "analysis_prefix:" entry
     analysis_prefix_present=$(yaml_check_exists "$config_file" "analysis_prefix")
     ## analysis prefix value is present only one time in all config files
@@ -138,6 +141,16 @@ do
 	fi
     fi
 
+    ## may optionally include a single "id_mode:" entry
+    id_mode_present=$(yaml_check_exists "$config_file" "id_mode")
+    ## the id_mode line can specify: "rsid" or "chrpos", and defaults to "chrpos"
+    if [[ "$id_mode_present" -eq "1" ]] ; then
+	id_mode_requested=$(yaml "$config_file" "id_mode")
+	if [[ "`echo $id_mode_requested | awk '$1 == \"rsid\" || $1 == \"chrpos\"' | wc -l`" -eq "1" ]] ; then
+	    id_mode_valid=1
+	fi
+    fi
+
     if [[ "$analysis_prefix_present" -ne "1" ]] ; then
 	echo "not ok - $config_file: key \"analysis_prefix:\" must be present exactly once in the file"
     elif [[ "$analysis_prefix_unique" -ne "1" ]] ; then
@@ -169,7 +182,11 @@ do
     elif [[ "$sex_specific_present" -gt "1" ]] ; then
 	echo "not ok - $config_file: key \"sex-specific:\" cannot be present more than once in the file"
     elif [[ "$sex_specific_present" -eq "1" && "$sex_specific_valid" -ne "1" ]] ; then
-	echo "not ok - $config_file: key \"transformation:\" must have value \"combined\" or \"female\" or \"male\""
+	echo "not ok - $config_file: key \"sex-specific:\" must have value \"combined\" or \"female\" or \"male\""
+    elif [[ "$id_mode_present" -gt "1" ]] ; then
+	echo "not ok - $config_file: key \"id_mode:\" cannot be present more than once in the file"
+    elif [[ "$id_mode_present" -eq "1" && "$id_mode_valid" -ne "1" ]] ; then
+	echo "not ok - $config_file: key \"id_mode:\" must have value \"rsid\" or \"chrpos\""
     else
 	echo "ok - $config_file: valid YAML format, all required entries present, and values acceptable"
     fi
