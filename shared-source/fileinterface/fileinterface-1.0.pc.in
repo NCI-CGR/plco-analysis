@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: File Interface
+Description: File I/O Interface Supporting Compression and Modding
+Requires: modern C++ compiler with stringstream support; optional zlib, bzip2
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir}
+Cflags: -I${includedir}/fileinterface-1.0 -I${libdir}/fileinterface-1.0/include

@@ -45,3 +45,5 @@ export_results
 *.out
 tmp*
 *png
+core.*
+shared-source/fileinterface
