@@ -22,7 +22,7 @@ total_tests=0
 tests_per_analysis=16
 
 ## determine how many tests need to be run in the end
-saige_config_files=`grep saige $config_dir/*config | sed 's/:/\t/g' | awk '{print $1}'`
+saige_config_files=`grep saige $config_dir/*config.yaml | sed 's/:/\t/g' | awk '{print $1}'`
 saige_analysis_prefixes=""
 for file in $saige_config_files ;
 do
