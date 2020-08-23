@@ -20,7 +20,7 @@ total_tests=0
 tests_per_analysis=16
 
 ## determine how many tests need to be run in the end
-boltlmm_config_files=`grep boltlmm $config_dir/*config | sed 's/:/\t/g' | awk '{print $1}'`
+boltlmm_config_files=`grep boltlmm $config_dir/*config.yaml | sed 's/:/\t/g' | awk '{print $1}'`
 boltlmm_analysis_prefixes=""
 for file in $boltlmm_config_files ;
 do
