@@ -43,3 +43,7 @@ export_plots
 export_results
 *.o
 *.out
+tmp*
+*png
+core.*
+shared-source/fileinterface

@@ -1,7 +1,7 @@
 require(stringr)
 cargs <- commandArgs(trailingOnly = TRUE)
-if (length(cargs) != 9) {
-   stop(paste("Arguments to construct_model_matrix.R: phenotype_filename chip_samplefile ancestry chip phenotype_name covariate_list output_filename transformation(or none) sex-specific(or combined) (expected 9, received ", length(cargs), sep=""))
+if (length(cargs) != 10) {
+   stop(paste("Arguments to construct_model_matrix.R: phenotype_filename chip_samplefile ancestry chip phenotype_name covariate_list output_filename phenotype_category_filename(or NA) transformation(or none) sex-specific(or combined) (expected 10, received ", length(cargs), sep=""))
 }
 phenotype.filename <- cargs[1]
 chip.samplefile <- cargs[2]
@@ -12,8 +12,9 @@ phenotype.name <- cargs[5]
 covariate.list <- unlist(strsplit(cargs[6], ","))
 covariate.list <- unique(covariate.list[covariate.list != "NA"])
 output.filename <- cargs[7]
-transformation <- cargs[8]
-sex.specific <- cargs[9]
+category.filename <- cargs[8]
+transformation <- cargs[9]
+sex.specific <- cargs[10]
 
 ## do some mild error checking on the transformation and sex.specific freetext options
 stopifnot(transformation == "none" | transformation == "post.split.INT")
@@ -177,6 +178,23 @@ for (cat.var in colnames(output.df)[grepl("ca$", colnames(output.df)) | colnames
        output.df <- transform(output.df, tmp = other.group)
        colnames(output.df)[ncol(output.df)] <- other.name
     }
+}
+
+## if the user provided a category filename
+if (category.filename != "NA" & file.exists(category.filename)) {
+    ## read the valid categories. format is expected to be: first row is reference level, all other rows are merged into non-reference level
+    ## note that this is applied to binary as well as non-binary categoricals
+    ## the only impact would be that the case condition might be flipped to "control" if N(cases) > N(controls)
+    ## but that would only flip ORs, nothing else
+    ## also it's very uncommon for N(cases) > N(controls)
+    valid.categories <- read.table(category.filename, header=FALSE, stringsAsFactors=FALSE)[,1]
+    ## only keep subjects with a value in these levels
+    output.df <- output.df[output.df[,phenotype.name] %in% valid.categories,]
+    reference.indicator <- output.df[,phenotype.name] == valid.categories[1]
+    ## set everyone in the reference level to 0; this is for compatibility with code expecting binary traits
+    output.df[reference.indicator,phenotype.name] <- 0
+    ## set everyone else, potentially merging low count categories, to 1
+    output.df[!reference.indicator,phenotype.name] <- 1
 }
 
 ## finally maybe report results

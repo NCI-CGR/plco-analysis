@@ -1,15 +1,17 @@
-analysis_prefix: j_pros_cancer_metaanalysis_sberndt
+analysis_prefix: bq_cig_stat_o
 chips:
+  - Omni25
   - OmniX
   - GSA_batch1
   - GSA_batch2
   - GSA_batch3
   - GSA_batch4
   - GSA_batch5
-phenotype: j_pros_cancer
+  - Oncoarray
+phenotype: bq_cig_stat_o
 covariates:
-  - bq_age_co
   - sex
+  - bq_age_co
   - is.other.asian
   - PC1
   - PC2
@@ -31,5 +33,4 @@ ancestries:
   - East_Asian
 algorithm:
   - saige
-  - plink
-frequency_mode: subject
+id_mode: rsid

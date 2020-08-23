@@ -14,7 +14,7 @@ total_tests=0
 tests_per_analysis=16
 
 ## determine how many tests need to be run in the end
-fastgwa_config_files=`grep fastgwa $config_dir/*config | sed 's/:/\t/g' | awk '{print $1}'`
+fastgwa_config_files=`grep fastgwa $config_dir/*config.yaml | sed 's/:/\t/g' | awk '{print $1}'`
 fastgwa_analysis_prefixes=""
 for file in $fastgwa_config_files ;
 do
@@ -38,6 +38,7 @@ do
 	    analysis_directory_missing=0
 	    analysis_not_requested=0
 	    analysis_file_missing=0
+	    tracking_file_missing=0
 	    model_matrix_missing=0
 	    insufficient_chip_subjects=1
 	    insufficient_imputed_subjects=1
@@ -101,6 +102,16 @@ do
 		    analysis_file_missing=1
 		else
 		    ## run consistency checks
+		    ## tracking files based on config.yaml
+		    if [[ ! -f "$prefix.phenotype_dataset" ||
+			      ! -f "$prefix.phenotype_selected" ||
+			      ! -f "$prefix.covariates_selected" ||
+			      ! -f "$prefix.transform" ||
+			      ! -f "$prefix.sex-specific" ||
+			      ! -f "$prefix.frequency_mode" ||
+			      ! -f "$prefix.id_mode" ]] ; then
+			tracking_file_missing=1
+		    fi
 		    ## model matrix: at least three columns, third is phenotype, phenotype is normal
 		    if [[ -f "$model_matrix" ]] ; then
 			invalid_row_count=`awk -F"\t" 'NF < 3' $model_matrix | wc -l`
@@ -212,6 +223,8 @@ do
 		else
 		    echo "not ok - $output_tag no results file detected"
 		fi
+	    elif [[ "$tracking_file_missing" -gt "0" ]] ; then
+		echo "not ok - $output_tag tracking file(s) missing from output directory"
 	    elif [[ "$model_matrix_missing" -gt "0" ]] ; then
 		echo "not ok - $output_tag output file present but model matrix missing"
 	    elif [[ "$malformed_phenotype" -gt "0" ]] ; then

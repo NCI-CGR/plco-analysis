@@ -34,3 +34,4 @@ ancestries:
 algorithm:
   - saige
   - plink
+id_mode: rsid
