@@ -88,8 +88,10 @@ endef
 ## frequency is set to NA at this step and requires a separate processing step
 %.saige.nofreq.tsv: $$(foreach chr,$$(CHRS),%.chr$$(chr).saige.success) %.saige$(FREQUENCY_MODE_TRACKER_SUFFIX) %.saige.model_matrix.success | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(filter %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)))
+	$(eval N_CASES := $(shell awk '$$3 == 1' $(subst .success,,$(lastword $^)) | wc -l))
+	$(eval N_CONTROLS := $(shell awk '$$3 == 0' $(subst .success,,$(lastword $^)) | wc -l))
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	cat $(subst .success,.txt,$(filter-out %.model_matrix.success %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9}' > $@ ; \
+	cat $(subst .success,.txt,$(filter-out %.model_matrix.success %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN\tNcases\tNcontrols"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9"\t$(N_CASES)\t$(N_CONTROLS)"}' > $@ ; \
 	fi
 
 
@@ -142,7 +144,7 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 %.saige.round1.success: %.saige-chip.GRCh38-resorted-nochr0.bed.success %.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.saige.model_matrix.success | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	rm -f $@.varianceRatio.txt $@.rda ; sleep 2 ; \
+	rm -f $(subst .success,.varianceRatio.txt,$@)* $(subst .success,.rda,$@) ; sleep 2 ; \
 	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed.success,,$<) $(subst .success,,$(lastword $^)) $(call get_tracked_parameter,$(word 2,$^)) $(if $(call get_covariates_from_model_matrix,$(subst .success,,$(word 3,$^))),$(call get_covariates_from_model_matrix,$(subst .success,,$(word 3,$^))),NA) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst .success,,$@)) ; \
 	else \
 	touch $@ ; \
