@@ -11,7 +11,7 @@ SAIGE_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/*saige.tsv" 
 BOLT_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/*boltlmm.tsv" -print)
 FASTGWA_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/*fastgwa.tsv" -print)
 
-ALL_OUTPUT := $(subst .tsv,.ldsc.log.success,$(SAIGE_TARGETS) $(BOLT_TARGETS) $(FASTGWA_TARGETS))
+ALL_OUTPUT := $(subst .tsv,.ldsc.log$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_TARGETS) $(BOLT_TARGETS) $(FASTGWA_TARGETS))
 
 ## eventually add to global config
 MUNGE_SUMSTATS := ~/Development/ldsc/munge_sumstats.py
@@ -32,32 +32,32 @@ all: $(ALL_OUTPUT) $(LDSCORE_SUMMARY)
 ##    output: results/ldscore_summary.tsv
 ##    input:  results/{PHENOTYPES}/European/{METHODS}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report
 ## Notes: combine summary results from all runs into a single top-level file
-$(LDSCORE_SUMMARY): $(subst .ldsc.log.success,.ldsc.report,$(ALL_OUTPUT))
+$(LDSCORE_SUMMARY): $(subst .ldsc.log$(TRACKING_SUCCESS_SUFFIX),.ldsc.report,$(ALL_OUTPUT))
 	cat $^ | sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 | awk 'NR == 1 {print "phenotype\tplatform\tancestry\tmethod\tinflation_factor\tintercept\terror"} ; {print $$0}' | sed 's/(// ; s/)//' > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report
-##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log.success
+##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: pull out GC lambda and ldscore regression intercept into a single line file
-%.ldsc.report: %.ldsc.log.success
-	echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log.success// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\t%s\t%s\t%s\t", $$2, $$3, $$1, $$4)}' > $@
-	grep -E "Lambda GC|Intercept" $(subst .success,,$^) | sed 's/:/\t/g' | awk '/Lambda GC/ {printf("%s\t",$$3)} ; /Intercept/ {print $$2"\t"$$3}' >> $@
+%.ldsc.report: %.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
+	echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log$(TRACKING_SUCCESS_SUFFIX)// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\t%s\t%s\t%s\t", $$2, $$3, $$1, $$4)}' > $@
+	grep -E "Lambda GC|Intercept" $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | sed 's/:/\t/g' | awk '/Lambda GC/ {printf("%s\t",$$3)} ; /Intercept/ {print $$2"\t"$$3}' >> $@
 
 ## patterns:
-##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log.success
-##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.sumstats.gz.success
+##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {ldsc_data_GRCh38}/{CHR}.l2.M_5_50
 ## Notes: actually run ldscore regression. Do heritabiity estimation as they term it on their wiki, then extract the values from the log file
-%.ldsc.log.success: %.ldsc.sumstats.gz.success $(LD_TARGETS)
-	$(call qsub_handler,$(subst .success,,$@),$(LDSC_PY) --h2 $(subst .success,,$<) --ref-ld-chr $(LD_CHR_GRCh38) --w-ld-chr $(LD_CHR_GRCh38) --out $(subst .log.success,,$@))
+%.ldsc.log$(TRACKING_SUCCESS_SUFFIX): %.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX) $(LD_TARGETS)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(LDSC_PY) --h2 $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) --ref-ld-chr $(LD_CHR_GRCh38) --w-ld-chr $(LD_CHR_GRCh38) --out $(subst .log$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.sumstats.gz.success
+##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.ldsc-processed.tsv
 ## Notes: run their ridiculous "munge_sumstats" script to get the analysis results in a format ldsc accepts
 COMMA := ,
-%.ldsc.sumstats.gz.success: %.ldsc.ldsc-processed.tsv
-	$(call qsub_handler,$(subst .success,,$@),$(MUNGE_SUMSTATS) --signed-sumstats STAT$(COMMA)0 --out $(subst .sumstats.gz.success,,$@) --a1-inc --frq Freq_Tested_Allele_in_TOPMed --N-col N --a1 Tested_Allele --a2 Other_Allele --snp SNP --sumstats $< --p P)
+%.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX): %.ldsc.ldsc-processed.tsv
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MUNGE_SUMSTATS) --signed-sumstats STAT$(COMMA)0 --out $(subst .sumstats.gz$(TRACKING_SUCCESS_SUFFIX),,$@) --a1-inc --frq Freq_Tested_Allele_in_TOPMed --N-col N --a1 Tested_Allele --a2 Other_Allele --snp SNP --sumstats $< --p P)
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.ldsc-processed.tsv

@@ -40,12 +40,12 @@ endef
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.PLINK.tsv.gz
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.PLINK.tsv
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: gzip the genome-wide plink association results.
 ## the model matrix is only required here to enforce a preflight sample size check.
-%.tsv.gz: %.tsv %.model_matrix.success | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+%.tsv.gz: %.tsv %.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	gzip -c $< > $@ ; \
 	fi
 
@@ -55,12 +55,12 @@ endef
 ##            [chrpos to rsid linker file]
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.rawids.tsv
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink$(ID_MODE_TRACKER_SUFFIX)
-##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: replace chr:pos:ref:alt style ids with rsids if requested
-%.plink.tsv: $(ANNOTATE_RSID) $(RSID_LINKER_FILE) %.plink.rawids.tsv %.plink$(ID_MODE_TRACKER_SUFFIX) %.plink.model_matrix.success | $$(dir $$@)
+%.plink.tsv: $(ANNOTATE_RSID) $(RSID_LINKER_FILE) %.plink.rawids.tsv %.plink$(ID_MODE_TRACKER_SUFFIX) %.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
 	$(eval ID_MODE := $(call get_tracker_parameter,$(word 4,$^)))
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(word 3,$^) $@,$< $(word 3,$^) $(word 2,$^) $@) ; \
 	fi
 
@@ -70,37 +70,37 @@ endef
 ##            [frequency annotation data]
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.nofreq.tsv
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink$(FREQUENCY_MODE_TRACKER_SUFFIX)
-##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
-##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.frequencies.frq.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX)
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.frequencies.frq$(TRACKING_SUCCESS_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
-%.plink.rawids.tsv: $(ANNOTATE_FREQUENCY) $(TOPMED_FREQUENCY_FILE) %.plink.nofreq.tsv %.plink$(FREQUENCY_MODE_TRACKER_SUFFIX) %.plink.model_matrix.success %.plink.frequencies.frq.success | $$(dir $$@)
+%.plink.rawids.tsv: $(ANNOTATE_FREQUENCY) $(TOPMED_FREQUENCY_FILE) %.plink.nofreq.tsv %.plink$(FREQUENCY_MODE_TRACKER_SUFFIX) %.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX) %.plink.frequencies.frq$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(word 4,$^)))
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),join -1 3 -2 2 $(word 3,$^) $(word 6,$^) | awk 'NR > 1 {$$6 = $$15} ; {print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5"\t"$$6"\t"$$7"\t"$$8"\t"$$9"\t"$$10}' > $@,$< $(word 3,$^) $(word 2,$^) $(call resolve_ancestry,$@) $@) ; \
 	fi
 
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.nofreq.tsv
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.logistic.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.logistic$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: convert raw plink .assoc.logistic results into standard output format, converting OR
-$(subst .assoc.logistic,.nofreq.tsv,$(filter %.assoc.logistic,$(ANALYSIS_RESULTS_PLINK))): $$(subst .nofreq.tsv,.assoc.logistic.success,$$@) $$(subst .nofreq.tsv,.model_matrix.success,$$@) | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" && $$8 != "0" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"log($$7)/log(10)"\t"(log($$7)/log(10)/$$8)"\t"$$9"\t"$$6}' $(subst .success,,$<) > $@ ; \
+$(subst .assoc.logistic,.nofreq.tsv,$(filter %.assoc.logistic,$(ANALYSIS_RESULTS_PLINK))): $$(subst .nofreq.tsv,.assoc.logistic$(TRACKING_SUCCESS_SUFFIX),$$@) $$(subst .nofreq.tsv,.model_matrix$(TRACKING_SUCCESS_SUFFIX),$$@) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" && $$8 != "0" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"log($$7)/log(10)"\t"(log($$7)/log(10)/$$8)"\t"$$9"\t"$$6}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $@ ; \
 	fi
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.nofreq.tsv
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.linear.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.linear$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: convert raw plink .assoc.lineaer results into standard output format
-$(subst .assoc.linear,.nofreq.tsv,$(filter %.assoc.linear,$(ANALYSIS_RESULTS_PLINK))): $$(subst .nofreq.tsv,.assoc.linear.success,$$@) $$(subst .nofreq.tsv,.model_matrix.success,$$@) | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" && $$8 != "0" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"$$7"\t"($$7/$$8)"\t"$$9"\t"$$6}' $(subst .success,,$<) > $@ ; \
+$(subst .assoc.linear,.nofreq.tsv,$(filter %.assoc.linear,$(ANALYSIS_RESULTS_PLINK))): $$(subst .nofreq.tsv,.assoc.linear$(TRACKING_SUCCESS_SUFFIX),$$@) $$(subst .nofreq.tsv,.model_matrix$(TRACKING_SUCCESS_SUFFIX),$$@) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; NR > 1 && $$5 == "ADD" && $$7 != "NA" && $$8 != "0" {print $$1"\t"$$3"\t"$$2"\t"$$4"\tNA\tNA\t"$$7"\t"($$7/$$8)"\t"$$9"\t"$$6}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $@ ; \
 	fi
 
 ## utility function to grab {CHIP} out of results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{whatever}
@@ -114,26 +114,26 @@ $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(1))))
 endef
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{MODEL_TYPE}.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{MODEL_TYPE}$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CLEANED_CHIPS}/{ANCESTRY}/{CHIP}.nohet.autosomes.bed
-##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.phenotype
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.covariates
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: run PLINK association on chip data.
 ## the model matrix is only required here to enforce a preflight sample size check.
-%.assoc.logistic.success %.assoc.linear.success: $$(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@,/).nohet.autosomes.bed %.model_matrix.success $$(subst .success,.phenotype,$$@) $$(subst .success,.covariates,$$@) | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(word 2,$^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --pheno $(word 3,$^) $(if $(shell head -1 $(word 4,$^) | cut -f 1-2 --complement),--covar $(word 4,$^),) --allow-no-sex $(if $(filter %.assoc.linear.success,$@),--linear,--logistic) --out $(firstword $(subst .plink.assoc., ,$@)).plink) ; \
+%.assoc.logistic$(TRACKING_SUCCESS_SUFFIX) %.assoc.linear$(TRACKING_SUCCESS_SUFFIX): $$(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@,/).nohet.autosomes.bed %.model_matrix$(TRACKING_SUCCESS_SUFFIX) $$(subst $(TRACKING_SUCCESS_SUFFIX),.phenotype,$$@) $$(subst $(TRACKING_SUCCESS_SUFFIX),.covariates,$$@) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed,,$<) --pheno $(word 3,$^) $(if $(shell head -1 $(word 4,$^) | cut -f 1-2 --complement),--covar $(word 4,$^),) --allow-no-sex $(if $(filter %.assoc.linear$(TRACKING_SUCCESS_SUFFIX),$@),--linear,--logistic) --out $(firstword $(subst .plink.assoc., ,$@)).plink) ; \
 	fi
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.frequencies.frq.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.frequencies.frq$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CLEANED_CHIPS}/{ANCESTRY}/{CHIP}.nohet.autosomes.bed
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: plink association results do not include frequency data :( so generate frequency data from the chip
-%.frequencies.frq.success: $$(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@,/).nohet.autosomes.bed | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --freq --out $(subst .frq.success,,$@))
+%.frequencies.frq$(TRACKING_SUCCESS_SUFFIX): $$(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@,/).nohet.autosomes.bed | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed,,$<) --freq --out $(subst .frq$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.samples
@@ -155,27 +155,27 @@ endef
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.logistic.phenotype
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: cut just the IDs and phenotype out of the model matrix and dump them in their own file.
-%.assoc.logistic.phenotype: %.model_matrix.success | $$(dir $$@)
-	cut -f 1-3 $(subst .success,,$<) | awk '$$3 == 1 {$$3 = 2} ; $$3 == 0 {$$3 = 1} ; {print $$0}' > $@
+%.assoc.logistic.phenotype: %.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	cut -f 1-3 $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk '$$3 == 1 {$$3 = 2} ; $$3 == 0 {$$3 = 1} ; {print $$0}' > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.linear.phenotype
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: cut just the IDs and phenotype out of the model matrix and dump them in their own file.
-%.assoc.linear.phenotype: %.model_matrix.success | $$(dir $$@)
-	cut -f 1-3 $(subst .success,,$<) > $@
+%.assoc.linear.phenotype: %.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	cut -f 1-3 $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $@
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.assoc.{MODEL_TYPE}.covariates
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: cut just the IDs and covariates out of the model matrix and dump them in their own file.
-%.covariates: $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix.success | $$(dir $$@)
-	cut -f 3 --complement $(subst .success,,$<) > $@
+%.covariates: $$(firstword $$(subst .plink.assoc., ,$$@)).plink.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	cut -f 3 --complement $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $@
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink$(PHENOTYPE_DATASET_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink$(PHENOTYPE_NAME_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.plink$(COVARIATE_NAME_TRACKER_SUFFIX)
@@ -186,8 +186,8 @@ endef
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster. Direct config file dependency has been removed to prevent
 ## repeated reruns due to version control, unrelated database updates, and other trivial issues.
-%.plink.model_matrix.success: %.plink$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.plink$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.plink$(COVARIATE_NAME_TRACKER_SUFFIX) %.plink$(CATEGORY_TRACKER_SUFFIX) %.plink$(SEX_SPECIFIC_TRACKER_SUFFIX) %.plink.samples | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst .success,,$@) $(word 4,$^) none $(call get_tracked_parameter,$(word 5,$^)))
+%.plink.model_matrix$(TRACKING_SUCCESS_SUFFIX): %.plink$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.plink$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.plink$(COVARIATE_NAME_TRACKER_SUFFIX) %.plink$(CATEGORY_TRACKER_SUFFIX) %.plink$(SEX_SPECIFIC_TRACKER_SUFFIX) %.plink.samples | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix$(TRACKING_SUCCESS_SUFFIX),,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) $(word 4,$^) none $(call get_tracked_parameter,$(word 5,$^)))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/

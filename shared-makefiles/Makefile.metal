@@ -27,14 +27,14 @@ $(if $(EXCLUDE_FASTGWA),$(eval ALL_TARGETS:=$(filter-out %.FASTGWA.tsv %.fastgwa
 .SECONDEXPANSION:
 .PHONY: all
 
-all: $(addsuffix .gz.success,$(ALL_TARGETS)) $(if $(EXCLUDE_SAIGE),,$(addsuffix .gz.success,$(CATEGORICAL_TARGETS)))
+all: $(addsuffix .gz$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)) $(if $(EXCLUDE_SAIGE),,$(addsuffix .gz$(TRACKING_SUCCESS_SUFFIX),$(CATEGORICAL_TARGETS)))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.tsv.gz.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.final-ids.tsv.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.tsv.gz$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: compress results
-%.tsv.gz.success: %.final-ids.tsv.success
-	gzip -c $(subst .success,,$<) > $(subst .success,,$@) && touch $@
+%.tsv.gz$(TRACKING_SUCCESS_SUFFIX): %.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX)
+	gzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) && touch $@
 
 ## get a saved config parameter setting from a tracking file
 define get_tracked_parameter =
@@ -42,34 +42,34 @@ $(shell cat $(1))
 endef
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.final-ids.tsv.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.sorted.tsv.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.sorted.tsv$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: change chr:pos:ref:alt labels to rsids if requested in relevant config file tracker
-%.final-ids.tsv.success: $(ANNOTATE_RSID) $(RSID_LINKER_FILE) %.sorted.tsv.success $$(shell find $$(dir $$@) -name "*$(ID_MODE_TRACKER_SUFFIX)" -print | head -1)
+%.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX): $(ANNOTATE_RSID) $(RSID_LINKER_FILE) %.sorted.tsv$(TRACKING_SUCCESS_SUFFIX) $$(shell find $$(dir $$@) -name "*$(ID_MODE_TRACKER_SUFFIX)" -print | head -1)
 	$(eval ID_MODE := $(call get_tracker_parameter,$(word 4,$^)))
-	$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(subst .success,,$(word 3,$^)) $(subst .success,,$@) && touch $@,$(call qsub_handler,$(subst .success,,$@),$< $(subst .success,,$(word 3,$^)) $(word 2,$^) $(subst .success,,$@)))
+	$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) && touch $@,$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.sorted.tsv.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.sorted.tsv$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.tsv
 ## Notes: METAL hashes variants in an unfortunate fashion, so resort everything
 COMMA:=,
-%.sorted.tsv.success: %.tsv
-	$(call qsub_handler,$(subst .success,,$@),sort -k 1$(COMMA)1g -k 2$(COMMA)2g $< -o $(subst .success,,$@))
+%.sorted.tsv$(TRACKING_SUCCESS_SUFFIX): %.tsv
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),sort -k 1$(COMMA)1g -k 2$(COMMA)2g $< -o $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.tsv
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.raw.tsv.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.raw.tsv$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: reformat output to match standard atlas output format, with added heterogeneity p-value
-$(ALL_TARGETS): $$(subst .tsv,1.raw.tsv.success,$$@)
-	awk 'NR > 1 {print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$8"\t"$$9"\t"$$10"\t"$$16"\t"$$15}' $(subst .success,,$<) | sed 's/^chr// ; s/:/\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN\tPHet"} ; {print $$1"\t"$$2"\tchr"$$1":"$$2":"$$3":"$$4"\t"toupper($$5)"\t"toupper($$6)"\t"$$7"\t"$$8"\t"$$9"\t"$$10"\t"$$11"\t"$$12}' > $@
+$(ALL_TARGETS): $$(subst .tsv,1.raw.tsv$(TRACKING_SUCCESS_SUFFIX),$$@)
+	awk 'NR > 1 {print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$8"\t"$$9"\t"$$10"\t"$$16"\t"$$15}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's/^chr// ; s/:/\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN\tPHet"} ; {print $$1"\t"$$2"\tchr"$$1":"$$2":"$$3":"$$4"\t"toupper($$5)"\t"toupper($$6)"\t"$$7"\t"$$8"\t"$$9"\t"$$10"\t"$$11"\t"$$12}' > $@
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.raw.tsv.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.raw.tsv$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.par
 ## Notes: this simply wraps the call to metal itself. configuration happens with the par file rule
-%.raw.tsv.success: %.par
-	$(call qsub_handler_specify_queue_time,$(subst .success,,$@),$(METAL) < $<,bigmem.q,4:30:00)
+%.raw.tsv$(TRACKING_SUCCESS_SUFFIX): %.par
+	$(call qsub_handler_specify_queue_time,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(METAL) < $<,bigmem.q,4:30:00)
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.par
