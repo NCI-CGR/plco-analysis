@@ -18,29 +18,29 @@ TODO: conda environment requirements.txt, primarily for SAIGE
 Running tally of dependencies:
 
 Required for pipeline functionality
-- bash
-- PyYAML
+- bash >= 4.1.2
+- PyYAML >= 3.12
 - Make >= 4.2
-- gcc/g++ let's say 7+
+- gcc/g++ let's say >= 7 but like, what are you doing with your life
 - boost >= 1.56
-- GRAF: ??
+- GRAF: >= 2.3.1
 - plink: 1.9 and 2
-- eigensoft/smartpca: 6.1.4
+- eigensoft/smartpca: = 6.1.4
 
 Optional depending on individual requirements:
 - fastGWA:
-  - fastGWA: ??
+  - fastGWA: >= gcta_1.93.1beta
 - BOLT-LMM:
-  - ldsc: ??
-  - BOLT-LMM: ??
+  - ldsc: >= 02.01.20
+  - BOLT-LMM: >= v2.3.4
 - SAIGE:
   - conda: ??
-  - SAIGE: ??
-  - R: ??
+  - SAIGE: >= 0.36.3.1
+  - R: >= 3.6.1
 - meta-analysis
   - metal: July 2010
 - LD score regression:
-  - ldsc: ??
+  - ldsc: >= 02.01.20
 
 
 ### Development Schedule
