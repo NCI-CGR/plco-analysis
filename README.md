@@ -1,6 +1,6 @@
-# plco-analysis: reproducible post-imputation association studies
+## plco-analysis: reproducible post-imputation association studies
 
-## Overview
+### Overview
 
 This pipeline system is designed to enable reproducible post-imputation analysis,
 primarily with (G)LMM software packages, as well as meta-analysis and QC plotting.
@@ -11,7 +11,7 @@ though with little effort it can be used for more reasonably-scoped analyses in 
 GWAS. It is highly configurable and extensible, specifically regarding association tools
 that can be modularly added, either with Make pipelines or tools in other languages.
 
-## Installation Instructions
+### Installation Instructions
 
 TODO: conda environment requirements.txt, primarily for SAIGE
 
@@ -43,8 +43,8 @@ Optional depending on individual requirements:
   - ldsc: ??
 
 
-## Development Schedule
-#### v1.0 (approximately corresponding to PLCO Atlas tranche 1 release)
+### Development Schedule
+##### v1.0 (approximately corresponding to PLCO Atlas tranche 1 release)
 - [x] BOLT-LMM support
 - [x] fastGWA support
 - [x] SAIGE support (binary traits)
@@ -65,18 +65,18 @@ Optional depending on individual requirements:
 - [ ] heuristic testing to support above
 - [ ] this README
 
-#### v2.0 (approximately corresponding with the end of PLCO Atlas)
+##### v2.0 (approximately corresponding with the end of PLCO Atlas)
 - [ ] polmm/ordinal phenotype support
 - [ ] slurm support
 - [ ] scalable testing with per-test dependency specification
 - [ ] heuristic testing to support above
 
-#### v3.0 (the Confluence build)
+##### v3.0 (the Confluence build)
 - [ ] complete (straightforward and documented) platform independence
 - [ ] integration of external meta-analysis files
 - [ ] distributed meta-analysis best practice QC measures
 - [ ] documentation: R-style vignette for generalized usage
 - [ ] heuristic testing to support above
 
-## Version History
+### Version History
 No locked versions exist yet!
