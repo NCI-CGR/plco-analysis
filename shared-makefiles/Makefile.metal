@@ -34,7 +34,7 @@ all: $(addsuffix .gz$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)) $(if $(EXCLUDE_SA
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: compress results
 %.tsv.gz$(TRACKING_SUCCESS_SUFFIX): %.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX)
-	$(call logging_handler,$(subst .success,,$@),gzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call log_handler,$(subst .success,,$@),gzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## get a saved config parameter setting from a tracking file
 define get_tracked_parameter =
@@ -64,7 +64,7 @@ COMMA:=,
 ## For SAIGE only: add Ncases/Ncontrols bonus tracked annotations from metal
 $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)): $$(subst .tsv,1.raw.tsv,$$@)
 	$(eval IS_SAIGE := $(shell echo $@ | grep SAIGE))
-	$(call logging_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk 'NR > 1 {print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$8"\t"$$9"\t"$$10"\t"$$16"\t"$$15$(if $(IS_SAIGE),"\t"$$17"\t"$$18,)}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's/^chr// ; s/:/\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN\tPHet$(if $(IS_SAIGE),\tNcases\tNcontrols,)"} ; {print $$1"\t"$$2"\tchr"$$1":"$$2":"$$3":"$$4"\t"toupper($$5)"\t"toupper($$6)"\t"$$7"\t"$$8"\t"$$9"\t"$$10"\t"$$11"\t"$$12$(if $(IS_SAIGE),"\t"$$13"\t"$$14,)}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk 'NR > 1 {print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$8"\t"$$9"\t"$$10"\t"$$16"\t"$$15$(if $(IS_SAIGE),"\t"$$17"\t"$$18,)}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's/^chr// ; s/:/\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN\tPHet$(if $(IS_SAIGE),\tNcases\tNcontrols,)"} ; {print $$1"\t"$$2"\tchr"$$1":"$$2":"$$3":"$$4"\t"toupper($$5)"\t"toupper($$6)"\t"$$7"\t"$$8"\t"$$9"\t"$$10"\t"$$11"\t"$$12$(if $(IS_SAIGE),"\t"$$13"\t"$$14,)}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.raw.tsv$(TRACKING_SUCCESS_SUFFIX)
@@ -78,10 +78,10 @@ $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)): $$(subst .tsv,1.raw.tsv,
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.rawids.tsv
 ## Notes: barebones configuration for metal. assumes effect estimates in log(OR) space for the moment.
 $(subst .tsv,1.par$(TRACKING_SUCCESS_SUFFIX),$(shell echo $(ALL_TARGETS) | grep -iv saige)): $$(shell find $$(dir $$@) -name "*[am].rawids.tsv" -print)
-	$(call logging_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo -e "MARKERLABEL SNP\nALLELELABELS Tested_Allele Other_Allele\nEFFECTLABEL BETA\nSTDERRLABEL SE\nFREQLABEL Freq_Tested_Allele_in_TOPMed\nCUSTOMVARIABLE TotalSampleSize\nLABEL TotalSampleSize as N\nSCHEME STDERR\nGENOMICCONTROL ON\nAVERAGEFREQ ON\nMINMAXFREQ ON\n$(patsubst %,PROCESSFILE %\n,$^)OUTFILE $(subst 1.par$(TRACKING_SUCCESS_SUFFIX),,$@) .raw.tsv\nANALYZE HETEROGENEITY\nQUIT" > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo -e "MARKERLABEL SNP\nALLELELABELS Tested_Allele Other_Allele\nEFFECTLABEL BETA\nSTDERRLABEL SE\nFREQLABEL Freq_Tested_Allele_in_TOPMed\nCUSTOMVARIABLE TotalSampleSize\nLABEL TotalSampleSize as N\nSCHEME STDERR\nGENOMICCONTROL ON\nAVERAGEFREQ ON\nMINMAXFREQ ON\n$(patsubst %,PROCESSFILE %\n,$^)OUTFILE $(subst 1.par$(TRACKING_SUCCESS_SUFFIX),,$@) .raw.tsv\nANALYZE HETEROGENEITY\nQUIT" > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 $(subst .tsv,1.par$(TRACKING_SUCCESS_SUFFIX),$(shell echo $(ALL_TARGETS) | grep -i saige)): $$(shell find $$(dir $$@) -name "*[e].rawids.tsv" -print)
-	$(call logging_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo -e "MARKERLABEL SNP\nALLELELABELS Tested_Allele Other_Allele\nEFFECTLABEL BETA\nSTDERRLABEL SE\nFREQLABEL Freq_Tested_Allele_in_TOPMed\nCUSTOMVARIABLE TotalSampleSize\nLABEL TotalSampleSize as N\nCUSTOMVARIABLE CaseCount\nLABEL CaseCount as Ncases\nCUSTOMVARIABLE ControlCount\nLABEL ControlCount as Ncontrols\nSCHEME STDERR\nGENOMICCONTROL ON\nAVERAGEFREQ ON\nMINMAXFREQ ON\n$(patsubst %,PROCESSFILE %\n,$^)OUTFILE $(subst 1.par$(TRACKING_SUCCESS_SUFFIX),,$@) .raw.tsv\nANALYZE HETEROGENEITY\nQUIT" > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo -e "MARKERLABEL SNP\nALLELELABELS Tested_Allele Other_Allele\nEFFECTLABEL BETA\nSTDERRLABEL SE\nFREQLABEL Freq_Tested_Allele_in_TOPMed\nCUSTOMVARIABLE TotalSampleSize\nLABEL TotalSampleSize as N\nCUSTOMVARIABLE CaseCount\nLABEL CaseCount as Ncases\nCUSTOMVARIABLE ControlCount\nLABEL ControlCount as Ncontrols\nSCHEME STDERR\nGENOMICCONTROL ON\nAVERAGEFREQ ON\nMINMAXFREQ ON\n$(patsubst %,PROCESSFILE %\n,$^)OUTFILE $(subst 1.par$(TRACKING_SUCCESS_SUFFIX),,$@) .raw.tsv\nANALYZE HETEROGENEITY\nQUIT" > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 
 
