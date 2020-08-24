@@ -222,7 +222,7 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: 
 %.bolt-chip.liftover-input$(TRACKING_SUCCESS_SUFFIX): %.bolt-chip.bed$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
-	$(call log_handler,$(subst .succes,,$@),awk '{print "chr"$$1"\t"$$4-1"\t"$$4}' $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.bim,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print "chr"$$1"\t"$$4-1"\t"$$4}' $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.bim,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.bed$(TRACKING_SUCCESS_SUFFIX)
