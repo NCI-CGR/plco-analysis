@@ -13,25 +13,25 @@ UNIQUE_PLATFORMS := $(subst _,/,$(filter-out Omni5,$(PLATFORMS)))
 all: $(UNIQUE_PLATFORMS) $(addsuffix /Makefile,$(UNIQUE_PLATFORMS))
 
 ## phony platform recursive target controls creation of platform's makefile
-$(UNIQUE_PLATFORMS): $$@/Makefile
+$(UNIQUE_PLATFORMS): $$@/Makefile.success
 	$(MAKE) -C $@
 
 ## create recursive makefile per platform, triggering creation of directory if needed
-$(addsuffix /Makefile,$(UNIQUE_PLATFORMS)): | $$(dir $$@)
-	echo -e "PROJECT_CODE := $(subst /Makefile,,$@)\n.DELETE_ON_ERROR:\ninclude $(BGEN_OUTPUT_DIR)/Makefile.bgen_format" > $@
+$(addsuffix /Makefile.success,$(UNIQUE_PLATFORMS)): | $$(dir $$@)
+	$(call log_handler,$(subst .success,,$@),echo -e "PROJECT_CODE := $(subst /Makefile.success,,$@)\n.DELETE_ON_ERROR:\ninclude $(BGEN_OUTPUT_DIR)/Makefile.bgen_format" > $(subst .success,,$@))
 
 ## create platform directory if needed
 $(addsuffix /,$(UNIQUE_PLATFORMS)):
 	mkdir -p $@
 
 ## test set to run after completion
-check: testing/Makefile
+check: testing/Makefile.success
 	$(MAKE) -C testing check
 
-testing/Makefile: testing/Makefile.am testing/configure.ac
-	cd testing && autoreconf -vi && ./configure && cd ../
+testing/Makefile.success: testing/Makefile.am testing/configure.ac
+	$(call log_handler,$(subst .success,,$@),cd testing && autoreconf -vi && ./configure && cd ../)
 
 secondary-clean: $(addsuffix -secondary-clean,$(UNIQUE_PLATFORMS))
 
-$(addsuffix -secondary-clean,$(UNIQUE_PLATFORMS)): #$$(subst -secondary-clean,/Makefile,$$@) | $$(dir $$@)
+$(addsuffix -secondary-clean,$(UNIQUE_PLATFORMS)):
 	$(MAKE) -C $(subst -secondary-clean,,$@) secondary-clean
