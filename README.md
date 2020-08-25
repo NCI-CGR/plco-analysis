@@ -22,7 +22,7 @@ Required for pipeline functionality
 - PyYAML >= 3.12
 - Make >= 4.2
 - gcc/g++ let's say >= 7 but like, what are you doing with your life
-- boost >= 1.56
+- boost >= 1.71
 - GRAF: >= 2.3.1
 - plink: 1.9 and 2
 - eigensoft/smartpca: = 6.1.4
