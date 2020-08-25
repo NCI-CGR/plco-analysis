@@ -53,30 +53,37 @@ Optional depending on individual requirements:
   - [x] support for fastGWA
   - [x] support for BOLT-LMM
   - [x] support for SAIGE/binary
-  - [ ] support for SAIGE/categorical
+  - [ ] support for SAIGE/categorical (#1)
 - [ ] full resumability
   - [x] resumable for cluster-submitted jobs
-  - [ ] resumable for non-cluster jobs
+  - [ ] resumable for non-cluster jobs (#9)
 - [ ] full logging
   - [x] logging for cluster-submitted jobs
-  - [ ] logging for non-cluster jobs
+  - [ ] logging for non-cluster jobs (#9)
 - [x] SGE/qsub support
 - [x] configuration via YAML
-- [ ] heuristic testing to support above
-- [ ] this README
+- [ ] testing via yaml (#13)
+- [ ] heuristic testing to support above (#4 #5 #6)
+- [ ] documentation: barebones installation instructions, conda for saige (#2)
+- [ ] this README (#3)
 
 ##### v2.0 (approximately corresponding with the end of PLCO Atlas)
 - [ ] polmm/ordinal phenotype support
-- [ ] slurm support
+- [ ] slurm support (#7)
 - [ ] scalable testing with per-test dependency specification
+- [ ] force post-primary analysis tools to ignore analysis results absent from config (#10)
 - [ ] heuristic testing to support above
+- [ ] documentation: full installation for multiple platforms, clusters; possibly docker
+- [ ] this README (#3)
 
 ##### v3.0 (the Confluence build)
 - [ ] complete (straightforward and documented) platform independence
-- [ ] integration of external meta-analysis files
-- [ ] distributed meta-analysis best practice QC measures
+- [ ] integration of external meta-analysis files (#11)
+- [ ] distributed meta-analysis best practice QC measures (#12)
+- [ ] LSF support (#8)
 - [ ] documentation: R-style vignette for generalized usage
 - [ ] heuristic testing to support above
+- [ ] this README (#3)
 
 ### Version History
 No locked versions exist yet!
