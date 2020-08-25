@@ -20,59 +20,59 @@ CHIPS := $(CHIP_FREEZE_INPUT_DIR)
 ## if you prefer and it would make things go faster, but as this is only run once, it doesn't
 ## make much of a difference, and removes a step that I'd otherwise be manually manipulating.
 
-all: $(addsuffix .success,$(REL_OUTPUT) $(patsubst %,PLCO_%.relatedness.txt,$(POPS)))
+all: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(REL_OUTPUT) $(patsubst %,PLCO_%.relatedness.txt,$(POPS)))
 
 ## patterns:
-##    output: PLCO.relatedness.txt.success
-##    input:  PLCO.fpg.success
-$(REL_OUTPUT).success: $(FPG_OUTPUT).success
-	-$(call log_handler,$(subst .success,,$@),$(GRAF_EXECUTABLE) -geno $(subst .success,,$<) -out $(subst .success,,$@))
+##    output: PLCO.relatedness.txt$(TRACKING_SUCCESS_SUFFIX)
+##    input:  PLCO.fpg$(TRACKING_SUCCESS_SUFFIX)
+$(REL_OUTPUT)$(TRACKING_SUCCESS_SUFFIX): $(FPG_OUTPUT)$(TRACKING_SUCCESS_SUFFIX)
+	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: PLCO.fpg.success
-##    input:  PLCO_{CHIP}_rsids.bed.success
-$(FPG_OUTPUT).success: $(patsubst %,PLCO_%_rsids.bed.success,$(POPS))
-	-$(call log_handler,$(subst .success,,$@),$(GRAF_EXECUTABLE) -exfp $(shell echo $(subst .success,,$^) | sed 's/ /,/g ; s/.bed//g')  -out $(subst .success,,$@) -type 4)
+##    output: PLCO.fpg$(TRACKING_SUCCESS_SUFFIX)
+##    input:  PLCO_{CHIP}_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
+$(FPG_OUTPUT)$(TRACKING_SUCCESS_SUFFIX): $(patsubst %,PLCO_%_rsids.bed$(TRACKING_SUCCESS_SUFFIX),$(POPS))
+	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(shell echo $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | sed 's/ /,/g ; s/.bed//g')  -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
 
 ## patterns:
-##    output: PLCO_{CHIP}_rsids.bed.success
+##    output: PLCO_{CHIP}_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CHIP_FREEZE}/PLCO_{CHIP}.bed
 ##            {CHIP_FREEZE}/PLCO_{CHIP}.bim
 ##            {CHIP_FREEZE}/PLCO_{CHIP}.fam
-##            GRAF.extract.success
-##            GRAF.update_names.success
+##            GRAF.extract$(TRACKING_SUCCESS_SUFFIX)
+##            GRAF.update_names$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: the input genotype files don't tend to have rsID annotations, but GRAF assumes they're present.
 ## so this uses plink to update whatever IDs are present to rsIDs and only keep the IDs that are present in the GRAF backend files.
 ## not also that this ~~assumes both GRAF and chips are in hg19~~
-PLCO_%_rsids.bed.success: $(CHIPS)/PLCO_%.bed $(CHIPS)/PLCO_%.bim $(CHIPS)/PLCO_%.fam GRAF.extract.success GRAF.update_names.success
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bed $< --bim $(word 2,$^) --fam $(word 3,$^) --extract $(subst .success,,$(word 4,$^)) --update-name $(subst .success,,$(word 5,$^)) --make-bed --out $(subst .bed.success,,$@))
+PLCO_%_rsids.bed$(TRACKING_SUCCESS_SUFFIX): $(CHIPS)/PLCO_%.bed $(CHIPS)/PLCO_%.bim $(CHIPS)/PLCO_%.fam GRAF.extract$(TRACKING_SUCCESS_SUFFIX) GRAF.update_names$(TRACKING_SUCCESS_SUFFIX)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bed $< --bim $(word 2,$^) --fam $(word 3,$^) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 4,$^)) --update-name $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: GRAF.extract.success
+##    output: GRAF.extract$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {GRAF_backend_bimfile}
 ## Notes: generates a plink-format --extract file to keep only the variants in the GRAF 1KG AIMs set
-GRAF.extract.success: $(GRAF_1KG_VARIANT_BIMFILE)
-	$(call log_handler,$(subst .success,,$@),awk '{print $$2}' $< > $(subst .success,,$@))
+GRAF.extract$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print $$2}' $< > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: GRAF.update_names.success
+##    output: GRAF.update_names$(TRACKING_SUCCESS_SUFFIX)
 ##    input: {GRAF_backend_bimfile}
 ## Notes: generates a plink(1.9)-format update-names file to convert chr:pos hg19 annotations to rsIDs
-GRAF.update_names.success: $(GRAF_1KG_VARIANT_BIMFILE)
-	$(call log_handler,$(subst .success,,$@),awk '{print $$1":"$$4"\t"$$2}' $< > $(subst .success,,$@))
+GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print $$1":"$$4"\t"$$2}' $< > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: PLCO_{CHIP}.relatedness.txt.success
-##    input:  PLCO_{CHIP}.fpg.success
+##    output: PLCO_{CHIP}.relatedness.txt$(TRACKING_SUCCESS_SUFFIX)
+##    input:  PLCO_{CHIP}.fpg$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this is really the primary output of this pipeline
-PLCO_%.relatedness.txt.success: PLCO_%.fpg.success
-	-$(call log_handler,$(subst .success,,$@),$(GRAF_EXECUTABLE) -geno $(subst .success,,$<) -out $(subst .success,,$@))
+PLCO_%.relatedness.txt$(TRACKING_SUCCESS_SUFFIX): PLCO_%.fpg$(TRACKING_SUCCESS_SUFFIX)
+	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: PLCO_{CHIP}.fpg.success
-##    input:  PLCO_{CHIP}_rsids.bed.success
-PLCO_%.fpg.success: PLCO_%_rsids.bed.success
-	-$(call log_handler,$(subst .success,,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed.success,,$<) -out $(subst .success,,$@) -type 4)
+##    output: PLCO_{CHIP}.fpg$(TRACKING_SUCCESS_SUFFIX)
+##    input:  PLCO_{CHIP}_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
+PLCO_%.fpg$(TRACKING_SUCCESS_SUFFIX): PLCO_%_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
+	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
 
 
 ## test set to run after completion

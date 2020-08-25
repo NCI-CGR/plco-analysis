@@ -44,7 +44,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
@@ -62,7 +62,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
@@ -80,7 +80,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(call resolve_ancestry,$@) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
@@ -99,7 +99,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(subst $(TRACKING_SUCCESS_SUFFIX),.txt,$(filter-out %.model_matrix$(TRACKING_SUCCESS_SUFFIX) %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN\tNcases\tNcontrols"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9"\t$(N_CASES)\t$(N_CONTROLS)"}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
@@ -128,7 +128,7 @@ $(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(patsubst %,$(subst .saige,,$(result
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call qsub_handler_long,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SAIGE_ROUND_2_SCRIPT) $(word 3,$^) $(word 4,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),.rda,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),.varianceRatio.txt,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),.varianceRatio.txt_relatednessCutoff_$(SAIGE_ROUND_1_RELATEDNESS_CUTOFF)_1000_randomMarkersUsed.sparseSigma.mtx,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) chr$(lastword $(subst .chr, ,$(subst .saige$(TRACKING_SUCCESS_SUFFIX),,$@)))) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 ## patterns:
@@ -154,7 +154,7 @@ endef
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),.varianceRatio.txt,$@)* $(subst $(TRACKING_SUCCESS_SUFFIX),.rda,$@) ; sleep 2 ; \
 	$(call qsub_handler_long,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) $(call get_tracked_parameter,$(word 2,$^)) $(if $(call get_covariates_from_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^))),$(call get_covariates_from_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^))),NA) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 

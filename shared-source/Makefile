@@ -7,10 +7,13 @@ GCC := g++
 CXXFLAGS := -Wall -O2
 LDFLAGS := -lz -lbz2
 
-FILEINTERFACE_DIR := fileinterface
+QSUB_JOB_MONITOR_DIR := qsub_job_monitor
+JOB_MONITOR_DIRS := $(QSUB_JOB_MONITOR_DIR)
 LIB_FILEINTERFACE := fileinterface/libfileinterface.a
 
-all:  $(OUT)
+SUBDIR_TARGETS := $(LIB_FILEINTERFACE) $(foreach dir,$(JOB_MONITOR_DIRS),$(dir)/$(dir).out)
+
+all: $(OUT) $(SUBDIR_TARGETS)
 
 %.out: %.o $(LIB_FILEINTERFACE)
 	$(GCC) -o $@ $^ $(LDFLAGS)
@@ -18,5 +21,5 @@ all:  $(OUT)
 %.o: %.cc
 	$(GCC) $(CXXFLAGS) -I$(FILEINTERFACE_DIR) -o $@ -c $<
 
-$(LIB_FILEINTERFACE):
-	$(MAKE) -C $(FILEINTERFACE_DIR)
+$(SUBDIR_TARGETS):
+	$(MAKE) -C $(dir $@)

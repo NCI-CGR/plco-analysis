@@ -11,8 +11,8 @@ include $(PROJECT_BASE_DIR)/Makefile.config
 all: check
 
 ## test set to run after completion
-check: testing/Makefile.success
+check: testing/Makefile$(TRACKING_SUCCESS_SUFFIX)
 	$(MAKE) -C testing check
 
-testing/Makefile.success: testing/Makefile.am testing/configure.ac
-	$(call log_handler,$(subst .success,,$@),cd testing && autoreconf -vi && ./configure && cd ../)
+testing/Makefile$(TRACKING_SUCCESS_SUFFIX): testing/Makefile.am testing/configure.ac
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cd testing && autoreconf -vi && ./configure && cd ../)

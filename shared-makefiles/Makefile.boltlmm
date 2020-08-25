@@ -45,7 +45,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
@@ -63,7 +63,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
@@ -81,7 +81,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(call resolve_ancestry,$@) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
@@ -99,7 +99,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(filter-out %.model_matrix$(TRACKING_SUCCESS_SUFFIX) %$(FREQUENCY_MODE_TRACKER_SUFFIX),$(subst .boltlmm$(TRACKING_SUCCESS_SUFFIX),.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$9"\t"$$10"\t"$$11"\t$(strip $(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) | awk '{print $$1}'))"}' | awk 'NR == 1 ; NR > 1 {$$NF = $$NF - 1 ; print $$0}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 ## phony clean target to eliminate all BOLT analysis directories
@@ -134,7 +134,7 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(BOLTLMM_EXECUTABLE) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$(word 1,$^)) --bgenFile $(word 2,$^) --sampleFile $(word 3,$^) --lmm --LDscoresFile=$(subst .gz,-reformatted.gz,$(word 6,$^)) --statsFile=$(subst .boltlmm$(TRACKING_SUCCESS_SUFFIX),.chip_results.boltlmm,$@) --statsFileBgenSnps=$(subst $(TRACKING_SUCCESS_SUFFIX),,$@) --phenoFile $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 4,$^)) --phenoCol $(shell head -1 $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 4,$^)) | cut -f 3) $(if $(shell head -1 $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) | cut -f 1-2 --complement),--covarFile $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) --qCovarCol $(shell head -1 $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) | cut -f 1-2 --complement | sed 's/\t/ --qCovarCol /g'),) --LDscoresMatchBp --geneticMapFile $(GRCH38_RECOMBINATION_MAP) > $(subst $(TRACKING_SUCCESS_SUFFIX),.log,$@) 2>&1) ; \
 	else \
-	rm -f $(subst .success,.fail,$@) && touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 ## patterns:
