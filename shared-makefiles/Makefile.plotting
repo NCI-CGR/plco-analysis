@@ -25,15 +25,12 @@ endef
 .SECONDARY:
 .SECONDEXPANSION:
 .DELETE_ON_ERROR:
-ALL_TARGETS := $(shell find $(RESULTS_DIR) -iname "*[am].tsv" -print)
 
-## for the moment, remove bq_cig_stat_o which is not compatible
-ALL_TARGETS := $(shell echo $(ALL_TARGETS) | grep -v "bq_cig_stat_o")
-
-META_TARGETS := $(filter %M.tsv %A.tsv %E.tsv,$(ALL_TARGETS))
+## significant improvements to search function: now it automatically finds any supported tool. UPPERCASE: meta-analysis; lowercase: primary analysis
+META_TARGETS := $(shell find $(RESULTS_DIR) \( -name "*$(shell echo "$(SUPPORTED_TARGETS)" | tr '[\:lower\:]' '[\:upper\:]' | sed 's/ /.tsv" -o -name "*/g').tsv" \) -print)
 META_TARGETS := $(subst .tsv,.manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),$(META_TARGETS))
 
-NOT_META_TARGETS := $(filter %m.tsv %a.tsv %e.tsv,$(ALL_TARGETS))
+NOT_META_TARGETS := $(shell find $(RESULTS_DIR) \( -name "*$(shell echo "$(SUPPORTED_TARGETS)" | tr '[\:upper\:]' '[\:lower\:]' | sed 's/ /.tsv" -o -name "*/g').tsv" \) -print)
 ## manipulate non-meta targets to have unambiguous filenames that match the format of the meta plots
 NOT_META_TARGETS := $(foreach target,$(NOT_META_TARGETS),$(dir $(target))$(firstword $(subst ., ,$(notdir $(target)))).$(call extract_ancestry,$(target)).$(call extract_chip,$(target)).$(call extract_method,$(target)).manhattan.jpg$(TRACKING_SUCCESS_SUFFIX))
 
