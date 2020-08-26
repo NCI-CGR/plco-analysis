@@ -7,6 +7,11 @@ include $(PROJECT_BASE_DIR)/Makefile.config
 .SECONDEXPANSION:
 .SECONDARY:
 
+## Computing the all-platforms relatedness file is slow and not required for the pipeline as-is;
+##   however, there are plenty of applications and QC steps that would require it. If you want it
+##   to be generated, define the below variable as anything at all and it will be added to the target set.
+GENERATE_CROSS_PLATFORM_RELATEDNESS :=
+
 ## So initially, long ago, the relatedness estimation was being conducted across the entire study.
 ## For whatever reason, these results were discarded in favor of within-platform estimates.
 ## Regardless, I've kept the between-platform estimates in here imagining someone will want them someday.
@@ -20,7 +25,7 @@ CHIPS := $(CHIP_FREEZE_INPUT_DIR)
 ## if you prefer and it would make things go faster, but as this is only run once, it doesn't
 ## make much of a difference, and removes a step that I'd otherwise be manually manipulating.
 
-all: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(REL_OUTPUT) $(patsubst %,PLCO_%.relatedness.txt,$(POPS)))
+all: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(if $(GENERATE_CROSS_PLATFORM_RELATEDNESS),$(REL_OUTPUT),) $(patsubst %,PLCO_%.relatedness.txt,$(POPS)))
 
 ## patterns:
 ##    output: PLCO.relatedness.txt$(TRACKING_SUCCESS_SUFFIX)
