@@ -47,6 +47,7 @@ PLCO_Oncoarray.graf_estimates.modified.txt$(TRACKING_SUCCESS_SUFFIX): $$(subst .
 ##    input:  PLCO_{CHIP}.graf_pop$(TRACKING_SUCCESS_SUFFIX)
 %.graf_estimates.raw.txt$(TRACKING_SUCCESS_SUFFIX): %.graf_pop$(TRACKING_SUCCESS_SUFFIX)
 	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_POP) $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	rm -f $(subst .success,.fail,$@) && touch $@
 
 ## patterns:
 ##    output: PLCO_{CHIP}.graf_pop$(TRACKING_SUCCESS_SUFFIX)
@@ -54,6 +55,7 @@ PLCO_Oncoarray.graf_estimates.modified.txt$(TRACKING_SUCCESS_SUFFIX): $$(subst .
 ## Notes: input is the output of the relatedness pipeline, which needs to complete before this pipeline is run.
 PLCO_%.graf_pop$(TRACKING_SUCCESS_SUFFIX): $(REL_DIR)/PLCO_%.fpg
 	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $< -pop $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	rm -f $(subst .success,.fail,$@) && touch $@
 
 ## test set to run after completion
 check: testing/Makefile
