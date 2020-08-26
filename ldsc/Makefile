@@ -91,7 +91,7 @@ $(patsubst %,1KG_%.merge_list$(TRACKING_SUCCESS_SUFFIX),$(1KG_POPS)): $$(patsubs
 ##    input:  1KG_{POP}.chr{CHR}.bed$(TRACKING_SUCCESS_SUFFIX) [really .bim]
 ## Notes: synchronize variant IDs with CHR:POS:A1:A2 nomenclature. be careful not to break file's relationship with .bed
 1KG_%_updated-ids.bim$(TRACKING_SUCCESS_SUFFIX): 1KG_%.bed$(TRACKING_SUCCESS_SUFFIX)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '$$5 < $$6 {print $$1"\t"$$1":"$$4":"$$5":"$$6"\t"$$3"\t"$$4"\t"$$5"\t"$$6} ; $$5 >= $$6 {print $$1"\t"$$1":"$$4":"$$6":"$$5"\t"$$3"\t"$$4"\t"$$5"\t"$$6}' $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.bim,$<) > $@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '$$5 < $$6 {print $$1"\t"$$1":"$$4":"$$5":"$$6"\t"$$3"\t"$$4"\t"$$5"\t"$$6} ; $$5 >= $$6 {print $$1"\t"$$1":"$$4":"$$6":"$$5"\t"$$3"\t"$$4"\t"$$5"\t"$$6}' $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.bim,$<) > $(subst .success,,$@))
 
 ## patterns:
 ##    output: 1KG_{POP}.{CHR}.bed$(TRACKING_SUCCESS_SUFFIX)
