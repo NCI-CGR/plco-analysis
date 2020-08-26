@@ -22,4 +22,5 @@ all: $(OUT) $(SUBDIR_TARGETS)
 	$(GCC) $(CXXFLAGS) -I$(FILEINTERFACE_DIR) -o $@ -c $<
 
 $(SUBDIR_TARGETS):
+	cd $(dir $@) && ./configure --prefix=$(shell pwd) $(if $(filter %/$(LIB_FILEINTERFACE),$@),,--with-boost=/home/palmercd/Development/stage) && cd ..
 	$(MAKE) -C $(dir $@)
