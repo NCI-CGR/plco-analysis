@@ -19,7 +19,7 @@ all: $(OUT) $(SUBDIR_TARGETS)
 	$(GCC) -o $@ $^ $(LDFLAGS)
 
 %.o: %.cc
-	$(GCC) $(CXXFLAGS) -I$(FILEINTERFACE_DIR) -o $@ -c $<
+	$(GCC) $(CXXFLAGS) -I$(dir $(LIB_FILEINTERFACE) -o $@ -c $<
 
 $(SUBDIR_TARGETS):
 	cd $(dir $@) && ./configure --prefix=$(shell pwd) $(if $(filter %/$(LIB_FILEINTERFACE),$@),,--with-boost=/home/palmercd/Development/stage) && cd ..
