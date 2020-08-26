@@ -40,7 +40,7 @@ all_chips: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(patsubst %,%.step5.ibs-norma
 ## Notes: this duplicates content from the relatedness pipeline
 %.graf_relatedness.txt$(TRACKING_SUCCESS_SUFFIX): %.fpg$(TRACKING_SUCCESS_SUFFIX)
 	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
-	rm -f $(subst .success,.fail,$@) && touch $@
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
 ##    output: {CHIP}.fpg$(TRACKING_SUCCESS_SUFFIX)
@@ -48,7 +48,7 @@ all_chips: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(patsubst %,%.step5.ibs-norma
 ## Notes: this duplicates content from the relatedness pipeline
 %.fpg$(TRACKING_SUCCESS_SUFFIX): %.rsids.bed$(TRACKING_SUCCESS_SUFFIX)
 	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
-	rm -f $(subst .success,.fail,$@) && touch $@
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
 ##    output: {CHIP}.rsids.bed$(TRACKING_SUCCESS_SUFFIX) (and bim, and fam)

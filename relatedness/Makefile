@@ -29,14 +29,14 @@ all: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(REL_OUTPUT) $(patsubst %,PLCO_%.re
 ##    In place of make's internal ignore return code feature, override the default success/fail tracking behavior for excepted rules.
 $(REL_OUTPUT)$(TRACKING_SUCCESS_SUFFIX): $(FPG_OUTPUT)$(TRACKING_SUCCESS_SUFFIX)
 	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
-	rm -f $(subst .success,.fail,$@) && touch $@
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
 ##    output: PLCO.fpg$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  PLCO_{CHIP}_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
 $(FPG_OUTPUT)$(TRACKING_SUCCESS_SUFFIX): $(patsubst %,PLCO_%_rsids.bed$(TRACKING_SUCCESS_SUFFIX),$(POPS))
 	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(shell echo $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | sed 's/ /,/g ; s/.bed//g')  -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
-	rm -f $(subst .success,.fail,$@) && touch $@
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
 ##    output: PLCO_{CHIP}_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
@@ -71,14 +71,14 @@ GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
 ## Notes: this is really the primary output of this pipeline
 PLCO_%.relatedness.txt$(TRACKING_SUCCESS_SUFFIX): PLCO_%.fpg$(TRACKING_SUCCESS_SUFFIX)
 	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
-	rm -f $(subst .success,.fail,$@) && touch $@
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
 ##    output: PLCO_{CHIP}.fpg$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  PLCO_{CHIP}_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
 PLCO_%.fpg$(TRACKING_SUCCESS_SUFFIX): PLCO_%_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
 	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
-	rm -f $(subst .success,.fail,$@) && touch $@
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## test set to run after completion
 check: testing/Makefile
