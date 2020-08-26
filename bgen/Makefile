@@ -10,7 +10,7 @@ UNIQUE_PLATFORMS := $(subst _,/,$(filter-out Omni5,$(PLATFORMS)))
 .SECONDEXPANSION:
 .PHONY: all $(UNIQUE_PLATFORMS) check secondary-clean $(addsuffix -secondary-clean,$(UNIQUE_PLATFORMS))
 ## all targets are: each platform, without Omni5 because it has no non-redundant subjects
-all: $(UNIQUE_PLATFORMS) $(addsuffix /Makefile,$(UNIQUE_PLATFORMS))
+all: $(UNIQUE_PLATFORMS)
 
 ## phony platform recursive target controls creation of platform's makefile
 $(UNIQUE_PLATFORMS): $$@/Makefile$(TRACKING_SUCCESS_SUFFIX)
