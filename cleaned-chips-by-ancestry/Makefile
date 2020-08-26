@@ -18,7 +18,7 @@ clean:
 ##    output: {ANCESTRY} [recursive make run]
 ##    input:  {ANCESTRY}/Makefile$(TRACKING_SUCCESS_SUFFIX)
 ## Note: dispatches recursive make call to each ancestry; also handles creation of the ancestry makefile
-$(CLEANED_ANCESTRY_NAMES): $$@/Makefile
+$(CLEANED_ANCESTRY_NAMES): $$@/Makefile$(TRACKING_SUCCESS_SUFFIX)
 	$(MAKE) -C $@
 
 ## patterns:
