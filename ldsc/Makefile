@@ -104,10 +104,10 @@ $(patsubst %,1KG_%.merge_list$(TRACKING_SUCCESS_SUFFIX),$(1KG_POPS)): $$(patsubs
 
 ## patterns:
 ##    output: {POP}.samples.plinkformat.tsv$(TRACKING_SUCCESS_SUFFIX)
-##    input:  {POP}_samples.tsv$(TRACKING_SUCCESS_SUFFIX)
+##    input:  {POP}_samples.tsv
 ## Notes: reformat 1000 Genomes supercontinent membership data into plink keep format.
 ## untracked, derived from http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/working/20130606_sample_info/20130606_sample_info.xlsx
-%.samples.plinkformat.tsv$(TRACKING_SUCCESS_SUFFIX): %_samples.tsv$(TRACKING_SUCCESS_SUFFIX)
+%.samples.plinkformat.tsv$(TRACKING_SUCCESS_SUFFIX): %_samples.tsv
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print $$1"\t"$$1}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
