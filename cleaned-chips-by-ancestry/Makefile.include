@@ -141,7 +141,7 @@ GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
 ##    input:  {CHIP}.step3.pruning.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: compute heterozygosity F statistics on LD pruned data
 %.step4.het$(TRACKING_SUCCESS_SUFFIX): %.step3.pruning.bed$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(Subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --het --out $(subst .het$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --het --out $(subst .het$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.step4.het.remove$(TRACKING_SUCCESS_SUFFIX)
