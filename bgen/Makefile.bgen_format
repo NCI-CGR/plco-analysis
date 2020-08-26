@@ -76,5 +76,5 @@ $(addsuffix /,$(VALID_ANCESTRIES)):
 ## Notes: this step was previously handled differently, but now there is an apparently canonical list of nonredundant subjects by platform
 ## created by a collaborator. so in this case, just use that list directly.
 %.unique.prioritized.keep$(TRACKING_SUCCESS_SUFFIX): $(RESOLVED_SUBJECT_LIST)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk -F"\t" '$$NF ~ /$(subst .unique.prioritized.keep,,$@)/ {print $$1"\t"$$1}' $< > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk -F"\t" '$$NF ~ /$(subst .unique.prioritized.keep$(TRACKING_SUCCESS_SUFFIX),,$@)/ {print $$1"\t"$$1}' $< > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
