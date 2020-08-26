@@ -179,7 +179,7 @@ $(patsubst %,%.step5.ibs-split.genome.gz$(TRACKING_SUCCESS_SUFFIX),$(LARGE_STUDI
 ##    input:  {CHIP}.pca.par$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: run eigenstrat smartpca fastmode
 %.step7.evec$(TRACKING_SUCCESS_SUFFIX): %.pca.par$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(SMARTPCA) -p $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 4,$^)))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(SMARTPCA) -p $(subst $(TRACKING_SUCCESS_SUFFIX),,$<))
 
 ## patterns:
 ##    output: {CHIP}.pca.par$(TRACKING_SUCCESS_SUFFIX)
