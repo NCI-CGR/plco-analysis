@@ -68,20 +68,20 @@ Optional depending on individual requirements:
 - [ ] this README (#3)
 
 ##### v2.0 (approximately corresponding with the end of PLCO Atlas)
-- [ ] polmm/ordinal phenotype support
+- [ ] polmm/ordinal phenotype support (#14)
 - [ ] slurm support (#7)
-- [ ] scalable testing with per-test dependency specification
+- [ ] scalable testing with per-test dependency specification (#17)
 - [ ] force post-primary analysis tools to ignore analysis results absent from config (#10)
 - [ ] heuristic testing to support above
 - [ ] documentation: full installation for multiple platforms, clusters; possibly docker
 - [ ] this README (#3)
 
 ##### v3.0 (the Confluence build)
-- [ ] complete (straightforward and documented) platform independence
+- [ ] complete (straightforward and documented) platform independence (#16)
 - [ ] integration of external meta-analysis files (#11)
 - [ ] distributed meta-analysis best practice QC measures (#12)
 - [ ] LSF support (#8)
-- [ ] documentation: R-style vignette for generalized usage
+- [ ] documentation: R-style vignette for generalized usage (#15)
 - [ ] heuristic testing to support above
 - [ ] this README (#3)
 
