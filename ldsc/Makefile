@@ -115,4 +115,4 @@ $(patsubst %,1KG_%.merge_list$(TRACKING_SUCCESS_SUFFIX),$(1KG_POPS)): $$(patsubs
 ##    input:  [genome-wide recombination map, likely bundled with BOLT]
 ## Notes: extract relevant chromosome and fix format of recombination data for use with LDSC
 genetic_map_chr%.txt$(TRACKING_SUCCESS_SUFFIX): $(HG38_CM_MAP)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk 'NR == 1 {print "pposition rrate gposition"} ; NR > 1 && $$1 == $(subst genetic_map_chr,,$(subst .txt.gz$(TRACKING_SUCCESS_SUFFIX),,$@)) {print $$2" "$$3" "$$4}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk 'NR == 1 {print "pposition rrate gposition"} ; NR > 1 && $$1 == $(subst genetic_map_chr,,$(subst .txt$(TRACKING_SUCCESS_SUFFIX),,$@)) {print $$2" "$$3" "$$4}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
