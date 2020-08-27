@@ -64,6 +64,7 @@ Optional depending on individual requirements:
 - [x] configuration via YAML
 - [ ] testing via yaml (#13)
 - [ ] heuristic testing to support above (#4 #5 #6)
+- [ ] hunt down last untracked auxiliary files (#24)
 - [ ] documentation: barebones installation instructions, conda for saige (#2)
 - [ ] this README (#3)
 
