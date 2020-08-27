@@ -69,6 +69,7 @@ Optional depending on individual requirements:
 
 ##### v2.0 (approximately corresponding with the end of PLCO Atlas)
 - [ ] polmm/ordinal phenotype support (#14)
+- [ ] top-level parameter exposure for analysis tools (#22)
 - [ ] slurm support (#7)
 - [ ] scalable testing with per-test dependency specification (#17)
 - [ ] force post-primary analysis tools to ignore analysis results absent from config (#10)
@@ -78,6 +79,7 @@ Optional depending on individual requirements:
 
 ##### v3.0 (the Confluence build)
 - [ ] complete (straightforward and documented) platform independence (#16)
+- [ ] config-level parameter exposure for analysis tools (#23)
 - [ ] integration of external meta-analysis files (#11)
 - [ ] distributed meta-analysis best practice QC measures (#12)
 - [ ] LSF support (#8)
