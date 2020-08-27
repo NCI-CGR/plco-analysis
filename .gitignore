@@ -47,3 +47,11 @@ tmp*
 *png
 core.*
 shared-source/fileinterface
+shared-source/qsub_job_monitor
+node_modules/
+shared-source/annotate_rsids.cc
+shared-source/build_dag.cc
+shared-source/compute_lambda_n.R
+shared-source/digraph_cleaner.cc
+backup
+*variances
