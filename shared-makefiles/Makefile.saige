@@ -135,7 +135,7 @@ $(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(patsubst %,$(subst .saige,,$(result
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr22-filtered-noNAs.sample
 ## Notes: final subject list for actual imputed data, originally required to prune extra subjects from chip or imputed data
-%.saige.samples$(TRACKING_SUCCESS_SUFFIX): $$(IMPUTED_DIR)/$$(call extract_chip,$$(subst .saige.samples,,$$@),/)/$$(call extract_ancestry,$$@)/chr22-filtered-noNAs.sample | $$(dir $$@)
+%.saige.samples$(TRACKING_SUCCESS_SUFFIX): $$(IMPUTED_DIR)/$$(call extract_chip,$$(subst .saige.samples$(TRACKING_SUCCESS_SUFFIX),,$$@),/)/$$(call extract_ancestry,$$@)/chr22-filtered-noNAs.sample | $$(dir $$@)
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk 'NR > 2 {print $$1}' $< > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## utility function to just grab comma-delimited covariates from a model matrix
@@ -251,7 +251,7 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-input$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: run liftover, chips are in hg19 and imputed data are in GRCh38
 %.saige-chip.liftover-output$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.liftover-input$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(LIFTOVER_EXECUTABLE) $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) $(LIFTOVER_19_TO_38) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) $(subst liftover-output$(TRACKING_SUCCESS_SUFFIX),liftover-failure,$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(LIFTOVER_EXECUTABLE) $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) $(LIFTOVER_19_TO_38) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) $(subst liftover-output$(TRACKING_SUCCESS_SUFFIX),liftover-failure,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-input$(TRACKING_SUCCESS_SUFFIX)
