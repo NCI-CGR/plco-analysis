@@ -21,24 +21,29 @@ else
     FORCE_RUN="${17}"
     PRETEND_RUN="${18}"
 
-    ## python yaml helper function
+    ## python yaml helper functions
+    declare -A PARSED_YAML
+    ## for version reasons, this can't be wrapped in a function
+    lines=`python3 -c "import yaml; print(yaml.safe_load(open('$1')))" | sed -E "s/('[^:,']+'): ('[^']+')/\1: \2\n/g ; s/],/]\n/g ; s/\{// ; s/\}//" | sed "s/^,// ; s/\[// ; s/]// ; s/ //g ; s/'//g"`
+    for line in `echo "$lines" | sed 's/ /\n/g'`;
+    do
+	PARSED_YAML[`echo "$line" | cut -f 1 -d ":"`]=`echo "$line" | cut -f 2 -d ":"`
+    done
+    ## previous versons of this implementation had distinct behaviors for these two functions; leaving as is for now
     yaml() {
-	VALUE=`python3 -c "import yaml; print(yaml.safe_load(open('$1'))['$2'])"`
-	echo "$VALUE" | sed "s/\[//g ; s/\]//g ; s/'//g ; s/,//g"
+	echo "${PARSED_YAML[$1]//,/ }"
     }
     yaml_check_exists() {
-	VALUE=`python3 -c "import yaml; print(\"$2\" in yaml.safe_load(open('$1')))"`
-	if [[ "$VALUE" == "True" ]] ; then
-	    echo "1"
-	fi
+	echo "${PARSED_YAML[$1]//,/ }"
     }
-    ANALYSIS_PREFIX=$(yaml "$CONFIG_FILE" "analysis_prefix")
-    REQUESTED_CHIPS=$(yaml "$CONFIG_FILE" "chips")
-    REQUESTED_ANCESTRIES=$(yaml "$CONFIG_FILE" "ancestries")
-    REQUESTED_ALGORITHM=$(yaml "$CONFIG_FILE" "algorithm")
+
+    ANALYSIS_PREFIX=$(yaml analysis_prefix)
+    REQUESTED_CHIPS=$(yaml chips)
+    REQUESTED_ANCESTRIES=$(yaml ancestries)
+    REQUESTED_ALGORITHM=$(yaml algorithm)
 
     ## only compute this either the first time, or when the analysis as a whole is being reevaluated
-    PHENOTYPE=$(yaml "$CONFIG_FILE" "phenotype")
+    PHENOTYPE=$(yaml phenotype)
     FACTORIZATION="NA"
     if [[ "${REQUESTED_ALGORITHM^^}" == *"SAIGE"* ]] ; then
     FACTORIZATION=`awk -F"\t" -v trait=$PHENOTYPE 'BEGIN {COL=0}
@@ -140,8 +145,8 @@ else
 
 		    ## run covariate selection tracking/version difference testing
 		    COVARIATES="NA"
-		    if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "covariates") ]] ; then
-			COVARIATES=$(yaml "$CONFIG_FILE" "covariates")
+		    if [[ ! -z $(yaml_check_exists covariates) ]] ; then
+			COVARIATES=$(yaml covariates)
 			COVARIATES=${COVARIATES// /,}
 		    fi
 		    if [[ -f "$COVARIATES_SELECTED_TRACKER" ]] ; then
@@ -157,8 +162,8 @@ else
 		    FREQUENCY_UPDATED="0"
 		    if [[ "$PRETEND_RUN" -eq "0" ]] ; then
 			FREQUENCY_MODE="reference"
-			if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "frequency_mode") ]] ; then
-			    FREQUENCY_MODE=$(yaml "$CONFIG_FILE" "frequency_mode")
+			if [[ ! -z $(yaml_check_exists frequency_mode) ]] ; then
+			    FREQUENCY_MODE=$(yaml frequency_mode)
 			fi
 			if [[ -f "$FREQUENCY_MODE_TRACKER" ]] ; then
 			    EXISTING_FREQUENCY_MODE=`cat $FREQUENCY_MODE_TRACKER`
@@ -182,8 +187,8 @@ else
 		    ID_UPDATED="0"
 		    if [[ "$PRETEND_RUN" -eq "0" ]] ; then
 			ID_MODE="chrpos"
-			if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "id_mode") ]] ; then
-			    ID_MODE=$(yaml "$CONFIG_FILE" "id_mode")
+			if [[ ! -z $(yaml_check_exists id_mode) ]] ; then
+			    ID_MODE=$(yaml id_mode)
 			fi
 			if [[ -f "$ID_MODE_TRACKER" ]] ; then
 			    EXISTING_ID_MODE=`cat $ID_MODE_TRACKER`
@@ -205,8 +210,8 @@ else
 
 		    ## run phenotype transformation mode tracking/version difference testing
 		    TRANSFORMATION="none"
-		    if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "transformation") ]] ; then
-			TRANSFORMATION=$(yaml "$CONFIG_FILE" "transformation")
+		    if [[ ! -z $(yaml_check_exists transformation) ]] ; then
+			TRANSFORMATION=$(yaml transformation)
 		    fi
 		    if [[ -f "$TRANSFORMATION_TRACKER" ]] ; then
 			EXISTING_TRANSFORMATION=`cat $TRANSFORMATION_TRACKER`
@@ -220,8 +225,8 @@ else
 
 		    ## run phenotype transformation mode tracking/version difference testing
 		    SEX_SPECIFIC="combined"
-		    if [[ ! -z $(yaml_check_exists "$CONFIG_FILE" "sex-specific") ]] ; then
-			SEX_SPECIFIC=$(yaml "$CONFIG_FILE" "sex-specific")
+		    if [[ ! -z $(yaml_check_exists sex-specific) ]] ; then
+			SEX_SPECIFIC=$(yaml sex-specific)
 		    fi
 		    if [[ -f "$SEX_SPECIFIC_TRACKER" ]] ; then
 			EXISTING_SEX_SPECIFIC=`cat $SEX_SPECIFIC_TRACKER`
