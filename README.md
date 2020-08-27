@@ -62,6 +62,7 @@ Optional depending on individual requirements:
   - [ ] logging for non-cluster jobs (#9)
 - [x] SGE/qsub support
 - [x] configuration via YAML
+- [ ] more efficient yaml access in preprocessor (#25)
 - [ ] testing via yaml (#13)
 - [ ] heuristic testing to support above (#4 #5 #6)
 - [ ] hunt down last untracked auxiliary files (#24)
