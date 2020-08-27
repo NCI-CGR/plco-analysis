@@ -24,11 +24,18 @@ else
     ## python yaml helper functions
     declare -A PARSED_YAML
     ## for version reasons, this can't be wrapped in a function
-    lines=`python3 -c "import yaml; print(yaml.safe_load(open('$1')))" | sed -E "s/('[^:,']+'): ('[^']+')/\1: \2\n/g ; s/],/]\n/g ; s/\{// ; s/\}//" | sed "s/^,// ; s/\[// ; s/]// ; s/ //g ; s/'//g"`
-    for line in `echo "$lines" | sed 's/ /\n/g'`;
-    do
-	PARSED_YAML[`echo "$line" | cut -f 1 -d ":"`]=`echo "$line" | cut -f 2 -d ":"`
-    done
+    raw_lines=`python3 -c "import yaml; print(yaml.safe_load(open('$1')))" 2> /dev/null`
+    if [[ "$raw_lines" =~ ^\{.*\}$ ]] ; then
+	lines=`echo "$raw_lines" | sed -E "s/('[^:,']+'): ('[^']+')/\1: \2\n/g ; s/],/]\n/g ; s/\{// ; s/\}//" | sed "s/^,// ; s/\[// ; s/]// ; s/ //g ; s/'//g"`
+	for line in `echo "$lines" | sed 's/ /\n/g'`;
+	do
+	    PARSED_YAML[`echo "$line" | cut -f 1 -d ":"`]=`echo "$line" | cut -f 2 -d ":"`
+	done
+    else
+	## this should have been caught upstream by the config test suite, so just die here in this case
+	echo "config failure detected, terminating: \"$raw_lines\""
+	exit 1
+    fi
     ## previous versons of this implementation had distinct behaviors for these two functions; leaving as is for now
     yaml() {
 	echo "${PARSED_YAML[$1]//,/ }"
