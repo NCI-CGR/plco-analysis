@@ -19,35 +19,35 @@ VALID_OUTPUTS := $(foreach input,$(VALID_INPUTS),$(subst .step3.pruning.bed,-sp.
 all: $(VALID_OUTPUTS)
 
 ## patterns:
-##    output: fastgwa-grm/{ANCESTRY}/{CHIP}-sp.grm.sp
-##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.grm.bin
-##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.grm.id
-##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.grm.N.bin
+##    output: fastgwa-grm/{ANCESTRY}/{CHIP}-sp.grm.sp$(TRACKING_SUCCESS_SUFFIX)
+##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.grm.bin$(TRACKING_SUCCESS_SUFFIX)
+##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.grm.id$(TRACKING_SUCCESS_SUFFIX)
+##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.grm.N.bin$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: round 2, make an existing GRM sparse
-%-sp.grm.sp$(TRACKING_SUCCESS_SUFFIX): %.grm.bin %.grm.id %.grm.N.bin | $$(dir $$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GCTA) --grm $(subst .grm.bin,,$<) --make-bK-sparse 0.05 --out $(subst .grm.sp$(TRACKING_SUCCESS_SUFFIX),,$@))
+%-sp.grm.sp$(TRACKING_SUCCESS_SUFFIX): %.grm.bin$(TRACKING_SUCCESS_SUFFIX) %.grm.id$(TRACKING_SUCCESS_SUFFIX) %.grm.N.bin$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GCTA) --grm $(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),,$<) --make-bK-sparse 0.05 --out $(subst .grm.sp$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 
 ## patterns:
-##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.grm.N.bin
+##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.grm.N.bin$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.part_{TOTALPARTS}_{CURRENTPART}.grm.bin$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: merge .grm.N.bin files from round 1
-$(subst -sp.grm.sp$(TRACKING_SUCCESS_SUFFIX),.grm.N.bin,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.N.bin,,$$@).part_$$(N_SPLITS)_%.grm.bin$(TRACKING_SUCCESS_SUFFIX),$$(SPLIT_SEQ)) | $$(dir $$@)
-	cat $(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),.grm.N.bin,$^) > $@
+$(subst -sp.grm.sp,.grm.N.bin,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.N.bin$(TRACKING_SUCCESS_SUFFIX),,$$@).part_$$(N_SPLITS)_%.grm.bin$(TRACKING_SUCCESS_SUFFIX),$$(SPLIT_SEQ)) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),.grm.N.bin,$^) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.grm.id
+##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.grm.id$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.part_{TOTALPARTS}_{CURRENTPART}.grm.bin$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: merge .grm.id files from round 1
-$(subst -sp.grm.sp$(TRACKING_SUCCESS_SUFFIX),.grm.id,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.id,,$$@).part_$$(N_SPLITS)_%.grm.bin$(TRACKING_SUCCESS_SUFFIX),$$(SPLIT_SEQ)) | $$(dir $$@)
-	cat $(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),.grm.id,$^) > $@
+$(subst -sp.grm.sp,.grm.id,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.id$(TRACKING_SUCCESS_SUFFIX),,$$@).part_$$(N_SPLITS)_%.grm.bin$(TRACKING_SUCCESS_SUFFIX),$$(SPLIT_SEQ)) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),.grm.id,$^) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.grm.bin
+##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.grm.bin$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.part_{TOTALPARTS}_{CURRENTPART}.grm.bin$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: merge .grm.bin files from round 1
-$(subst -sp.grm.sp$(TRACKING_SUCCESS_SUFFIX),.grm.bin,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.bin,,$$@).part_$$(N_SPLITS)_%.grm.bin$(TRACKING_SUCCESS_SUFFIX),$$(SPLIT_SEQ)) | $$(dir $$@)
-	cat $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) > $@
+$(subst -sp.grm.sp,.grm.bin,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),,$$@).part_$$(N_SPLITS)_%.grm.bin$(TRACKING_SUCCESS_SUFFIX),$$(SPLIT_SEQ)) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: fastgwa-grm/{ANCESTRY}/{CHIP}.part_{TOTALPARTS}_{CURRENTPART}.grm.bin$(TRACKING_SUCCESS_SUFFIX)

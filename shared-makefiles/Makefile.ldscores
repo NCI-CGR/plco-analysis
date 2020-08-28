@@ -90,7 +90,7 @@ $(LD_CHR_GRCh38)%.l2.ldscore.gz: $(LD_CHR_GRCh38)%.lifted.bed | $$(dir $$@)
 ##    input:  {ldsc_data_GRCh38}
 ## Notes: run liftOver from 19->38; use hacked bed format to simplify things
 $(LD_CHR_GRCh38)%.lifted.bed: $(LD_CHR_GRCh38)%.input.bed | $$(dir $$@)
-	$(LIFTOVER_EXECUTABLE) $< $(LIFTOVER_19_TO_38) $@ $(subst .bed,.fail,$@)
+	$(LIFTOVER_EXECUTABLE) $< $(LIFTOVER_19_TO_38) $@ $(subst .bed,$(TRACKING_FAIL_SUFFIX),$@)
 
 ## patterns:
 ##    output: {ldsc_data_GRCh38}/{CHR}.input.bed

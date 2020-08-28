@@ -43,7 +43,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
 	else \
-	touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 ## patterns:
@@ -60,7 +60,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)),$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))) ; \
 	else \
-	touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 ## patterns:
@@ -77,7 +77,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)),$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(call resolve_ancestry,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))) ; \
 	else \
-	touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 ## patterns:
@@ -94,7 +94,7 @@ endef
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(filter-out %.model_matrix$(TRACKING_SUCCESS_SUFFIX) %$(FREQUENCY_MODE_TRACKER_SUFFIX),$(subst .fastgwa$(TRACKING_SUCCESS_SUFFIX),.fastGWA,$^)) | awk '! /CHR/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$1"\t"$$3"\t"$$2"\t"$$4"\t"$$5"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$8"\t"$$9"\t"$$10"\t"$$6}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
 	else \
-	touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
@@ -122,11 +122,11 @@ endef
 ## Notes: run fastGWA itself, on precomputed GRM from the separate pipeline. all covariates are handled as quantitative, categoricals are binarized.
 ## this is a step that requires the "noNA" modification to sample files in the bgen pipeline. the model matrix is used to enforce minimum sample size requirements
 ## on a per-method basis.
-$(foreach result,$(ANALYSIS_RESULTS_FASTGWA),$(patsubst %,$(subst .fastgwa,,$(result)).chr%.fastgwa$(TRACKING_SUCCESS_SUFFIX),$(CHRS))): $$(FASTGWA_GRM_OUTPUT_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@, )-sp.grm.sp $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst .chr, chr,$$(subst .fastgwa$(TRACKING_SUCCESS_SUFFIX),,$$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst .chr, chr,$$(subst .fastgwa$(TRACKING_SUCCESS_SUFFIX),,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).fastgwa.phenotype $$(word 1,$$(subst .chr, ,$$@)).fastgwa.covariates $$(word 1,$$(subst .chr, ,$$@)).fastgwa.model_matrix$(TRACKING_SUCCESS_SUFFIX)
+$(foreach result,$(ANALYSIS_RESULTS_FASTGWA),$(patsubst %,$(subst .fastgwa,,$(result)).chr%.fastgwa$(TRACKING_SUCCESS_SUFFIX),$(CHRS))): $$(FASTGWA_GRM_OUTPUT_DIR)/$$(call extract_ancestry,$$@)/$$(call extract_chip,$$@, )-sp.grm.sp $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst .chr, chr,$$(subst .fastgwa$(TRACKING_SUCCESS_SUFFIX),,$$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(lastword $$(subst .chr, chr,$$(subst .fastgwa$(TRACKING_SUCCESS_SUFFIX),,$$@)))-filtered-noNAs.sample $$(word 1,$$(subst .chr, ,$$@)).fastgwa.phenotype$(TRACKING_SUCCESS_SUFFIX) $$(word 1,$$(subst .chr, ,$$@)).fastgwa.covariates$(TRACKING_SUCCESS_SUFFIX) $$(word 1,$$(subst .chr, ,$$@)).fastgwa.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
 	$(call qsub_handler_specify_queue_time,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GCTA) --bgen $(word 2,$^) --sample $(word 3,$^) --fastGWA-mlm --grm-sparse $(subst -sp.grm.sp,-sp,$<) --pheno $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 4,$^)) $(if $(shell head -1 $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) | cut -f 1-2 --complement),--qcovar $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)),) --threads 4 --out $(subst .fastgwa$(TRACKING_SUCCESS_SUFFIX),,$@) > $(subst $(TRACKING_SUCCESS_SUFFIX),.log,$@),all.q,1:00:00) ; \
 	else \
-	touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 ## patterns:
@@ -181,8 +181,6 @@ secondary-clean:
 	done
 	for dir in $(dir $(ANALYSIS_RESULTS_FASTGWA)) ; \
 	do \
-	rm -f $$dir/*output ; \
-	rm -f $$dir/*error ; \
 	rm -f $$dir/*fastGWA ; \
 	rm -f $$dir/*plot_ready ; \
 	rm -f $$dir/*tsv ; \

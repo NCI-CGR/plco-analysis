@@ -3,8 +3,7 @@
 
 include $(PROJECT_BASE_DIR)/Makefile.config
 
-ALL_FIND_TARGETS := $(shell find $(RESULT_OUTPUT_DIR) -name "*[mae].rawids.tsv" -print)
-#ALL_TARGETS := $(sort $(dir $(shell echo $(ALL_FIND_TARGETS) | grep -vE "*/comparison[0-9]+/*")))
+ALL_FIND_TARGETS := $(shell find $(RESULT_OUTPUT_DIR) \( -name "*$(shell echo "$(SUPPORTED_TARGETS)" | tr '[\:upper\:]' '[\:lower\:]' | sed 's/ /.rawids.tsv" -o -name "*/g').rawids.tsv" \) -print)
 ALL_TARGETS := $(sort $(dir $(ALL_FIND_TARGETS)))
 ALL_TARGETS := $(foreach target,$(ALL_TARGETS),$(target)$(word 1,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).$(word 2,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).$(word 3,$(subst /, ,$(subst $(RESULT_OUTPUT_DIR),,$(target)))).tsv)
 
@@ -34,7 +33,7 @@ all: $(addsuffix .gz$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)) $(if $(EXCLUDE_SA
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: compress results
 %.tsv.gz$(TRACKING_SUCCESS_SUFFIX): %.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX)
-	$(call log_handler,$(subst .success,,$@),gzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## get a saved config parameter setting from a tracking file
 define get_tracked_parameter =
