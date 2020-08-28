@@ -164,8 +164,6 @@ do
 	    fi
 	fi
     else
-	## this should have been caught upstream by the config test suite, so just die here in this case
-	echo "$raw_lines"
 	config_yaml_failure=1
     fi
 
