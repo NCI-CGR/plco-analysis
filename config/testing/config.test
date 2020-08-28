@@ -1,7 +1,6 @@
 #!/bin/bash
 config_dir=..
 phenotype_file=$PHENOTYPE_FILE
-phenotype_file="/CGF/GWAS/Scans/PLCO/builds/1/plco-analysis/phenotypes/v8/atlas_v8.with_na.augmented.03august2020.tsv"
 expected_test_count=`ls -l $config_dir/*config.yaml | wc -l`
 echo "1..$expected_test_count"
 
