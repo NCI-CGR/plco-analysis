@@ -60,108 +60,113 @@ do
     ## for version reasons, this can't be wrapped in a function
     raw_lines=`python3 -c "import yaml; print(yaml.safe_load(open('$config_file')))" 2> /dev/null`
     if [[ "$raw_lines" =~ ^\{.*\}$ ]] ; then
-	lines=`echo "$raw_lines" | sed -E "s/('[^:,']+'): ('[^']+')/\1: \2\n/g ; s/],/]\n/g ; s/\{// ; s/\}//" | sed "s/^,// ; s/\[// ; s/]// ; s/ //g ; s/'//g"`
-	for line in `echo "$lines" | sed 's/ /\n/g'`;
-	do
-            PARSED_YAML[`echo "$line" | cut -f 1 -d ":"`]=`echo "$line" | cut -f 2 -d ":"`
-	done
-	
-	## exactly one (unique across all files) "analysis_prefix:" entry
-	analysis_prefix_present=$(yaml_check_exists analysis_prefix)
-	## analysis prefix value is present only one time in all config files
-	if [[ "$analysis_prefix_present" ]] ; then
-	    value=$(yaml analysis_prefix)
-	    if [[ "$aggregated_prefixes" != *"$value"* ]] ; then
-		analysis_prefix_unique="1"
+	if [[ "$raw_lines" =~ ^\{.*\{.*\}.*\}$ ]] ; then
+	    config_yaml_unsupported_features=1
+	else
+	    lines=`echo "$raw_lines" | sed -E "s/('[^:,']+'): ('[^']+')/\1: \2\n/g ; s/],/]\n/g ; s/\{// ; s/\}//" | sed "s/^,// ; s/\[// ; s/]// ; s/ //g ; s/'//g"`
+	    for line in `echo "$lines" | sed 's/ /\n/g'`;
+	    do
+		PARSED_YAML[`echo "$line" | cut -f 1 -d ":"`]=`echo "$line" | cut -f 2 -d ":"`
+	    done
+	    
+	    ## exactly one (unique across all files) "analysis_prefix:" entry
+	    analysis_prefix_present=$(yaml_check_exists analysis_prefix)
+	    ## analysis prefix value is present only one time in all config files
+	    if [[ "$analysis_prefix_present" ]] ; then
+		value=$(yaml analysis_prefix)
+		if [[ "$aggregated_prefixes" != *"$value"* ]] ; then
+		    analysis_prefix_unique="1"
+		fi
+		analysis_prefix_present=$(howmany "$value")
+		aggregated_prefixes="$aggregated_prefixes $value"
 	    fi
-	    analysis_prefix_present=$(howmany "$value")
-	    aggregated_prefixes="$aggregated_prefixes $value"
-	fi
-	## exactly one "phenotype:" entry
-	phenotype_present=$(yaml_check_exists phenotype)
-	## phenotype matches values in phenotype header
-	if [[ "$phenotype_present" ]] ; then
-	    value=$(yaml phenotype)
-	    phenotype_present=$(howmany "$value")
-	    phenotype_valid=`head -1 $phenotype_file | sed 's/\t/\n/g' | grep -w $value | wc -l`
-	fi
-	## may optionally include "covariates:" line
-	covariates_present=$(yaml_check_exists covariates)
-	## if present, covariates match values in phenotype header OR are PC1-10
-	if [[ "$covariates_present" ]] ; then
-	    requested_covariates=$(yaml covariates)
-	    n_requested_covariates=$(howmany "$requested_covariates")
-	    pc_covariates=`echo $requested_covariates | sed 's/ /\n/g' | awk '/PC[1-9]/ || /PC10/' | wc -l`
-	    pheno_header=`head -1 $phenotype_file | sed 's/\t/\n/g'`
-	    covariates_valid=`echo $requested_covariates $pheno_header | sed 's/ /\n/g' | sort | uniq -d | wc -l`
-	    if [[ " $(( covariates_valid + pc_covariates )) " -eq "$n_requested_covariates" ]] ; then
-		covariates_valid=1
-	    else
-		covariates_valid=0
+	    ## exactly one "phenotype:" entry
+	    phenotype_present=$(yaml_check_exists phenotype)
+	    ## phenotype matches values in phenotype header
+	    if [[ "$phenotype_present" ]] ; then
+		value=$(yaml phenotype)
+		phenotype_present=$(howmany "$value")
+		phenotype_valid=`head -1 $phenotype_file | sed 's/\t/\n/g' | grep -w $value | wc -l`
 	    fi
-	fi
-	## must include "ancestries:" entries
-	ancestries_present=$(yaml_check_exists ancestries)
-	## ancestries are recognized GRAF ancestries, minus two groups that were removed, with '_' instead of ' '
-	if [[ "$ancestries_present" ]] ; then
-	    ancestries_requested=$(yaml ancestries)
-	    n_ancestries_requested=$(howmany "$ancestries_requested")
-	    valid_ancestries=`echo $ancestries_requested | sed 's/ /\n/g' | awk '$1 == "East_Asian" || $1 == "European" || $1 == "African American" || $1 == "Other" || $1 == "Hispanic1" || $1 == "Hispanic2" || $1 == "South_Asian"' | wc -l`
-	    if [[ "$valid_ancestries" -eq "$n_ancestries_requested" ]] ; then
-		ancestries_valid=1
+	    ## may optionally include "covariates:" line
+	    covariates_present=$(yaml_check_exists covariates)
+	    ## if present, covariates match values in phenotype header OR are PC1-10
+	    if [[ "$covariates_present" ]] ; then
+		requested_covariates=$(yaml covariates)
+		n_requested_covariates=$(howmany "$requested_covariates")
+		pc_covariates=`echo $requested_covariates | sed 's/ /\n/g' | awk '/PC[1-9]/ || /PC10/' | wc -l`
+		pheno_header=`head -1 $phenotype_file | sed 's/\t/\n/g'`
+		covariates_valid=`echo $requested_covariates $pheno_header | sed 's/ /\n/g' | sort | uniq -d | wc -l`
+		if [[ " $(( covariates_valid + pc_covariates )) " -eq "$n_requested_covariates" ]] ; then
+		    covariates_valid=1
+		else
+		    covariates_valid=0
+		fi
 	    fi
-	fi
-	## must include "algorithm:" entries
-	algorithm_present=$(yaml_check_exists algorithm)
-	## algorithms are of "saige" "boltlmm" "fastgwa" "plink"
-	if [[ "$algorithm_present" ]] ; then
-	    algorithms_requested=$(yaml "$config_file" "algorithm")
-	    n_algorithms_requested=$(howmany "$algorithms_requested")
-	    valid_algorithms=`echo $algorithms_requested | sed 's/ /\n/g' | awk '$1 == "saige" || $1 == "boltlmm" || $1 == "plink" || $1 == "fastgwa"' | wc -l`
-	    if [[ "$valid_algorithms" -eq "$n_algorithms_requested" ]] ; then
-		algorithm_valid=1
+	    ## must include "ancestries:" entries
+	    ancestries_present=$(yaml_check_exists ancestries)
+	    ## ancestries are recognized GRAF ancestries, minus two groups that were removed, with '_' instead of ' '
+	    if [[ "$ancestries_present" ]] ; then
+		ancestries_requested=$(yaml ancestries)
+		n_ancestries_requested=$(howmany "$ancestries_requested")
+		valid_ancestries=`echo $ancestries_requested | sed 's/ /\n/g' | awk '$1 == "East_Asian" || $1 == "European" || $1 == "African American" || $1 == "Other" || $1 == "Hispanic1" || $1 == "Hispanic2" || $1 == "South_Asian"' | wc -l`
+		if [[ "$valid_ancestries" -eq "$n_ancestries_requested" ]] ; then
+		    ancestries_valid=1
+		fi
 	    fi
-	fi
-	## may optionally include a single "frequency_mode:" entry
-	frequency_mode_present=$(yaml_check_exists frequency_mode)
-	## frequency_mode entry is either "reference" (default) or "subject"
-	if [[ "$frequency_mode_present" ]] ; then
-	    requested_mode=$(yaml frequency_mode)
-	    if [[ "$requested_mode" == "reference" || "$requested_mode" == "subject" ]] ; then
-		frequency_mode_valid=1
+	    ## must include "algorithm:" entries
+	    algorithm_present=$(yaml_check_exists algorithm)
+	    ## algorithms are of "saige" "boltlmm" "fastgwa" "plink"
+	    if [[ "$algorithm_present" ]] ; then
+		algorithms_requested=$(yaml "$config_file" "algorithm")
+		n_algorithms_requested=$(howmany "$algorithms_requested")
+		valid_algorithms=`echo $algorithms_requested | sed 's/ /\n/g' | awk '$1 == "saige" || $1 == "boltlmm" || $1 == "plink" || $1 == "fastgwa"' | wc -l`
+		if [[ "$valid_algorithms" -eq "$n_algorithms_requested" ]] ; then
+		    algorithm_valid=1
+		fi
 	    fi
-	fi
-	## may optionally include a single "transformation:" entry
-	transformation_present=$(yaml_check_exists transformation)
-	## the transformation line has very limited support, currently only for "post.split.INT" for continuous traits, or default "none"
-	if [[ "$transformation_present" ]] ; then
-	    transformation_requested=$(yaml transformation)
-	    if [[ "`echo $transformation_requested | awk '$1 == \"none\" || $1 == \"post.split.INT\"' | wc -l`" -eq "1" ]] ; then
-		transformation_valid=1
+	    ## may optionally include a single "frequency_mode:" entry
+	    frequency_mode_present=$(yaml_check_exists frequency_mode)
+	    ## frequency_mode entry is either "reference" (default) or "subject"
+	    if [[ "$frequency_mode_present" ]] ; then
+		requested_mode=$(yaml frequency_mode)
+		if [[ "$requested_mode" == "reference" || "$requested_mode" == "subject" ]] ; then
+		    frequency_mode_valid=1
+		fi
 	    fi
-	fi
-	
-	## may optionally include a single "sex-specific:" entry
-	sex_specific_present=$(yaml_check_exists sex-specific)
-	## the sex-specific line can specify: "female" "male" or "combined", and defaults to "combined"
-	if [[ "$sex_specific_present" ]] ; then
-	    sex_specific_requested=$(yaml sex-specific)
-	    if [[ "`echo $sex_specific_requested | awk '$1 == \"female\" || $1 == \"male\" || $1 == \"combined\"' | wc -l`" -eq "1" ]] ; then
-		sex_specific_valid=1
+	    ## may optionally include a single "transformation:" entry
+	    transformation_present=$(yaml_check_exists transformation)
+	    ## the transformation line has very limited support, currently only for "post.split.INT" for continuous traits, or default "none"
+	    if [[ "$transformation_present" ]] ; then
+		transformation_requested=$(yaml transformation)
+		if [[ "`echo $transformation_requested | awk '$1 == \"none\" || $1 == \"post.split.INT\"' | wc -l`" -eq "1" ]] ; then
+		    transformation_valid=1
+		fi
 	    fi
-	fi
+	    
+	    ## may optionally include a single "sex-specific:" entry
+	    sex_specific_present=$(yaml_check_exists sex-specific)
+	    ## the sex-specific line can specify: "female" "male" or "combined", and defaults to "combined"
+	    if [[ "$sex_specific_present" ]] ; then
+		sex_specific_requested=$(yaml sex-specific)
+		if [[ "`echo $sex_specific_requested | awk '$1 == \"female\" || $1 == \"male\" || $1 == \"combined\"' | wc -l`" -eq "1" ]] ; then
+		    sex_specific_valid=1
+		fi
+	    fi
 
-	## may optionally include a single "id_mode:" entry
-	id_mode_present=$(yaml_check_exists id_mode)
-	## the id_mode line can specify: "rsid" or "chrpos", and defaults to "chrpos"
-	if [[ "$id_mode_present" ]] ; then
-	    id_mode_requested=$(yaml id_mode)
-	    if [[ "`echo $id_mode_requested | awk '$1 == \"rsid\" || $1 == \"chrpos\"' | wc -l`" -eq "1" ]] ; then
-		id_mode_valid=1
+	    ## may optionally include a single "id_mode:" entry
+	    id_mode_present=$(yaml_check_exists id_mode)
+	    ## the id_mode line can specify: "rsid" or "chrpos", and defaults to "chrpos"
+	    if [[ "$id_mode_present" ]] ; then
+		id_mode_requested=$(yaml id_mode)
+		if [[ "`echo $id_mode_requested | awk '$1 == \"rsid\" || $1 == \"chrpos\"' | wc -l`" -eq "1" ]] ; then
+		    id_mode_valid=1
+		fi
 	    fi
 	fi
     else
 	## this should have been caught upstream by the config test suite, so just die here in this case
+	echo "$raw_lines"
 	config_yaml_failure=1
     fi
 
