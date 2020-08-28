@@ -1,21 +1,18 @@
 #!/bin/bash
 config_dir=..
 phenotype_file=$PHENOTYPE_FILE
+phenotype_file="/CGF/GWAS/Scans/PLCO/builds/1/plco-analysis/phenotypes/v8/atlas_v8.with_na.augmented.03august2020.tsv"
 expected_test_count=`ls -l $config_dir/*config.yaml | wc -l`
 echo "1..$expected_test_count"
 
-## python yaml helper function
+## python yaml helper functions
+declare -A PARSED_YAML
+## previous versons of this implementation had distinct behaviors for these two functions; leaving as is for now
 yaml() {
-    VALUE=`python3 -c "import yaml; print(yaml.safe_load(open('$1'))['$2'])"`
-    echo "$VALUE" | sed "s/\[//g ; s/\]//g ; s/'//g ; s/,//g"
+    echo "${PARSED_YAML[$1]//,/ }"
 }
 yaml_check_exists() {
-    VALUE=`python3 -c "import yaml; print(\"$2\" in yaml.safe_load(open('$1')))"`
-    if [[ "$VALUE" == "True" ]] ; then
-        echo "1"
-    else
-	echo "0"
-    fi
+    echo "${PARSED_YAML[$1]//,/ }"
 }
 
 ## https://stackoverflow.com/questions/638802/number-of-tokens-in-bash-variable
@@ -26,6 +23,9 @@ aggregated_prefixes=""
 for config_file in `ls $config_dir/*config.yaml` ;
 do
     ## requirements for config file
+    config_yaml_failure=0
+    config_yaml_unsupported_features=0
+    
     analysis_prefix_present=0
     analysis_prefix_unique=0
     
@@ -56,136 +56,144 @@ do
     id_mode_present=0
     id_mode_valid=0
 
-    ## exactly one (unique across all files) "analysis_prefix:" entry
-    analysis_prefix_present=$(yaml_check_exists "$config_file" "analysis_prefix")
-    ## analysis prefix value is present only one time in all config files
-    if [[ "$analysis_prefix_present" -eq "1" ]] ; then
-	value=$(yaml "$config_file" "analysis_prefix")
-	if [[ "$aggregated_prefixes" != *"$value"* ]] ; then
-	    analysis_prefix_unique="1"
+
+    ## for version reasons, this can't be wrapped in a function
+    raw_lines=`python3 -c "import yaml; print(yaml.safe_load(open('$config_file')))" 2> /dev/null`
+    if [[ "$raw_lines" =~ ^\{.*\}$ ]] ; then
+	lines=`echo "$raw_lines" | sed -E "s/('[^:,']+'): ('[^']+')/\1: \2\n/g ; s/],/]\n/g ; s/\{// ; s/\}//" | sed "s/^,// ; s/\[// ; s/]// ; s/ //g ; s/'//g"`
+	for line in `echo "$lines" | sed 's/ /\n/g'`;
+	do
+            PARSED_YAML[`echo "$line" | cut -f 1 -d ":"`]=`echo "$line" | cut -f 2 -d ":"`
+	done
+	
+	## exactly one (unique across all files) "analysis_prefix:" entry
+	analysis_prefix_present=$(yaml_check_exists analysis_prefix)
+	## analysis prefix value is present only one time in all config files
+	if [[ "$analysis_prefix_present" ]] ; then
+	    value=$(yaml analysis_prefix)
+	    if [[ "$aggregated_prefixes" != *"$value"* ]] ; then
+		analysis_prefix_unique="1"
+	    fi
+	    analysis_prefix_present=$(howmany "$value")
+	    aggregated_prefixes="$aggregated_prefixes $value"
 	fi
-	analysis_prefix_present=$(howmany "$value")
-	aggregated_prefixes="$aggregated_prefixes $value"
-    fi
-    ## exactly one "phenotype:" entry
-    phenotype_present=$(yaml_check_exists "$config_file" "phenotype")
-    ## phenotype matches values in phenotype header
-    if [[ "$phenotype_present" -eq "1" ]] ; then
-	value=$(yaml "$config_file" "phenotype")
-	phenotype_present=$(howmany "$value")
-	phenotype_valid=`head -1 $phenotype_file | sed 's/\t/\n/g' | grep -w $value | wc -l`
-    fi
-    ## may optionally include "covariates:" line
-    covariates_present=$(yaml_check_exists "$config_file" "covariates")
-    ## if present, covariates match values in phenotype header OR are PC1-10
-    if [[ "$covariates_present" -eq "1" ]] ; then
-	requested_covariates=$(yaml "$config_file" "covariates")
-	n_requested_covariates=$(howmany "$requested_covariates")
-	pc_covariates=`echo $requested_covariates | sed 's/ /\n/g' | awk '/PC[1-9]/ || /PC10/' | wc -l`
-	pheno_header=`head -1 $phenotype_file | sed 's/\t/\n/g'`
-	covariates_valid=`echo $requested_covariates $pheno_header | sed 's/ /\n/g' | sort | uniq -d | wc -l`
-	if [[ " $(( covariates_valid + pc_covariates )) " -eq "$n_requested_covariates" ]] ; then
-	    covariates_valid=1
-	else
-	    covariates_valid=0
+	## exactly one "phenotype:" entry
+	phenotype_present=$(yaml_check_exists phenotype)
+	## phenotype matches values in phenotype header
+	if [[ "$phenotype_present" ]] ; then
+	    value=$(yaml phenotype)
+	    phenotype_present=$(howmany "$value")
+	    phenotype_valid=`head -1 $phenotype_file | sed 's/\t/\n/g' | grep -w $value | wc -l`
 	fi
-    fi
-    ## must include "ancestries:" entries
-    ancestries_present=$(yaml_check_exists "$config_file" "ancestries")
-    ## ancestries are recognized GRAF ancestries, minus two groups that were removed, with '_' instead of ' '
-    if [[ "$ancestries_present" -eq "1" ]] ; then
-	ancestries_requested=$(yaml "$config_file" "ancestries")
-	n_ancestries_requested=$(howmany "$ancestries_requested")
-	valid_ancestries=`echo $ancestries_requested | sed 's/ /\n/g' | awk '$1 == "East_Asian" || $1 == "European" || $1 == "African American" || $1 == "Other" || $1 == "Hispanic1" || $1 == "Hispanic2" || $1 == "South_Asian"' | wc -l`
-	if [[ "$valid_ancestries" -eq "$n_ancestries_requested" ]] ; then
-	    ancestries_valid=1
+	## may optionally include "covariates:" line
+	covariates_present=$(yaml_check_exists covariates)
+	## if present, covariates match values in phenotype header OR are PC1-10
+	if [[ "$covariates_present" ]] ; then
+	    requested_covariates=$(yaml covariates)
+	    n_requested_covariates=$(howmany "$requested_covariates")
+	    pc_covariates=`echo $requested_covariates | sed 's/ /\n/g' | awk '/PC[1-9]/ || /PC10/' | wc -l`
+	    pheno_header=`head -1 $phenotype_file | sed 's/\t/\n/g'`
+	    covariates_valid=`echo $requested_covariates $pheno_header | sed 's/ /\n/g' | sort | uniq -d | wc -l`
+	    if [[ " $(( covariates_valid + pc_covariates )) " -eq "$n_requested_covariates" ]] ; then
+		covariates_valid=1
+	    else
+		covariates_valid=0
+	    fi
 	fi
-    fi
-    ## must include "algorithm:" entries
-    algorithm_present=$(yaml_check_exists "$config_file" "algorithm")
-    ## algorithms are of "saige" "boltlmm" "fastgwa" "plink"
-    if [[ "$algorithm_present" -eq "1" ]] ; then
-	algorithms_requested=$(yaml "$config_file" "algorithm")
-	n_algorithms_requested=$(howmany "$algorithms_requested")
-	valid_algorithms=`echo $algorithms_requested | sed 's/ /\n/g' | awk '$1 == "saige" || $1 == "boltlmm" || $1 == "plink" || $1 == "fastgwa"' | wc -l`
-	if [[ "$valid_algorithms" -eq "$n_algorithms_requested" ]] ; then
-	    algorithm_valid=1
+	## must include "ancestries:" entries
+	ancestries_present=$(yaml_check_exists ancestries)
+	## ancestries are recognized GRAF ancestries, minus two groups that were removed, with '_' instead of ' '
+	if [[ "$ancestries_present" ]] ; then
+	    ancestries_requested=$(yaml ancestries)
+	    n_ancestries_requested=$(howmany "$ancestries_requested")
+	    valid_ancestries=`echo $ancestries_requested | sed 's/ /\n/g' | awk '$1 == "East_Asian" || $1 == "European" || $1 == "African American" || $1 == "Other" || $1 == "Hispanic1" || $1 == "Hispanic2" || $1 == "South_Asian"' | wc -l`
+	    if [[ "$valid_ancestries" -eq "$n_ancestries_requested" ]] ; then
+		ancestries_valid=1
+	    fi
 	fi
-    fi
-    ## may optionally include a single "frequency_mode:" entry
-    frequency_mode_present=$(yaml_check_exists "$config_file" "frequency_mode")
-    ## frequency_mode entry is either "reference" (default) or "subject"
-    if [[ "$frequency_mode_present" -eq "1" ]] ; then
-	requested_mode=$(yaml "$config_file" "frequency_mode")
-	if [[ "$requested_mode" == "reference" || "$requested_mode" == "subject" ]] ; then
-	    frequency_mode_valid=1
+	## must include "algorithm:" entries
+	algorithm_present=$(yaml_check_exists algorithm)
+	## algorithms are of "saige" "boltlmm" "fastgwa" "plink"
+	if [[ "$algorithm_present" ]] ; then
+	    algorithms_requested=$(yaml "$config_file" "algorithm")
+	    n_algorithms_requested=$(howmany "$algorithms_requested")
+	    valid_algorithms=`echo $algorithms_requested | sed 's/ /\n/g' | awk '$1 == "saige" || $1 == "boltlmm" || $1 == "plink" || $1 == "fastgwa"' | wc -l`
+	    if [[ "$valid_algorithms" -eq "$n_algorithms_requested" ]] ; then
+		algorithm_valid=1
+	    fi
 	fi
-    fi
-    ## may optionally include a single "transformation:" entry
-    transformation_present=$(yaml_check_exists "$config_file" "transformation")
-    ## the transformation line has very limited support, currently only for "post.split.INT" for continuous traits, or default "none"
-    if [[ "$transformation_present" -eq "1" ]] ; then
-	transformation_requested=$(yaml "$config_file" "transformation")
-	if [[ "`echo $transformation_requested | awk '$1 == \"none\" || $1 == \"post.split.INT\"' | wc -l`" -eq "1" ]] ; then
-	    transformation_valid=1
+	## may optionally include a single "frequency_mode:" entry
+	frequency_mode_present=$(yaml_check_exists frequency_mode)
+	## frequency_mode entry is either "reference" (default) or "subject"
+	if [[ "$frequency_mode_present" ]] ; then
+	    requested_mode=$(yaml frequency_mode)
+	    if [[ "$requested_mode" == "reference" || "$requested_mode" == "subject" ]] ; then
+		frequency_mode_valid=1
+	    fi
 	fi
-    fi
-    
-    ## may optionally include a single "sex-specific:" entry
-    sex_specific_present=$(yaml_check_exists "$config_file" "sex-specific")
-    ## the sex-specific line can specify: "female" "male" or "combined", and defaults to "combined"
-    if [[ "$sex_specific_present" -eq "1" ]] ; then
-	sex_specific_requested=$(yaml "$config_file" "sex-specific")
-	if [[ "`echo $sex_specific_requested | awk '$1 == \"female\" || $1 == \"male\" || $1 == \"combined\"' | wc -l`" -eq "1" ]] ; then
-	   sex_specific_valid=1
+	## may optionally include a single "transformation:" entry
+	transformation_present=$(yaml_check_exists transformation)
+	## the transformation line has very limited support, currently only for "post.split.INT" for continuous traits, or default "none"
+	if [[ "$transformation_present" ]] ; then
+	    transformation_requested=$(yaml transformation)
+	    if [[ "`echo $transformation_requested | awk '$1 == \"none\" || $1 == \"post.split.INT\"' | wc -l`" -eq "1" ]] ; then
+		transformation_valid=1
+	    fi
 	fi
+	
+	## may optionally include a single "sex-specific:" entry
+	sex_specific_present=$(yaml_check_exists sex-specific)
+	## the sex-specific line can specify: "female" "male" or "combined", and defaults to "combined"
+	if [[ "$sex_specific_present" ]] ; then
+	    sex_specific_requested=$(yaml sex-specific)
+	    if [[ "`echo $sex_specific_requested | awk '$1 == \"female\" || $1 == \"male\" || $1 == \"combined\"' | wc -l`" -eq "1" ]] ; then
+		sex_specific_valid=1
+	    fi
+	fi
+
+	## may optionally include a single "id_mode:" entry
+	id_mode_present=$(yaml_check_exists id_mode)
+	## the id_mode line can specify: "rsid" or "chrpos", and defaults to "chrpos"
+	if [[ "$id_mode_present" ]] ; then
+	    id_mode_requested=$(yaml id_mode)
+	    if [[ "`echo $id_mode_requested | awk '$1 == \"rsid\" || $1 == \"chrpos\"' | wc -l`" -eq "1" ]] ; then
+		id_mode_valid=1
+	    fi
+	fi
+    else
+	## this should have been caught upstream by the config test suite, so just die here in this case
+	config_yaml_failure=1
     fi
 
-    ## may optionally include a single "id_mode:" entry
-    id_mode_present=$(yaml_check_exists "$config_file" "id_mode")
-    ## the id_mode line can specify: "rsid" or "chrpos", and defaults to "chrpos"
-    if [[ "$id_mode_present" -eq "1" ]] ; then
-	id_mode_requested=$(yaml "$config_file" "id_mode")
-	if [[ "`echo $id_mode_requested | awk '$1 == \"rsid\" || $1 == \"chrpos\"' | wc -l`" -eq "1" ]] ; then
-	    id_mode_valid=1
-	fi
-    fi
-
-    if [[ "$analysis_prefix_present" -ne "1" ]] ; then
-	echo "not ok - $config_file: key \"analysis_prefix:\" must be present exactly once in the file"
+    if [[ "$config_yaml_failure" -eq "1" ]] ; then
+	echo "not ok - $config_file: unable to process config file due to yaml format problems"
+    elif [[ "$config_yaml_unsupported_features" -eq "1" ]] ; then
+	echo "not ok - $config_file: unsupported yaml features detected: multilevel dicts not supported"
+    elif [[ -z "$analysis_prefix_present" ]] ; then
+	echo "not ok - $config_file: key \"analysis_prefix:\" must be present in the file"
     elif [[ "$analysis_prefix_unique" -ne "1" ]] ; then
 	echo "not ok - $config_file: value \"analysis_prefix:\" must be unique across all configured analyses"
-    elif [[ "$phenotype_present" -ne "1" ]] ; then
-	echo "not ok - $config_file: key \"phenotype:\" must be present exactly once in the file"
+    elif [[ -z "$phenotype_present" ]] ; then
+	echo "not ok - $config_file: key \"phenotype:\" must be present in the file"
     elif [[ "$phenotype_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: value \"phenotype:\" must be present and unique in the corresponding phenotypes $phenotype_file"
-    elif [[ "$covariates_present" -gt "1" ]] ; then
-	echo "not ok - $config_file: key \"covariates:\" cannot be present more than once in the file"
-    elif [[ "$covariates_present" -eq "1" && "$covariates_valid" -eq "0" ]] ; then
+    elif [[ "$covariates_present" && "$covariates_valid" -eq "0" ]] ; then
 	echo "not ok - $config_file: value \"covariates:\" must contain either PC1-10, or unique entries in $phenotype_file"
-    elif [[ "$ancestries_present" -ne "1" ]] ; then
-	echo "not ok - $config_file: key \"ancestries:\" must be present exactly once in the file"
+    elif [[ -z "$ancestries_present" ]] ; then
+	echo "not ok - $config_file: key \"ancestries:\" must be present in the file"
     elif [[ "$ancestries_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: value \"ancestries:\" must be unique and from: \"African_American,East_Asian,European,Hispanic1,Hispanic2,Other,South_Asian\" (observed \"$ancestries_requested\")"
-    elif [[ "$algorithm_present" -ne "1" ]] ; then
-	echo "not ok - $config_file: key \"algorithm:\" must be present exactly once in the file"
+    elif [[ -z "$algorithm_present" ]] ; then
+	echo "not ok - $config_file: key \"algorithm:\" must be present in the file"
     elif [[ "$algorithm_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: value \"algorithm:\" must be unique and from: \"boltlmm,fastgwa,plink,saige\""
-    elif [[ "$frequency_mode_present" -gt "1" ]] ; then
-	echo "not ok - $config_file: key \"frequency_mode:\" cannot be present more than once in the file"
-    elif [[ "$frequency_mode_present" -eq "1" && "$frequency_mode_valid" -ne "1" ]] ; then
+    elif [[ "$frequency_mode_present" && "$frequency_mode_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: value \"frequency_mode:\" must be uniquely one of: \"reference,subject\""
-    elif [[ "$transformation_present" -gt "1" ]] ; then
-	echo "not ok - $config_file: key \"transformation:\" cannot be present more than once in the file"
-    elif [[ "$transformation_present" -eq "1" && "$transformation_valid" -ne "1" ]] ; then
+    elif [[ "$transformation_present" && "$transformation_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: key \"transformation:\" must have value \"none\" or \"post.split.INT\""
-    elif [[ "$sex_specific_present" -gt "1" ]] ; then
-	echo "not ok - $config_file: key \"sex-specific:\" cannot be present more than once in the file"
-    elif [[ "$sex_specific_present" -eq "1" && "$sex_specific_valid" -ne "1" ]] ; then
+    elif [[ "$sex_specific_present" && "$sex_specific_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: key \"sex-specific:\" must have value \"combined\" or \"female\" or \"male\""
-    elif [[ "$id_mode_present" -gt "1" ]] ; then
-	echo "not ok - $config_file: key \"id_mode:\" cannot be present more than once in the file"
-    elif [[ "$id_mode_present" -eq "1" && "$id_mode_valid" -ne "1" ]] ; then
+    elif [[ "$id_mode_present" && "$id_mode_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: key \"id_mode:\" must have value \"rsid\" or \"chrpos\""
     else
 	echo "ok - $config_file: valid YAML format, all required entries present, and values acceptable"
