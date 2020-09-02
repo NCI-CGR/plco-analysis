@@ -1,0 +1,34 @@
+{
+  "name": "plco-analysis",
+  "version": "0.0.0",
+  "description": "reproducible post-imputation association studies",
+  "main": "index.js",
+  "dependencies": {
+    "commitizen": "^4.2.1"
+  },
+  "devDependencies": {
+    "cz-conventional-changelog": "^3.2.1",
+    "husky": "^4.2.5"
+  },
+  "scripts": {
+    "test": "make check"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@10.133.130.114:palmercd/plco-analysis.git"
+  },
+  "keywords": [
+    "plco",
+    "atlas",
+    "lmm",
+    "glmm",
+    "imputation"
+  ],
+  "author": "Cameron Palmer",
+  "license": "UNLICENSED",
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  } 
+}

@@ -19,7 +19,7 @@ ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSI
 .PHONY: all $(ANALYSIS_RESULTS_SAIGE) secondary-clean
 all: $(ANALYSIS_RESULTS_SAIGE)
 
-$(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz,$$@) | $$(dir $$@)
+$(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz$(TRACKING_SUCCESS_SUFFIX),$$@) | $$(dir $$@)
 
 ## get a saved config parameter setting from a tracking file
 define get_tracked_parameter =
@@ -34,64 +34,71 @@ endef
 
 
 ## patterns:
-##    output: results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv.gz
-##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv
-##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##    output: results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv.gz$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/
 ## Notes: compress combined saige output file.
 ## the model matrix is only required here to enforce a preflight sample size check.
-%.tsv.gz: %.tsv %.model_matrix.success | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	gzip -c $< > $@ ; \
+%.tsv.gz$(TRACKING_SUCCESS_SUFFIX): %.tsv$(TRACKING_SUCCESS_SUFFIX) %.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
+	else \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.tsv$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  [rsid annotation software]
 ##            [chrpos to rsid linker file]
-##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.rawids.tsv
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.rawids.tsv$(TRACKING_SUCCESS_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(ID_MODE_TRACKER_SUFFIX)
-##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: replace chr:pos:ref:alt style ids with rsids if requested
-%.saige.tsv: $(ANNOTATE_RSID) $(RSID_LINKER_FILE) %.saige.rawids.tsv %.saige$(ID_MODE_TRACKER_SUFFIX) %.saige.model_matrix.success | $$(dir $$@)
+%.saige.tsv$(TRACKING_SUCCESS_SUFFIX): $(ANNOTATE_RSID) $(RSID_LINKER_FILE) %.saige.rawids.tsv$(TRACKING_SUCCESS_SUFFIX) %.saige$(ID_MODE_TRACKER_SUFFIX) %.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
 	$(eval ID_MODE := $(call get_tracker_parameter,$(word 4,$^)))
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(word 3,$^) $@,$< $(word 3,$^) $(word 2,$^) $@) ; \
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))) ; \
+	else \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
-
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.rawids.tsv
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.rawids.tsv$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  [frequency annotation software]
 ##            [frequency annotation data]
-##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.nofreq.tsv
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.nofreq.tsv$(TRACKING_SUCCESS_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(FREQUENCY_MODE_TRACKER_SUFFIX)
-##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
-%.saige.rawids.tsv: $(ANNOTATE_FREQUENCY) $(TOPMED_FREQUENCY_FILE) %.saige.nofreq.tsv %.saige$(FREQUENCY_MODE_TRACKER_SUFFIX) %.saige.model_matrix.success | $$(dir $$@)
+%.saige.rawids.tsv$(TRACKING_SUCCESS_SUFFIX): $(ANNOTATE_FREQUENCY) $(TOPMED_FREQUENCY_FILE) %.saige.nofreq.tsv$(TRACKING_SUCCESS_SUFFIX) %.saige$(FREQUENCY_MODE_TRACKER_SUFFIX) %.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(word 4,$^)))
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(word 3,$^) $@,$< $(word 3,$^) $(word 2,$^) $(call resolve_ancestry,$@) $@) ; \
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(call resolve_ancestry,$@) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))) ; \
+	else \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
 ## patterns:
-##    output: results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.nofreq.tsv
-##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.saige.success
+##    output: results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.nofreq.tsv$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.saige$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(FREQUENCY_MODE_TRACKER_SUFFIX)
-##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.saige.model_matrix.success
+##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/{PHENOTYPE}.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{ANCESTRY}/{PHENOTYPE}/{METHOD}/
 ## Notes: combine results from each autosome into a single genome-wide result. note allele flip to conform to format
 ## frequency is set to NA at this step and requires a separate processing step
-%.saige.nofreq.tsv: $$(foreach chr,$$(CHRS),%.chr$$(chr).saige.success) %.saige$(FREQUENCY_MODE_TRACKER_SUFFIX) %.saige.model_matrix.success | $$(dir $$@)
+%.saige.nofreq.tsv$(TRACKING_SUCCESS_SUFFIX): $$(foreach chr,$$(CHRS),%.chr$$(chr).saige$(TRACKING_SUCCESS_SUFFIX)) %.saige$(FREQUENCY_MODE_TRACKER_SUFFIX) %.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(filter %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)))
-	$(eval N_CASES := $(shell awk '$$3 == 1' $(subst .success,,$(lastword $^)) | wc -l))
-	$(eval N_CONTROLS := $(shell awk '$$3 == 0' $(subst .success,,$(lastword $^)) | wc -l))
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	cat $(subst .success,.txt,$(filter-out %.model_matrix.success %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN\tNcases\tNcontrols"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9"\t$(N_CASES)\t$(N_CONTROLS)"}' > $@ ; \
+	$(eval N_CASES := $(shell awk '$$3 == 1' $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) | wc -l))
+	$(eval N_CONTROLS := $(shell awk '$$3 == 0' $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) | wc -l))
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(subst $(TRACKING_SUCCESS_SUFFIX),.txt,$(filter-out %.model_matrix$(TRACKING_SUCCESS_SUFFIX) %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN\tNcases\tNcontrols"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9"\t$(N_CASES)\t$(N_CONTROLS)"}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
+	else \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
@@ -107,29 +114,28 @@ endef
 
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.saige.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.round1.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.chr{CHR}.saige$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.round1$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr{CHR}-filtered.bgen
 ##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr{CHR}-filtered.bgen.bgi
-##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr{CHR}-filtered-noNAs.sample
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: run second round of SAIGE analysis, by autosome, using output of initial inflation estimation (LD-pruned) genome wide.
 ## but only run if the effective sample size is greater than some heuristic minimum.
-$(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(patsubst %,$(subst .saige,,$(result)).chr%.saige.success,$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).saige.round1.success $$(word 1,$$(subst .chr, ,$$@)).saige.model_matrix.success $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen.bgi $$(word 1,$$(subst .chr, ,$$@)).saige.samples | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(word 2,$^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_2_SCRIPT) $(word 3,$^) $(word 4,$^) $(subst .success,.rda,$<) $(subst .success,.varianceRatio.txt,$<) $(subst .success,.varianceRatio.txt_relatednessCutoff_$(SAIGE_ROUND_1_RELATEDNESS_CUTOFF)_1000_randomMarkersUsed.sparseSigma.mtx,$<) $(word 5,$^) $(subst .success,,$@) chr$(lastword $(subst .chr, ,$(subst .saige.success,,$@)))) ; \
+$(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(patsubst %,$(subst .saige,,$(result)).chr%.saige$(TRACKING_SUCCESS_SUFFIX),$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).saige.round1$(TRACKING_SUCCESS_SUFFIX) $$(word 1,$$(subst .chr, ,$$@)).saige.model_matrix$(TRACKING_SUCCESS_SUFFIX) $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen.bgi $$(word 1,$$(subst .chr, ,$$@)).saige.samples$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	$(call qsub_handler_long,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SAIGE_ROUND_2_SCRIPT) $(word 3,$^) $(word 4,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),.rda,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),.varianceRatio.txt,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),.varianceRatio.txt_relatednessCutoff_$(SAIGE_ROUND_1_RELATEDNESS_CUTOFF)_1000_randomMarkersUsed.sparseSigma.mtx,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) chr$(lastword $(subst .chr, ,$(subst .saige$(TRACKING_SUCCESS_SUFFIX),,$@)))) ; \
 	else \
-	touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {BGEN-INPUT}/{CHIP}/{ANCESTRY}/chr22-filtered-noNAs.sample
 ## Notes: final subject list for actual imputed data, originally required to prune extra subjects from chip or imputed data
-%.saige.samples: $$(IMPUTED_DIR)/$$(call extract_chip,$$(subst .saige.samples,,$$@),/)/$$(call extract_ancestry,$$@)/chr22-filtered-noNAs.sample | $$(dir $$@)
-	awk 'NR > 2 {print $$1}' $< > $@
+%.saige.samples$(TRACKING_SUCCESS_SUFFIX): $$(IMPUTED_DIR)/$$(call extract_chip,$$(subst .saige.samples$(TRACKING_SUCCESS_SUFFIX),,$$@),/)/$$(call extract_ancestry,$$@)/chr22-filtered-noNAs.sample | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk 'NR > 2 {print $$1}' $< > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## utility function to just grab comma-delimited covariates from a model matrix
 define get_covariates_from_model_matrix
@@ -137,34 +143,34 @@ $(shell awk 'NR == 1' $(1) | cut -f 1-3 --complement | sed 's/ /,/g; s/\t/,/g')
 endef
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.round1.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted-nochr0.bed.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.round1$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted-nochr0.bed$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX)
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
-%.saige.round1.success: %.saige-chip.GRCh38-resorted-nochr0.bed.success %.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.saige.model_matrix.success | $$(dir $$@)
-	if [[ $(call check_model_matrix,$(subst .success,,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	rm -f $(subst .success,.varianceRatio.txt,$@)* $(subst .success,.rda,$@) ; sleep 2 ; \
-	$(call qsub_handler_long,$(subst .success,,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed.success,,$<) $(subst .success,,$(lastword $^)) $(call get_tracked_parameter,$(word 2,$^)) $(if $(call get_covariates_from_model_matrix,$(subst .success,,$(word 3,$^))),$(call get_covariates_from_model_matrix,$(subst .success,,$(word 3,$^))),NA) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst .success,,$@)) ; \
+%.saige.round1$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.GRCh38-resorted-nochr0.bed$(TRACKING_SUCCESS_SUFFIX) %.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),.varianceRatio.txt,$@)* $(subst $(TRACKING_SUCCESS_SUFFIX),.rda,$@) ; sleep 2 ; \
+	$(call qsub_handler_long,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SAIGE_ROUND_1_SCRIPT) $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) $(call get_tracked_parameter,$(word 2,$^)) $(if $(call get_covariates_from_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^))),$(call get_covariates_from_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^))),NA) $(SAIGE_ROUND_1_RELATEDNESS_CUTOFF) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
 	else \
-	touch $@ ; \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(PHENOTYPE_DATASET_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(COVARIATE_NAME_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(CATEGORY_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige$(SEX_SPECIFIC_TRACKER_SUFFIX)
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster. Direct config file dependency has been removed to prevent
 ## repeated reruns due to version control, unrelated database updates, and other trivial issues.
-%.saige.model_matrix.success: %.saige$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.saige$(COVARIATE_NAME_TRACKER_SUFFIX) %.saige$(CATEGORY_TRACKER_SUFFIX) %.saige$(SEX_SPECIFIC_TRACKER_SUFFIX) %.saige.samples | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(lastword $^) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix.success,,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst .success,,$@) $(word 4,$^) none $(call get_tracked_parameter,$(word 5,$^)))
+%.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX): %.saige$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.saige$(COVARIATE_NAME_TRACKER_SUFFIX) %.saige$(CATEGORY_TRACKER_SUFFIX) %.saige$(SEX_SPECIFIC_TRACKER_SUFFIX) %.saige.samples$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix$(TRACKING_SUCCESS_SUFFIX),,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) $(word 4,$^) none $(call get_tracked_parameter,$(word 5,$^)))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
@@ -174,100 +180,101 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted-nochr0.bed.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.bed.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip-GRCh38-resorted-chr0.exclude
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted-nochr0.bed$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip-GRCh38-resorted-chr0.exclude$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: remove "0" chromosome annotations for compatibility with SAIGE
-%.saige-chip.GRCh38-resorted-nochr0.bed.success: %.saige-chip.GRCh38-resorted.bed.success %.saige-chip.GRCh38-resorted.chr0.exclude | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed.success,,$<) --exclude $(word 2,$^) --make-bed --out $(subst .bed.success,,$@))
+%.saige-chip.GRCh38-resorted-nochr0.bed$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX) %.saige-chip.GRCh38-resorted.chr0.exclude$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --exclude $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.chr0.exclude
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.bed.success (really bim)
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.chr0.exclude$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX) (really bim)
 ## Notes: get a plink-format exclude file for variants with unlocalized chromosome
-%.saige-chip.GRCh38-resorted.chr0.exclude: %.saige-chip.GRCh38-resorted.bed.success | $$(dir $$@)
-	awk '$$1 == 0 {print $$2}' $(subst .bed.success,.bim,$<) > $@
+%.saige-chip.GRCh38-resorted.chr0.exclude$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '$$1 == 0 {print $$2}' $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.bim,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.bed.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bed
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip-GRCh38.bim
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.fam
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bed$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip-GRCh38.bim$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.fam$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: liftover likely breaks order of variants in the genome; quickest solution is just to reload and rewrite everything with plink.
-%.saige-chip.GRCh38-resorted.bed.success: %.saige-chip.GRCh38.bed %.saige-chip.GRCh38.bim %.saige-chip.GRCh38.fam | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bed $< --bim $(word 2,$^) --fam $(word 3,$^) --allow-extra-chr 0 --make-bed --out $(subst .bed.success,,$@))
+%.saige-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.GRCh38.bed$(TRACKING_SUCCESS_SUFFIX) %.saige-chip.GRCh38.bim$(TRACKING_SUCCESS_SUFFIX) %.saige-chip.GRCh38.fam$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bed $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) --bim $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --fam $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) --allow-extra-chr 0 --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bed
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bed$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. so it's just a hack liftover intermediate step.
-%.saige-chip.GRCh38.bed: %.saige-chip.lift-failures-excluded.bed.success | $$(dir $$@)
-	cp $(subst .success,,$<) $@
+%.saige-chip.GRCh38.bed$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.lift-failures-excluded.bed$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cp $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bim
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success (really bim)
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.bim$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed$(TRACKING_SUCCESS_SUFFIX) (really bim)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. so it's just a hack liftover intermediate step.
-%.saige-chip.GRCh38.bim: %.saige-chip.lift-failures-excluded.bed.success %.saige-chip.liftover-output | $$(dir $$@)
-	paste $(word 2,$^) $(subst .bed.success,.bim,$<) | sed 's/^chr//' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2+1"\t"$$8"\t"$$9}' > $@
+%.saige-chip.GRCh38.bim$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.lift-failures-excluded.bed$(TRACKING_SUCCESS_SUFFIX) %.saige-chip.liftover-output$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),paste $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.bim,$<) | sed 's/^chr//' | awk '{print $$1"\t"$$5"\t"$$6"\t"$$2+1"\t"$$8"\t"$$9}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.fam
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success (really fam)
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.GRCh38.fam$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed$(TRACKING_SUCCESS_SUFFIX) (really fam)
 ## Notes: this was a late addition to the pipeline, as it was originally tested on chip data in hg19 but then deployed on
 ## imputed data in GRCh38. so it's just a hack liftover intermediate step.
-%.saige-chip.GRCh38.fam: %.saige-chip.lift-failures-excluded.bed.success | $$(dir $$@)
-	cp $(subst .bed.success,.fam,$<) $@
+%.saige-chip.GRCh38.fam$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.lift-failures-excluded.bed$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.fam,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed.success
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover.exclude
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.lift-failures-excluded.bed$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover.exclude$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: first step to updating plink file with GRCh38 lifted positions: remove variants that failed lift, in order
-%.saige-chip.lift-failures-excluded.bed.success: %.saige-chip.bed.success %.saige-chip.liftover.exclude | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed.success,,$<) --exclude $(word 2,$^) --make-bed --out $(subst .bed.success,,$@))
+%.saige-chip.lift-failures-excluded.bed$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.bed$(TRACKING_SUCCESS_SUFFIX) %.saige-chip.liftover.exclude$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --exclude $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover.exclude
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output (really liftover-failure)
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover.exclude$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output$(TRACKING_SUCCESS_SUFFIX) (really liftover-failure)
 ## Notes: convert failed lifts into a plink-format exclude file
-%.saige-chip.liftover.exclude: %.saige-chip.liftover-output | $$(dir $$@)
-	awk '! /^#/ {print $$1":"$$2+1}' $(subst liftover-output,liftover-failure,$<) | sed 's/^chr//' > $@
+%.saige-chip.liftover.exclude$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.liftover-output$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '! /^#/ {print $$1":"$$2+1}' $(subst liftover-output$(TRACKING_SUCCESS_SUFFIX),liftover-failure,$<) | sed 's/^chr//' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-input
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-output$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-input$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: run liftover, chips are in hg19 and imputed data are in GRCh38
-%.saige-chip.liftover-output: %.saige-chip.liftover-input | $$(dir $$@)
-	$(LIFTOVER_EXECUTABLE) $< $(LIFTOVER_19_TO_38) $@ $(subst liftover-output,liftover-failure,$@)
+%.saige-chip.liftover-output$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.liftover-input$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(LIFTOVER_EXECUTABLE) $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) $(LIFTOVER_19_TO_38) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) $(subst liftover-output$(TRACKING_SUCCESS_SUFFIX),liftover-failure,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-input
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.liftover-input$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes:
-%.saige-chip.liftover-input: %.saige-chip.bed.success | $$(dir $$@)
-	awk '{print "chr"$$1"\t"$$4-1"\t"$$4}' $(subst .bed.success,.bim,$<) > $@
+%.saige-chip.liftover-input$(TRACKING_SUCCESS_SUFFIX): %.saige-chip.bed$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print "chr"$$1"\t"$$4-1"\t"$$4}' $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.bim,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed.success
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige-chip.bed$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CLEANED_CHIPS_BY_ANCESTRY}/{ANCESTRY}/{CHIP}.nohet.autosomes.bed
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples.plink-format
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples.plink-format$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CLEANED_CHIPS_BY_ANCESTRY}/{ANCESTRY}/{CHIP}.step2.pruning.prune.in
 ##    input:  {CLEANED_CHIPS_BY_ANCESTRY}/{ANCESTRY}/{CHIP}.step3.pruning.prune.out
 ## Notes: gets an ancestry-specific LD-pruned (more or less) dataset for SAIGE heritability estimation.
-%.saige-chip.bed.success: $(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(firstword $$(subst /, ,$$(call extract_chip,$$(subst .saige-chip.bed.success,,$$@),/))).nohet.autosomes.bed %.saige.samples.plink-format $(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(firstword $$(subst /, ,$$(call extract_chip,$$(subst .saige-chip.bed.success,,$$@),/))).step2.pruning.prune.in $(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(firstword $$(subst /, ,$$(call extract_chip,$$(subst .saige-chip.bed.success,,$$@),/))).step3.pruning.prune.out | $$(dir $$@)
-	$(call qsub_handler,$(subst .success,,$@),$(PLINK19) --bfile $(subst .bed,,$<) --keep $(word 2,$^) --extract $(word 3,$^) --exclude $(word 4,$^) --make-bed --out $(subst .bed.success,,$@))
+%.saige-chip.bed$(TRACKING_SUCCESS_SUFFIX): $(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(firstword $$(subst /, ,$$(call extract_chip,$$(subst .saige-chip.bed$(TRACKING_SUCCESS_SUFFIX),,$$@),/))).nohet.autosomes.bed %.saige.samples.plink-format$(TRACKING_SUCCESS_SUFFIX) $(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(firstword $$(subst /, ,$$(call extract_chip,$$(subst .saige-chip.bed$(TRACKING_SUCCESS_SUFFIX),,$$@),/))).step2.pruning.prune.in $(GENOTYPE_DIR)/$$(call extract_ancestry,$$@)/$$(firstword $$(subst /, ,$$(call extract_chip,$$(subst .saige-chip.bed$(TRACKING_SUCCESS_SUFFIX),,$$@),/))).step3.pruning.prune.out | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed,,$<) --keep $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --extract $(word 3,$^) --exclude $(word 4,$^) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples.plink-format
-##    input:  results/{PHENTOYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples.plink-format$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENTOYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: take single column subject ID list and duplicate it into two columns, for plink --keep convention.
-%.saige.samples.plink-format: %.saige.samples | $$(dir $$@)
-	awk '{print $$1"\t"$$1}' $< > $@
+%.saige.samples.plink-format$(TRACKING_SUCCESS_SUFFIX): %.saige.samples$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print $$1"\t"$$1}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## phony target for removing intermediate files. Somewhat dangerous but extremely helpful for disk usage
 secondary-clean:
@@ -277,8 +284,6 @@ secondary-clean:
 	done
 	for dir in $(dir $(ANALYSIS_RESULTS_SAIGE)) ; \
 	do \
-	rm -f $$dir/*output ; \
-	rm -f $$dir/*error ; \
 	rm -f $$dir/*saige.txt ; \
 	rm -f $$dir/*bed ; \
 	rm -f $$dir/*bim ; \

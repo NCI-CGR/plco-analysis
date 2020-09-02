@@ -1,0 +1,11 @@
+prefix=/CGF/GWAS/Scans/PLCO/builds/1/plco-analysis/shared-source
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: qsub_job_monitor
+Description: Analyze genotype imputation output for simulated chips from 1000G data
+Requires: modern C++ compiler with stringstream support; optional zlib
+Version: 1.0
+Libs: -L${libdir}
+Cflags: -I${includedir}/qsub_job_monitor-1.0 -I${libdir}/qsub_job_monitor-1.0/include

@@ -16,17 +16,17 @@ clean:
 
 ## patterns:
 ##    output: {ANCESTRY} [recursive make run]
-##    input:  {ANCESTRY}/Makefile
+##    input:  {ANCESTRY}/Makefile$(TRACKING_SUCCESS_SUFFIX)
 ## Note: dispatches recursive make call to each ancestry; also handles creation of the ancestry makefile
-$(CLEANED_ANCESTRY_NAMES): $$@/Makefile
+$(CLEANED_ANCESTRY_NAMES): $$@/Makefile$(TRACKING_SUCCESS_SUFFIX)
 	$(MAKE) -C $@
 
 ## patterns:
-##    output: {ANCESTRY}/Makefile
+##    output: {ANCESTRY}/Makefile$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {ANCESTRY}/
 ## Note: the ancestry-specific makefiles trigger the creation of the ancestry directory itself if needed.
-$(addsuffix /Makefile,$(CLEANED_ANCESTRY_NAMES)): | $$(dir $$@)
-	echo -e "POPULATION_NAME := $(subst /Makefile,,$@)\ninclude ../Makefile.include" > $@
+$(addsuffix /Makefile$(TRACKING_SUCCESS_SUFFIX),$(CLEANED_ANCESTRY_NAMES)): | $$(dir $$@)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo -e "POPULATION_NAME := $(subst /Makefile$(TRACKING_SUCCESS_SUFFIX),,$@)\ninclude ../Makefile.include" > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {ANCESTRY}/
@@ -35,8 +35,8 @@ $(addsuffix /,$(CLEANED_ANCESTRY_NAMES)):
 
 
 ## test set to run after completion
-check: testing/Makefile
+check: testing/Makefile$(TRACKING_SUCCESS_SUFFIX)
 	$(MAKE) -C testing check
 
-testing/Makefile: testing/Makefile.am testing/configure.ac
-	cd testing && autoreconf -vi && ./configure && cd ../
+testing/Makefile$(TRACKING_SUCCESS_SUFFIX): testing/Makefile.am testing/configure.ac
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cd testing && autoreconf -vi && ./configure && cd ../)
