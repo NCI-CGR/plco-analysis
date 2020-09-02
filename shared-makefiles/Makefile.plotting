@@ -27,17 +27,21 @@ endef
 .DELETE_ON_ERROR:
 
 ## significant improvements to search function: now it automatically finds any supported tool. UPPERCASE: meta-analysis; lowercase: primary analysis
-META_TARGETS := $(shell find $(RESULTS_DIR) \( -name "*$(shell echo "$(SUPPORTED_TARGETS)" | tr '[\:lower\:]' '[\:upper\:]' | sed 's/ /.tsv.gz" -o -name "*/g').tsv.gz" \) -print)
-META_TARGETS := $(subst .tsv,.manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),$(META_TARGETS))
+FORMATTED_TARGET_META := $(shell echo "$(SUPPORTED_METHODS)" | tr '[:lower:]' '[:upper:]' | sed 's/ /.tsv.gz" -o -name "*/g')
+FORMATTED_TARGET_NONMETA := $(shell echo "$(SUPPORTED_METHODS)" | tr '[:upper:]' '[:lower:]' | sed 's/ /.tsv.gz" -o -name "*/g')
+META_TARGETS := $(shell find $(RESULTS_DIR) \( -name "*$(FORMATTED_TARGET_META).tsv.gz" \) -print)
+META_TARGETS := $(subst .tsv.gz,.manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),$(META_TARGETS))
+$(info $(META_TARGETS))
 
-NOT_META_TARGETS := $(shell find $(RESULTS_DIR) \( -name "*$(shell echo "$(SUPPORTED_TARGETS)" | tr '[\:upper\:]' '[\:lower\:]' | sed 's/ /.tsv.gz" -o -name "*/g').tsv.gz" \) -print)
+NOT_META_TARGETS := $(shell find $(RESULTS_DIR) \( -name "*$(FORMATTED_TARGET_NONMETA).tsv.gz" \) -print)
 ## manipulate non-meta targets to have unambiguous filenames that match the format of the meta plots
 NOT_META_TARGETS := $(foreach target,$(NOT_META_TARGETS),$(dir $(target))$(firstword $(subst ., ,$(notdir $(target)))).$(call extract_ancestry,$(target)).$(call extract_chip,$(target)).$(call extract_method,$(target)).manhattan.jpg$(TRACKING_SUCCESS_SUFFIX))
 
+$(info $(NOT_META_TARGETS))
 MANHATTAN_PLOT_SCRIPT := $(SHARED_SOURCE)/manhattan_loci_colored_launcher.R
 LAMBDA_N_PLOT := $(RESULTS_DIR)/lambda-n.jpg$(TRACKING_SUCCESS_SUFFIX)
 LAMBDA_N_PLOT_SCRIPT := $(SHARED_SOURCE)/lambda-n_plot_launcher.R
-all: $(META_TARGETS) $(NOT_META_TARGETS) $(LAMBDA_N_PLOT)
+all: $(META_TARGETS) $(NOT_META_TARGETS) # $(LAMBDA_N_PLOT)
 
 
 ## patterns:
@@ -47,7 +51,7 @@ all: $(META_TARGETS) $(NOT_META_TARGETS) $(LAMBDA_N_PLOT)
 ##    input:  known-signals/{PHENOTYPE}.txt
 ## Notes: final dependency is optional file of rsid->gene correspondence for known signal plotting. It will be ignored if not present
 $(META_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$@) $$(shell ls -l $$(KNOWN_SIGNALS_INPUT_DIR) | awk '$$$$9 == "$$(subst _female,,$$(subst _male,,$$(call extract_phenotype,$$@))).txt" {print "$$(KNOWN_SIGNALS_INPUT_DIR)/"$$$$9}')
-	if [[ "$(shell wc -l $(word 2,$^) | awk '{print $$1}')" -gt "1" ]] ; then \
+	if [[ "$(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) | awk '{print $$1}')" -gt "1" ]] ; then \
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@) $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(word 3,$^) $(SHARED_SOURCE)) ; \
 	else \
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
@@ -56,8 +60,8 @@ $(META_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.plot_ready$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.tsv.gz
-$(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),.plot_ready,$(META_TARGETS)): $$(subst .plot_ready$(TRACKING_SUCCESS_SUFFIX),.tsv.gz,$$@)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk '{print $$1"\t"$$2"\t"$$3"\t"$$9}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+$(subst .manhattan.jpg,.plot_ready,$(META_TARGETS)): $$(subst .plot_ready$(TRACKING_SUCCESS_SUFFIX),.tsv.gz,$$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk 'BEGIN {pcol=1} ; NR == 1 {print "CHR\tPOS\tSNP\tP" ; for ( i = 1; i <= NF; i++ ) {if ($$i == "P" || $$i == "P_CONSENSUS") {pcol=i}}} ; NR > 1 {print $$1"\t"$$2"\t"$$3"\t"$$pcol}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{CHIP}.{method}.manhattan.jpg$(TRACKING_SUCCESS_SUFFIX)
@@ -66,7 +70,7 @@ $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),.plot_ready,$(META_TARGETS)): $
 ##    input:  known-signals/{PHENOTYPE}.txt
 ## Notes: final dependency is optional file of rsid->gene correspondence for known signal plotting. It will be ignored if not present
 $(NOT_META_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$@) $$(shell ls -l $$(KNOWN_SIGNALS_INPUT_DIR) | awk '$$$$9 == "$$(subst _female,,$$(subst _male,,$$(call extract_phenotype,$$@))).txt" {print "$$(KNOWN_SIGNALS_INPUT_DIR)/"$$$$9}')
-	if [[ "$(shell wc -l $(word 2,$^) | awk '{print $$1}')" -gt "1" ]] ; then \
+	if [[ "$(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) | awk '{print $$1}')" -gt "1" ]] ; then \
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/$(call extract_chip,$@) $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(word 3,$^) $(SHARED_SOURCE)) ; \
 	else \
 	rm $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
@@ -84,12 +88,12 @@ $(LAMBDA_N_PLOT): $(LAMBDA_N_PLOT_SCRIPT) $$@.data-source.tsv
 $(LAMBDA_N_PLOT).data-source.tsv: $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),.lambda-n.tsv$(TRACKING_SUCCESS_SUFFIX),$(NOT_META_TARGETS))
 	cat $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) > $@
 
-$(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),.lambda-n.tsv$(TRACKING_SUCCESS_SUFFIX),$(NOT_META_TARGETS)): $$(subst .lambda-n.tsv$(TRACKING_SUCCESS_SUFFIX),.plot_ready,$$@) $$(dir $$@)$$(call extract_phenotype,$$@).$$(word 3,$$(subst ., ,$$@)).$$(shell echo "$$(call extract_method,$$@)" | tr '[\:upper\:]' '[\:lower\:]').tsv.gz
+$(subst .manhattan.jpg,.lambda-n.tsv,$(NOT_META_TARGETS)): $$(subst .lambda-n.tsv$(TRACKING_SUCCESS_SUFFIX),.plot_ready,$$@) $$(dir $$@)$$(call extract_phenotype,$$@).$$(word 3,$$(subst ., ,$$@)).$$(shell echo "$$(call extract_method,$$@)" | tr '[\:upper\:]' '[\:lower\:]').tsv.gz
 	$(eval MAX_N := $(shell gunzip -c $(word 2,$^) | awk 'NR > 1 {print $$10}' | uniq | sort -k 1,1gr | head -1))
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SHARED_SOURCE)/compute_lambda_n.R $< $(MAX_N) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{CHIP}.{method}.plot_ready
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.{method}.tsv
-$(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),.plot_ready,$(NOT_META_TARGETS)): $$(dir $$@)$$(call extract_phenotype,$$@).$$(word 3,$$(subst ., ,$$@)).$$(shell echo "$$(call extract_method,$$@)" | tr '[\:upper\:]' '[\:lower\:]').tsv.gz
-	gunzip -c $< | awk '{print $$1"\t"$$2"\t"$$3"\t"$$9}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $@
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.{method}.tsv.gz
+$(subst .manhattan.jpg,.plot_ready,$(NOT_META_TARGETS)): $$(dir $$@)$$(call extract_phenotype,$$@).$$(word 3,$$(subst ., ,$$@)).$$(shell echo "$$(call extract_method,$$@)" | tr '[\:upper\:]' '[\:lower\:]').tsv.gz
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk '{print $$1"\t"$$2"\t"$$3"\t"$$9}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
