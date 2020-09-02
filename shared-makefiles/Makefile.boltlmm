@@ -48,6 +48,7 @@ endef
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
 
+
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.tsv$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  [rsid annotation software]
@@ -139,10 +140,10 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted-nochr0.bed$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX)
-##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip-GRCh38-resorted-chr0.exclude
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip-GRCh38-resorted-chr0.exclude$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: remove "0" chromosome annotations for compatibility with BOLT
-%.bolt-chip.GRCh38-resorted-nochr0.bed$(TRACKING_SUCCESS_SUFFIX): %.bolt-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX) %.bolt-chip.GRCh38-resorted.chr0.exclude | $$(dir $$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --exclude $(word 2,$^) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+%.bolt-chip.GRCh38-resorted-nochr0.bed$(TRACKING_SUCCESS_SUFFIX): %.bolt-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX) %.bolt-chip.GRCh38-resorted.chr0.exclude$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --exclude $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38-resorted.chr0.exclude$(TRACKING_SUCCESS_SUFFIX)
@@ -157,7 +158,7 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip-GRCh38.bim$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.bolt-chip.GRCh38.fam$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: liftover likely breaks order of variants in the genome; quickest solution is just to reload and rewrite everything with plink.
-%.bolt-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX): %.bolt-chip.GRCh38.bed %.bolt-chip.GRCh38.bim %.bolt-chip.GRCh38.fam | $$(dir $$@)
+%.bolt-chip.GRCh38-resorted.bed$(TRACKING_SUCCESS_SUFFIX): %.bolt-chip.GRCh38.bed$(TRACKING_SUCCESS_SUFFIX) %.bolt-chip.GRCh38.bim$(TRACKING_SUCCESS_SUFFIX) %.bolt-chip.GRCh38.fam$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bed $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) --bim $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --fam $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) --allow-extra-chr 0 --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
