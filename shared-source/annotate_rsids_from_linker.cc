@@ -88,7 +88,7 @@ void stream_update(const std::string &analysis_filename,
 		   std::map<std::string, rescue_annotation> *rescue_chrpos) {
   fileinterface_reader *input_analysis = 0, *input_linker = 0;
   fileinterface_writer *output = 0;
-  std::string analysis_line = "", linker_line = "", chrpos_id = "", rsid = "", analysis_chrpos = "", catcher = "";
+  std::string analysis_line = "", linker_line = "", chrpos_id = "", rsid = "", analysis_chrpos = "", catcher = "", refalt = "";
   std::string::size_type loc = 0;
   unsigned total_updated = 0, valid_updated = 0, not_present_in_linker = 0, linker_chr = 0, linker_pos = 0, analysis_chr = 0, analysis_pos = 0;
   try {
@@ -105,6 +105,7 @@ void stream_update(const std::string &analysis_filename,
       std::istringstream strm1(analysis_line);
       if (!(strm1 >> analysis_chr >> analysis_pos >> analysis_chrpos))
 	throw std::domain_error("unable to parse analysis file \"" + analysis_filename + "\" line \"" + analysis_line + "\"");
+      refalt = analysis_chrpos.substr(analysis_chrpos.find(":", analysis_chrpos.find(":") + 1) + 1);
       while (true) {
 	if (linker_line.empty()) {
 	  if (!input_linker->getline(linker_line)) break;
@@ -121,7 +122,7 @@ void stream_update(const std::string &analysis_filename,
 	  else rsid = analysis_chrpos;
 	  if (output) {
 	    std::ostringstream o;
-	    o << analysis_chr << '\t' << analysis_pos << '\t' << rsid;
+	    o << analysis_chr << '\t' << analysis_pos << '\t' << rsid << ":" << refalt;
 	    while (strm1 >> catcher) {
 	      o << '\t' << catcher;
 	    }
@@ -220,7 +221,7 @@ void update_from_memory(const std::string &input_filename,
 			const std::string &output_filename) {
   fileinterface_reader *input = 0;
   fileinterface_writer *output = 0;
-  std::string line = "", catcher = "";
+  std::string line = "", catcher = "", refalt = "";
   try {
     input = reconcile_reader(input_filename);
     output = reconcile_writer(output_filename);
@@ -241,7 +242,8 @@ void update_from_memory(const std::string &input_filename,
 	o << catcher;
       }
       strm1 >> catcher;
-      o << '\t' << updated_ids.at(counter);
+      refalt = catcher.substr(catcher.find(":", catcher.find(":") + 1) + 1);
+      o << '\t' << updated_ids.at(counter) << ":" << refalt;
       while (strm1 >> catcher) o << '\t' << catcher;
       output->writeline(o.str());
       ++counter;
