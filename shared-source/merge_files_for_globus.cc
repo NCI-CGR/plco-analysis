@@ -82,7 +82,7 @@ public:
 		unsigned n,
 		const double &phet) {
     if (_tags.find(tag) != _tags.end()) {
-      throw std::domain_error("attempted to double-add data for \"" + tag + "\"");
+      throw std::domain_error("attempted to double-add data for \"" + tag + "\" variant \"" + id + "\"");
     }
     _tags[tag] = _freqs.size();
     _pos = pos;
@@ -193,9 +193,9 @@ void read_data(const std::string &filename,
 	  throw std::domain_error("cannot read file \"" + filename + "\" line \"" + line + "\"");
       }
       if (target.size() < chr) target.resize(chr);
-      if ((finder = target.at(chr-1).find(id.substr(id.find(":") + 1))) == target.at(chr-1).end()) {
+      if ((finder = target.at(chr-1).find(id)) == target.at(chr-1).end()) {
 	boost::shared_ptr<annotation> ptr(new annotation);
-	finder = target.at(chr-1).insert(std::make_pair(id.substr(id.find(":") + 1), ptr)).first;
+	finder = target.at(chr-1).insert(std::make_pair(id, ptr)).first;
       }
       finder->second->add_data(file_tag, pos, id, ref, alt, freq, beta, se, p, n, hetp);
     }
