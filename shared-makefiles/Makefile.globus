@@ -23,7 +23,7 @@ ALL_TARGETS := $(filter-out %.PLINK,$(ALL_TARGETS))
 ## ALL_TARGETS := $(filter %.FASTGWA,$(ALL_TARGETS))
 
 ## temporarily remove categoricals
-ALL_TARGETS := $(shell echo $(ALL_TARGETS) | sed 's/ /\n/g' | grep -v bq_cig_stat_o)
+## ALL_TARGETS := $(shell echo $(ALL_TARGETS) | sed 's/ /\n/g' | grep -v bq_cig_stat_o)
 
 ## add prefixes and suffixes appropriately
 ALL_TARGETS := $(addprefix $(OUTPUT_DIR)/,$(addsuffix .tsv.gz$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)))
@@ -42,5 +42,6 @@ $(OUTPUT_DIR)/%.tsv.gz$(TRACKING_SUCCESS_SUFFIX): $$(shell find $$(RESULTS_DIR) 
 	else \
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MERGE_SOFTWARE) $^ $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) no) ; \
 	fi
+
 $(sort $(dir $(ALL_TARGETS))):
 	mkdir -p $@
