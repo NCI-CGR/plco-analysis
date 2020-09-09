@@ -29,6 +29,22 @@ std::string to_string(const value_type &obj) {
   return o.str();
 }
 
+void splitline(const std::string &s,
+	       std::vector<std::string> &vec,
+	       const std::string &sep) {
+  vec.clear();
+  std::string::size_type loc = 0, cur = 0;
+  while (true) {
+    loc = s.find(sep, cur);
+    if (loc == std::string::npos) {
+      vec.push_back(s.substr(cur));
+      break;
+    }
+    vec.push_back(s.substr(cur, loc - cur));
+    cur = loc + sep.size();
+  }
+}
+
 bool cicompare(const std::string &s1, const std::string &s2) {
   if (s1.size() != s2.size()) return false;
   for (unsigned i = 0; i < s1.size(); ++i) {
@@ -113,11 +129,19 @@ public:
       if (report_frequency) {
 	o << '\t' << _freqs.at(finder->second);
       }
-      o << '\t' << _betas.at(finder->second)
-	<< '\t' << _ses.at(finder->second)
-	<< '\t' << _ps.at(finder->second)
-	<< '\t' << _ns.at(finder->second)
-	<< '\t' << _phets.at(finder->second);
+      if (_betas.at(finder->second) != _betas.at(finder->second)) {
+	o << "\tNA\tNA";
+      } else {
+	o << '\t' << _betas.at(finder->second)
+	  << '\t' << _ses.at(finder->second);
+      }
+      o << '\t' << _ps.at(finder->second)
+	<< '\t' << _ns.at(finder->second);
+      if (_phets.at(finder->second) != _phets.at(finder->second)) {
+	o << "\tNA";
+      } else {
+	o << '\t' << _phets.at(finder->second);
+      }
     }
   }
 private:
@@ -141,14 +165,33 @@ void read_data(const std::string &filename,
   std::string line = "", id = "", ref = "", alt = "", freq = "";
   double beta = 0.0, se = 0.0, p = 0.0, hetp = 0.0;
   unsigned chr = 0, pos = 0, n = 0;
+  bool categorical_override = false;
+  std::vector<std::string> vec;
   std::map<std::string, boost::shared_ptr<annotation> >::iterator finder;
   try {
     input = reconcile_reader(filename);
     input->getline(line);
+    categorical_override = line.find("P_CONSENSUS") != std::string::npos;
     while (input->getline(line)) {
       std::istringstream strm1(line);
-      if (!(strm1 >> chr >> pos >> id >> ref >> alt >> freq >> beta >> se >> p >> n >> hetp))
-	throw std::domain_error("cannot read file \"" + filename + "\" line \"" + line + "\"");
+      if (categorical_override) {
+	splitline(line, vec, "\t");
+	if (vec.size() < 10) {
+	  throw std::runtime_error("categorical type file \"" + filename + "\" had insufficient line entries :(");
+	}
+	chr = from_string<unsigned>(vec.at(0));
+	pos = from_string<unsigned>(vec.at(1));
+	id = vec.at(2);
+	ref = vec.at(3);
+	alt = vec.at(4);
+	freq = vec.at(5);
+	beta = se = hetp = 1.0 / 0.0;
+	p = from_string<double>(vec.at(vec.size() - 2));
+	n = from_string<unsigned>(vec.at(vec.size() - 1));
+      } else {
+	if (!(strm1 >> chr >> pos >> id >> ref >> alt >> freq >> beta >> se >> p >> n >> hetp))
+	  throw std::domain_error("cannot read file \"" + filename + "\" line \"" + line + "\"");
+      }
       if (target.size() < chr) target.resize(chr);
       if ((finder = target.at(chr-1).find(id.substr(id.find(":") + 1))) == target.at(chr-1).end()) {
 	boost::shared_ptr<annotation> ptr(new annotation);
