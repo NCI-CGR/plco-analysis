@@ -39,8 +39,7 @@ bool cicompare(const std::string &s1, const std::string &s2) {
 
 class annotation {
 public:
-  annotation()
-    : _ignore(false) {}
+  annotation() {}
   annotation(const annotation &obj)
     : _pos(obj._pos),
       _id(obj._id),
@@ -52,12 +51,9 @@ public:
       _ses(obj._ses),
       _ps(obj._ps),
       _ns(obj._ns),
-      _phets(obj._phets),
-      _ignore(obj._ignore) {}
+      _phets(obj._phets) {}
   ~annotation() throw() {}
-
-  void set_ignore(bool b) {_ignore = b;}
-  
+		
   void add_data(const std::string &tag,
 		unsigned pos,
 		const std::string &id,
@@ -105,7 +101,6 @@ public:
 		    bool first,
 		    bool report_frequency,
 		    std::ostringstream &o) {
-    if (_ignore) return;
     std::map<std::string, unsigned>::const_iterator finder;
     if (first) {
       o << '\t' << _pos << '\t' << _id << '\t' << _ref << '\t' << _alt;
@@ -137,7 +132,6 @@ private:
   std::vector<double> _ps;
   std::vector<unsigned> _ns;
   std::vector<double> _phets;
-  bool _ignore;
 };
 
 void read_data(const std::string &filename,
@@ -148,7 +142,6 @@ void read_data(const std::string &filename,
   double beta = 0.0, se = 0.0, p = 0.0, hetp = 0.0;
   unsigned chr = 0, pos = 0, n = 0;
   std::map<std::string, boost::shared_ptr<annotation> >::iterator finder;
-  std::map<std::string, bool> previously_found;
   try {
     input = reconcile_reader(filename);
     input->getline(line);
@@ -156,19 +149,12 @@ void read_data(const std::string &filename,
       std::istringstream strm1(line);
       if (!(strm1 >> chr >> pos >> id >> ref >> alt >> freq >> beta >> se >> p >> n >> hetp))
 	throw std::domain_error("cannot read file \"" + filename + "\" line \"" + line + "\"");
-      bool force_ignore = previously_found.find(id) != previously_found.end();
-      previously_found[id] = true;
       if (target.size() < chr) target.resize(chr);
-      //if ((finder = target.at(chr-1).find(id.substr(id.find(":") + 1))) == target.at(chr-1).end()) {
-      if ((finder = target.at(chr-1).find(id)) == target.at(chr-1).end()) {
+      if ((finder = target.at(chr-1).find(id.substr(id.find(":") + 1))) == target.at(chr-1).end()) {
 	boost::shared_ptr<annotation> ptr(new annotation);
-	finder = target.at(chr-1).insert(std::make_pair(id, ptr)).first;
+	finder = target.at(chr-1).insert(std::make_pair(id.substr(id.find(":") + 1), ptr)).first;
       }
-      if (force_ignore) {
-	finder->second->set_ignore(true);
-      } else {
-	finder->second->add_data(file_tag, pos, id, ref, alt, freq, beta, se, p, n, hetp);
-      }
+      finder->second->add_data(file_tag, pos, id, ref, alt, freq, beta, se, p, n, hetp);
     }
     input->close();
     delete input;
@@ -277,7 +263,6 @@ int main(int argc, char **argv) {
     std::string ancestry = determine_ancestry_from_file(filename);
     file_linker[ancestry][sex] = filename;
   }
-
   // report all the results, aligned by variant
   std::vector<std::map<std::string, boost::shared_ptr<annotation> > > all_data;
   all_data.reserve(22);
