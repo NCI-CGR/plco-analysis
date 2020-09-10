@@ -1,4 +1,4 @@
-analysis_prefix: bq_cig_stat_o
+analysis_prefix: bq_cig_stat_o_female
 chips:
   - Omni25
   - OmniX

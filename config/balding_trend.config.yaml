@@ -8,7 +8,7 @@ chips:
   - GSA_batch4
   - GSA_batch5
   - Oncoarray
-phenotype: bq_cig_stat_o
+phenotype: sqx_balding_trend_o
 covariates:
   - sex
   - bq_age_co
