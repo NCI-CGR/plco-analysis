@@ -1,0 +1,86 @@
+#!/bin/bash
+kg_dir=..
+kg_prefix=$KG_PREFIX
+kg_suffix=$KG_SUFFIX
+kg_prefix="ALL.chr"
+kg_suffix=".shapeit2_integrated_v1a.GRCh38.20181129.phased.vcf.gz"
+echo "1..44"
+
+starting_dir=`pwd`
+
+for chr in `seq 1 22` ;
+do
+    primary_present="0"
+    primary_checksum="0"
+    primary_checksum_lines="0"
+    primary_ok="0"
+    tbi_present="0"
+    tbi_checksum="0"
+    tbi_checksum_lines="0"
+    tbi_ok="0"
+
+    current_prefix="$kg_prefix$chr$kg_suffix"
+    ## detect primary file
+    if [[ -f "$kg_dir/$current_prefix" ]] ; then
+	primary_present="1"
+    fi
+    ## detect primary checksum
+    if [[ -f "$kg_dir/$current_prefix.md5sum" ]] ; then
+	primary_checksum="1"
+	if [[ `wc -l "$kg_dir/$current_prefix.md5sum" | awk '{print $1}'` != 1 ]] ; then
+	    primary_checksum_lines="1"
+	fi
+    fi
+    ## run primary checksum
+    if [[ "$primary_present" == "1" && "$primary_checksum" == 1 && "$primary_checksum_lines" == "0" ]] ; then
+	cd "$kg_dir"
+	md5sum --status -c "$current_prefix.md5sum"
+	primary_ok="$?"
+	cd "$starting_dir"
+    fi
+
+    ## report primary results
+    if [[ "$primary_present" -eq "0" ]] ; then
+	echo "not ok - $current_prefix: file missing"
+    elif [[ "$primary_checksum" -eq "0" ]] ; then
+	echo "not ok - $current_prefix: checksum missing"
+    elif [[ "$primary_checksum_lines" -ne "0" ]] ; then
+	echo "not ok - $current_prefix: incorrect number of checksum lines"
+    elif [[ "$primary_ok" -ne "0" ]] ; then
+	echo "not ok - $current_prefix: checksum failure"
+    else
+	echo "ok - $current_prefix: file and checksum exist and agree"
+    fi
+
+    ## detect tbi file
+    if [[ -f "$kg_dir/$current_prefix.tbi" ]] ; then
+	tbi_present="1"
+    fi
+    ## detect tbi checksum
+    if [[ -f "$kg_dir/$current_prefix.tbi.md5sum" ]] ; then
+	tbi_checksum="1"
+	if [[ `wc -l "$kg_dir/$current_prefix.tbi.md5sum" | awk '{print $1}'` != 1 ]] ; then
+	    tbi_checksum_lines="1"
+	fi
+    fi
+    ## run tbi checksum
+    if [[ "$tbi_present" == "1" && "$tbi_checksum" == 1 && "$tbi_checksum_lines" == "0" ]] ; then
+	cd $kg_dir
+	md5sum --status -c "$current_prefix.tbi.md5sum"
+	tbi_ok="$?"
+	cd "$starting_dir"
+    fi
+
+    ## report tbi results
+    if [[ "$tbi_present" -eq "0" ]] ; then
+	echo "not ok - $current_prefix.tbi: file missing"
+    elif [[ "$tbi_checksum" -eq "0" ]] ; then
+	echo "not ok - $current_prefix.tbi: checksum missing"
+    elif [[ "$tbi_checksum_lines" -ne "0" ]] ; then
+	echo "not ok - $current_prefix.tbi: incorrect number of checksum lines"
+    elif [[ "$tbi_ok" -ne "0" ]] ; then
+	echo "not ok - $current_prefix.tbi: checksum failure"
+    else
+	echo "ok - $current_prefix.tbi: file and checksum exist and agree"
+    fi
+done
