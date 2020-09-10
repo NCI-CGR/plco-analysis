@@ -7,6 +7,7 @@
 #include <utility>
 #include <stdexcept>
 #include <cctype>
+#include <cmath>
 #include <boost/smart_ptr.hpp>
 #include "fileinterface/fileinterface.h"
 
@@ -129,7 +130,7 @@ public:
       if (report_frequency) {
 	o << '\t' << _freqs.at(finder->second);
       }
-      if (_betas.at(finder->second) != _betas.at(finder->second)) {
+      if (isinf(_betas.at(finder->second))) {
 	o << "\tNA\tNA";
       } else {
 	o << '\t' << _betas.at(finder->second)
@@ -137,7 +138,7 @@ public:
       }
       o << '\t' << _ps.at(finder->second)
 	<< '\t' << _ns.at(finder->second);
-      if (_phets.at(finder->second) != _phets.at(finder->second)) {
+      if (isinf(_phets.at(finder->second))) {
 	o << "\tNA";
       } else {
 	o << '\t' << _phets.at(finder->second);
