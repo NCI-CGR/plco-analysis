@@ -6,6 +6,7 @@
 #include <map>
 #include <utility>
 #include <stdexcept>
+#include <algorithm>
 #include <cmath>
 #include "fileinterface/fileinterface.h"
 
@@ -296,6 +297,13 @@ void compute_combinatorial_uniques(const std::vector<std::string> &model_matrix_
   }
 }
 
+bool comparison_name_sort(const std::string &filename1,
+			  const std::string &filename2) {
+  unsigned comp1 = get_comparison_number(filename1);
+  unsigned comp2 = get_comparison_number(filename2);
+  return comp1 < comp2;
+}
+
 int main(int argc, char **argv) {
   if (argc < 4)
     throw std::domain_error("usage: \"" + std::string(argv[0]) + " [multiple input files] [corresponding model matrix files] output_filename\"");
@@ -313,6 +321,8 @@ int main(int argc, char **argv) {
       input_filenames.push_back(input_filename);
     }
   }
+  // sort the input files to get the comparisons in the right order in the end
+  std::sort(input_filenames.begin(), input_filenames.end(), comparison_name_sort);
   std::vector<std::map<std::pair<unsigned, unsigned>, std::map<std::string, std::pair<unsigned, unsigned> > > > combinatorial_file_counts;
   std::cout << "computing combinatorial unique sample counts for sample size reporting" << std::endl;
   compute_combinatorial_uniques(model_matrix_filenames, combinatorial_file_counts);
