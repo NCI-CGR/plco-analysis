@@ -5,7 +5,7 @@ else
     ANCESTRY="$1"
     LDSC_DIRECTORY="$2"
     LDSC_PREFIX="${LDSC_DIRECTORY}/LDSCORE.1000G_"
-    LDSC_SUFFIX=".l2.ldscore.gz"
+    LDSC_SUFFIX=".l2.ldscore-reformatted.gz"
     if [[ "$ANCESTRY" == "European" ]] ; then
 	echo "${LDSC_PREFIX}EUR${LDSC_SUFFIX}" ;
     elif [[ "$ANCESTRY" == "Hispanic1" ]] || [[ "$ANCESTRY" == "Hispanic2" ]] ; then
