@@ -55,3 +55,5 @@ shared-source/compute_lambda_n.R
 shared-source/digraph_cleaner.cc
 backup
 *variances
+config/testing
+1KG_files
