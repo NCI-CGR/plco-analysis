@@ -63,6 +63,7 @@ do
 	    config_yaml_unsupported_features=1
 	else
 	    lines=`echo "$raw_lines" | sed -E "s/('[^:,']+'): ('[^']+')/\1: \2\n/g ; s/],/]\n/g ; s/\{// ; s/\}//" | sed "s/^,// ; s/\[// ; s/]// ; s/ //g ; s/'//g"`
+	    declare -A PARSED_YAML
 	    for line in `echo "$lines" | sed 's/ /\n/g'`;
 	    do
 		PARSED_YAML[`echo "$line" | cut -f 1 -d ":"`]=`echo "$line" | cut -f 2 -d ":"`
@@ -117,7 +118,7 @@ do
 	    algorithm_present=$(yaml_check_exists algorithm)
 	    ## algorithms are of "saige" "boltlmm" "fastgwa" "plink"
 	    if [[ "$algorithm_present" ]] ; then
-		algorithms_requested=$(yaml "$config_file" "algorithm")
+		algorithms_requested=$(yaml algorithm)
 		n_algorithms_requested=$(howmany "$algorithms_requested")
 		valid_algorithms=`echo $algorithms_requested | sed 's/ /\n/g' | awk '$1 == "saige" || $1 == "boltlmm" || $1 == "plink" || $1 == "fastgwa"' | wc -l`
 		if [[ "$valid_algorithms" -eq "$n_algorithms_requested" ]] ; then
