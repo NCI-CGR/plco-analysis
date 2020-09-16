@@ -21,7 +21,7 @@ do
 		n_expected_overlap=`cat $target_file $other_file | awk -F"\t" '! /Self-reported/ {print $1}' | sort | uniq -d | wc -l`
 		((n_crossover_subjects = n_crossover_subjects + n_expected_overlap))
 		n_observed_overlap=`cat $target_file $other_file | awk -F"\t" '! /Self-reported/ {print $1":"$NF}' | sort | uniq -d | wc -l`
-		if [[ "$n_observed_overlap" != "$n_expected_overlap" ]] ; then
+		if [[ "$n_observed_overlap" -ne "$n_expected_overlap" ]] ; then
 		    ((ancestry_discordance_count = ancestry_discordance_count + n_expected_overlap - n_observed_overlap))
 		fi
 	    else
