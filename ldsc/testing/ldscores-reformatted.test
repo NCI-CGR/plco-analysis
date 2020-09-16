@@ -1,4 +1,5 @@
 #!/bin/bash
+echo 1..6
 supercontinents="AFR AFRAMR AMR EAS EUR SAS"
 for supercontinent in $supercontinents ;
 do
