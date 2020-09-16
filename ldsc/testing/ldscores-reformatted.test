@@ -1,0 +1,17 @@
+#!/bin/bash
+supercontinents="AFR AFRAMR AMR EAS EUR SAS"
+for supercontinent in $supercontinents ;
+do
+    filename="../LDSCORE.1000G_$supercontinent.l2.ldscore-reformatted.gz"
+    if [[ -f "$filename" ]] ; then
+	## flag erroneous lines
+	n_badlines=`gunzip -c $filename | sed 's/:/\t/g' | awk 'NR == 1 && $0 != "CHR\tSNP\tBP\tLDSCORE" ; NR > 1 && ($1 != $2 || $3 != $6 || NF != 7)' | wc -l`
+	if [[ "$n_badlines" -gt "0" ]] ; then
+	    echo "not ok - $filename: $n_badlines bad lines detected"
+	else
+	    echo "ok - $filename mild consistency checks"
+	fi
+    else
+	echo "not ok - $filename does not exist"
+    fi
+done

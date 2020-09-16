@@ -1,0 +1,22 @@
+#!/bin/bash
+echo 1..22
+for chr in `seq 1 22`;
+do
+    filename="../genetic_map_chr$chr.txt"
+    if [[ -f "$filename" ]] ; then
+	if [[ `wc -l $filename | awk '{print $1}'` -lt "2" ]] ; then
+	    echo "not ok - $filename insufficient entries"
+	else
+	    ## load min and max positions on this chromosome
+	    max_expected_pos=`grep -P "^chr$chr\t" cytoBand.txt | awk '{print $3}' | sort -k 1,1gr | head -1`
+	    max_observed_pos=`tail -n 1 $filename | awk '{print $1}'`
+	    if [[ "$max_observed_pos" -gt "$max_expected_pos" ]] ; then
+		echo "not ok - $filename max position out of bounds for chromosome (expected max $max_expected_pos, found $max_observed_pos)"
+	    else
+		echo "ok - $filename positions look consistent with chromosome"
+	    fi
+	fi
+    else
+	echo "not ok - $filename does not exist"
+    fi
+done

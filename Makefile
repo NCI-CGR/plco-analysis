@@ -62,9 +62,9 @@ globus: # meta
 
 ## TESTING CONTROLLERS
 
-.PHONY: check bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check
+.PHONY: check bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check ldsc-check
 
-check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check
+check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check ldsc-check
 
 bgen-check:
 	$(MAKE) -C $(BGEN_OUTPUT_DIR) check FILTERED_DOSAGE_DATA=$(FILTERED_IMPUTED_INPUT_DIR)
@@ -96,7 +96,8 @@ meta-check:
 1KG_files-check:
 	$(MAKE) -C $(KG_REFERENCE_INPUT_DIR) check KG_PREFIX=$(KG_GENOTYPES_PREFIX) KG_SUFFIX=$(KG_GENOTYPES_SUFFIX)
 
-
+ldsc-check:
+	$(MAKE) -C $(LDSC_OUTPUT_DIR) check
 
 ## CLEANING INTERMEDIATES
 
