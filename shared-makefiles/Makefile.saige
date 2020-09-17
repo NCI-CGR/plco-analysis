@@ -96,7 +96,7 @@ endef
 	$(eval N_CASES := $(shell awk '$$3 == 1' $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) | wc -l))
 	$(eval N_CONTROLS := $(shell awk '$$3 == 0' $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) | wc -l))
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(subst $(TRACKING_SUCCESS_SUFFIX),.txt,$(filter-out %.model_matrix$(TRACKING_SUCCESS_SUFFIX) %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN\tNcases\tNcontrols"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9"\t$(N_CASES)\t$(N_CONTROLS)"}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(subst $(TRACKING_SUCCESS_SUFFIX),.txt,$(filter-out %.model_matrix$(TRACKING_SUCCESS_SUFFIX) %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)) | awk '! /CHR POS rsid/' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN\tNcases\tNcontrols"} ; {print $$1"\t"$$2"\t"$$3"\t"$$5"\t"$$4"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$10"\t"$$11"\t"$$13"\t"$$9"\t$(N_CASES)\t$(N_CONTROLS)"}' | sed 's/:/\t/g' | awk 'NR == 1 ; NR > 1 {print $$1"\t"$$4"\t"$$3":"$$4":"$$5":"$$6"\t"$$7"\t"$$8"\t"$$9"\t"$$10"\t"$$11"\t"$$12"\t"$$13"\t"$$14"\t"$$15}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
 	else \
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
