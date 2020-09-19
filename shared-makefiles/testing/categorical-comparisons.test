@@ -1,0 +1,51 @@
+#!/bin/bash
+
+config_dir="$CONFIG_DIR"
+results_dir="$RESULTS_DIR"
+phenotype_filename="$PHENOTYPE_FILENAME"
+
+config_dir="../../config"
+results_dir="../../results"
+
+total_tests=0
+
+## python yaml helper functions
+declare -A PARSED_YAML
+## previous versons of this implementation had distinct behaviors for these two functions; leaving as is for now
+yaml() {
+    echo "${PARSED_YAML[$1]//,/ }"
+}
+yaml_check_exists() {
+    echo "${PARSED_YAML[$1]//,/ }"
+}
+
+for config_file in `ls $config_dir/*config.yaml` ;
+do
+    ## assume config-check has been run
+    ## for version reasons, this can't be wrapped in a function
+    raw_lines=`python3 -c "import yaml; print(yaml.safe_load(open('$config_file')))" 2> /dev/null`
+    lines=`echo "$raw_lines" | sed -E "s/('[^:,']+'): ('[^']+')/\1: \2\n/g ; s/],/]\n/g ; s/\{// ; s/\}//" | sed "s/^,// ; s/\[// ; s/]// ; s/ //g ; s/'//g"`
+    declare -A PARSED_YAML
+    for line in `echo "$lines" | sed 's/ /\n/g'`;
+    do
+        PARSED_YAML[`echo "$line" | cut -f 1 -d ":"`]=`echo "$line" | cut -f 2 -d ":"`
+    done
+
+    phenotype_file_missing=0
+    phenotype_missing=0
+    results_dir_missing=0
+    comparison_dir_missing=0
+    comparison_dir_trait_n_failure=0
+    
+    ## check that it's saige
+    algorithms=$(yaml algorithm)
+    if [[ ! -z "`echo $algorithms | grep saige`" ]] ; then
+	## extract the phenotype from the phenotype file
+	phenotype_name=$(yaml phenotype)
+	if [[ ! -f "$phenotype_filename" ]] ; then
+	    phenotype_file_missing=1
+	else
+	    
+	fi
+    fi
+done
