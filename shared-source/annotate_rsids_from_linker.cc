@@ -121,11 +121,15 @@ void stream_update(const std::string &analysis_filename,
 	  // note: these two rsIDs are annotation failures in dbSNP due to weird cross-chromosome homology in pseudogenes.
 	  //       as these are the only variants I've found so far affected by this issue, I'm just putting in a hard-coded
 	  //       fix. if I find more, I'll improve the generalisability of the fix
-	  if (rsid.compare(".") && rsid.compare("rs1192281978") && rsid.compare("rs1160972848")) ++valid_updated;
-	  else rsid = analysis_chrpos;
+	  if (rsid.compare(".") && rsid.compare("rs1192281978") && rsid.compare("rs1160972848")) {
+	    ++valid_updated;
+	    rsid += ":" + refalt;
+	  } else {
+	    rsid = analysis_chrpos;
+	  }
 	  if (output) {
 	    std::ostringstream o;
-	    o << analysis_chr << '\t' << analysis_pos << '\t' << rsid << ":" << refalt;
+	    o << analysis_chr << '\t' << analysis_pos << '\t' << rsid;
 	    while (strm1 >> catcher) {
 	      o << '\t' << catcher;
 	    }
