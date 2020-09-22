@@ -104,6 +104,7 @@ namespace qsub_job_monitor {
   void get_job_ids(const std::string &qstat,
 		   std::map<unsigned, bool> &target);
   unsigned get_job_id(const std::string &echo_output);
+  void kill_job(unsigned jobid);
 }
 
 #endif //__QSUB_JOB_MONITOR_UTILITIES_H__

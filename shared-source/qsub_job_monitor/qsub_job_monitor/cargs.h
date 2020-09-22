@@ -74,6 +74,9 @@ namespace qsub_job_monitor {
     unsigned get_crashcheck_attempts() const {
       return compute_parameter<unsigned>("crashcheck-attempts");
     }
+    unsigned get_eqw_resub_limit() const {
+      return compute_parameter<unsigned>("eqw-resub-limit");
+    }
     /*!
       \brief find status of arbitrary flag
       @param tag name of flag

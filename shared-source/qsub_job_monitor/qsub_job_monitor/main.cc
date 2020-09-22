@@ -7,6 +7,7 @@
 #include <utility>
 #include <stdexcept>
 #include <filesystem>
+#include <random>
 #include <ctime>
 
 #include "qsub_job_monitor/cargs.h"
@@ -38,6 +39,8 @@ int main(int argc, char **argv) {
   unsigned sleep_in_seconds = ap.get_sleep_time();
   unsigned crashcheck_interval_in_seconds = ap.get_crashcheck_interval();
   unsigned crashcheck_attempts = ap.get_crashcheck_attempts();
+  unsigned eqw_resub_limit = ap.get_eqw_resub_limit();
+  unsigned eqw_resubs = 0;
   std::string qsub_command = "qsub -N " + job_name + " -o " + logging_prefix + ".output -e " + logging_prefix + ".error -V -q " + qsub_queue + " -l " + resources + " -cwd -S /bin/bash -b y bash " + command_script;
   std::string qsub_screen_output = "";
   std::time_t my_time;
@@ -56,6 +59,13 @@ int main(int argc, char **argv) {
   std::cout << qsub_screen_output << std::endl;
   unsigned job_id = get_job_id(qsub_screen_output);
   unsigned seconds_elapsed_since_crashcheck = 0;
+  // now, for reasons, wait a random (small) amount of time to try to relieve burden on the system
+  //   from multiple concurrent qstat pings
+  std::random_device r;
+  std::default_random_engine dre(r());
+  std::uniform_int_distribution<int> uid(1, 30);
+  sleep(uid(dre));
+  // monitoring loop
   while (true) {
     if (std::filesystem::exists(logging_prefix + ".success")) {
       my_time = std::time(NULL);
@@ -71,6 +81,7 @@ int main(int argc, char **argv) {
     if (seconds_elapsed_since_crashcheck >= crashcheck_interval_in_seconds) {
       std::string qstat_log = "";
       std::map<unsigned, bool> current_job_ids;
+      std::map<unsigned, bool>::const_iterator finder;
       unsigned n_crashcheck_retries = 0;
       for ( ; n_crashcheck_retries < crashcheck_attempts; ++n_crashcheck_retries) {
 	if (exec("qstat", qstat_log)) {
@@ -79,9 +90,26 @@ int main(int argc, char **argv) {
 	} else {
 	  // parse the output into active job ids
 	  get_job_ids(qstat_log, current_job_ids);
-	  if (current_job_ids.find(job_id) != current_job_ids.end()) {
+	  // if the job is still running
+	  if ((finder = current_job_ids.find(job_id)) != current_job_ids.end() &&
+	      finder->second) {
 	    break;
-	  } else {
+	  } else if (finder != current_job_ids.end()) { // the job is still running but Eqw
+	    kill_job(job_id);
+	    if (eqw_resubs >= eqw_resub_limit) {
+	      std::cout << "ERROR: job \"" << qsub_command << "\" (id " << job_id << ") has Eqw, Eqw resubmission limit reached, terminating" << std::endl;
+	    } else {
+	      ++eqw_resubs;
+	      std::cout << "WARNING: job \"" << qsub_command << "\" (id " << job_id << ") has Eqw, killing and resubmitting" << std::endl;
+	      if (exec(qsub_command, qsub_screen_output)) {
+		throw std::runtime_error("unable to relaunch qsub command: \"" + qsub_command + "\"");
+	      }
+	      std::cout << "resub (Eqw): " << qsub_screen_output << std::endl;
+	      job_id = get_job_id(qsub_screen_output);
+	      seconds_elapsed_since_crashcheck = 0;
+	      break;
+	    }
+	  } else { // the job is finished
 	    // there is a minor possibility that the job finished between when we started the crashcheck and now. check that
 	    if (std::filesystem::exists(logging_prefix + ".success")) {
 	      my_time = std::time(NULL);
@@ -110,7 +138,7 @@ int main(int argc, char **argv) {
 		if (exec(qsub_command, qsub_screen_output)) {
 		  throw std::runtime_error("unable to relaunch qsub command: \"" + qsub_command + "\"");
 		}
-		std::cout << "echoed output: " << qsub_screen_output << std::endl;
+		std::cout << "resub (job crashed): " << qsub_screen_output << std::endl;
 		job_id = get_job_id(qsub_screen_output);
 		seconds_elapsed_since_crashcheck = 0;
 		break;

@@ -16,5 +16,6 @@ void qsub_job_monitor::cargs::initialize_options() {
     ("sleep-time,t", boost::program_options::value<unsigned>()->default_value(10), "number of seconds to sleep between checks")
     ("crashcheck-interval,i", boost::program_options::value<unsigned>()->default_value(3600), "number of seconds to wait before checking queue for job existence")
     ("crashcheck-attempts,a", boost::program_options::value<unsigned>()->default_value(10), "number of times to attempt qstat before killing process")
+    ("eqw-resub-limit,e", boost::program_options::value<unsigned>()->default_value(3), "number of times to attempt resubbing Eqw job before killing process")
     ;
 }

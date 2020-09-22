@@ -137,6 +137,7 @@ void qsub_job_monitor::get_job_ids(const std::string &qstat,
 				   std::map<unsigned, bool> &target) {
   std::vector<std::string> lines;
   unsigned jobid = 0;
+  std::string catcher = "", jobstat = "";
   target.clear();
   splitline(qstat, lines, "\n");
   std::vector<std::string>::const_iterator line = lines.begin();
@@ -146,9 +147,10 @@ void qsub_job_monitor::get_job_ids(const std::string &qstat,
   for (; line != lines.end(); ++line) {
     if (line->empty()) continue;
     std::istringstream strm1(*line);
-    if (!(strm1 >> jobid))
+    if (!(strm1 >> jobid >> catcher >> catcher >> catcher >> jobstat))
       throw std::domain_error("cannot parse qstat line \"" + *line + "\"");
-    target[jobid] = true;
+    // report if the job is present and whether it is in a valid run state
+    target[jobid] = jobstat.compare("Eqw");
   }
 }
 
@@ -161,3 +163,7 @@ unsigned qsub_job_monitor::get_job_id(const std::string &echo_output) {
   return res;
 }
 
+void qsub_job_monitor::kill_job(unsigned jobid) {
+  std::string command = "qdel " + to_string<unsigned>(jobid);
+  system(command.c_str());
+}
