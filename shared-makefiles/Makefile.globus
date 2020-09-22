@@ -14,16 +14,9 @@ MERGE_SOFTWARE := $(SHARED_SOURCE)/merge_files_for_globus.out
 
 CONFIG_FILES := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## determine a unique set of phenotype/algorithm targets from the config directory
-ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell res="`grep \"exclude_from_atlas:\" $(file) | wc -l`"; if [[ "$$res" -eq "0" ]] ; then echo "`awk '/phenotype:/ ; /- boltlmm/ || /- saige/ {$$1 = \"algorithm:\" ; print $$0}' $(file) | sort -r | awk '{$$1 = ""; printf(\"%s\t\",$$0)}' | awk '{for (i = 2 ; i <= NF ; ++i) print $$1\".\"toupper($$i)}'`" ; fi)))
+#ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell res="`grep \"exclude_from_atlas:\" $(file) | wc -l`"; if [[ "$$res" -eq "0" ]] ; then echo "`awk '/phenotype:/ ; /- boltlmm/ || /- saige/ {$$1 = \"algorithm:\" ; print $$0}' $(file) | sort -r | awk '{$$1 = ""; printf(\"%s\t\",$$0)}' | awk '{for (i = 2 ; i <= NF ; ++i) print $$1\".\"toupper($$i)}'`" ; fi)))
+ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell $(SHARED_SOURCE)/format_globus_prefixes.py $(file))))
 
-## remove plink targets
-ALL_TARGETS := $(filter-out %.PLINK,$(ALL_TARGETS))
-
-## temporarily only select FASTGWA targets
-## ALL_TARGETS := $(filter %.FASTGWA,$(ALL_TARGETS))
-
-## temporarily remove categoricals
-## ALL_TARGETS := $(shell echo $(ALL_TARGETS) | sed 's/ /\n/g' | grep -v bq_cig_stat_o)
 
 ## add prefixes and suffixes appropriately
 ALL_TARGETS := $(addprefix $(OUTPUT_DIR)/,$(addsuffix .tsv.gz$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)))
