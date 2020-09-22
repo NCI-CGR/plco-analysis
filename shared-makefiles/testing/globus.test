@@ -1,0 +1,16 @@
+#!/bin/bash
+globus_dir="$GLOBUS_DIR"
+#globus_dir="../../globus"
+total_tests=0
+for file in `ls $globus_dir/latest/*tsv.gz` ;
+do
+    ## check ID format compliance
+    aberrant_id_lines=`gunzip -c $file | awk 'NR > 1 && ! ($3 ~ /^rs[0-9]+:[ACGT]+:[ACGT]+$/ || $3 ~ /^chr[0-9]+:[0-9]+:[ACGT]+:[ACGT]+$/)' | wc -l`
+    if [[ "$aberrant_id_lines" -gt "0" ]] ; then
+	echo "not ok - $file aberrant ID format on $aberrant_id_lines lines"
+    else
+	echo "ok - $file"
+    fi
+    (( total_tests = total_tests + 1 ))
+done
+echo "1..$total_tests"
