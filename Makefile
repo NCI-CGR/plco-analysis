@@ -62,9 +62,9 @@ globus: # meta
 
 ## TESTING CONTROLLERS
 
-.PHONY: check bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check ldsc-check
+.PHONY: check bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check ldsc-check globus-check
 
-check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check ldsc-check
+check: bgen-check relatedness-check ancestry-check cleaned-chips-by-ancestry-check fastgwa-check boltlmm-check fastgwa-grm-check ldscores-check saige-check config-check meta-check ldsc-check globus-check
 
 bgen-check:
 	$(MAKE) -C $(BGEN_OUTPUT_DIR) check FILTERED_DOSAGE_DATA=$(FILTERED_IMPUTED_INPUT_DIR)
@@ -99,6 +99,9 @@ meta-check:
 ldsc-check:
 	$(MAKE) -C $(LDSC_OUTPUT_DIR) check
 
+globus-check:
+	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ GLOBUS_DIR=$(GLOBUS_OUTPUT_DIR)
+
 ## CLEANING INTERMEDIATES
 
 bgen-secondary-clean:
@@ -106,4 +109,3 @@ bgen-secondary-clean:
 
 $(addsuffix -secondary-clean,$(SUPPORTED_METHODS)):
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.$(subst -secondary-clean,,$@) secondary-clean
-
