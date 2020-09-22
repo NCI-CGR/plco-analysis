@@ -5,7 +5,7 @@ include $(PROJECT_BASE_DIR)/Makefile.config
 
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
-OUTPUT_DIR := $(GLOBUS_OUTPUT_DIR)/staging
+OUTPUT_DIR := $(GLOBUS_OUTPUT_DIR)/21sep2020
 MERGE_SOFTWARE := $(SHARED_SOURCE)/merge_files_for_globus.out
 .DELETE_ON_ERROR:
 .PHONY: all
@@ -14,7 +14,7 @@ MERGE_SOFTWARE := $(SHARED_SOURCE)/merge_files_for_globus.out
 
 CONFIG_FILES := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## determine a unique set of phenotype/algorithm targets from the config directory
-ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell res="`grep \"exclude_from_atlas:\" $(file) | wc -l`"; if [[ "$$res" -eq "0" ]] ; then echo "`awk '/phenotype:/ ; /- boltlmm/ || /- saige/ || /- fastgwa/ {$$1 = \"algorithm:\" ; print $$0}' $(file) | sort -r | awk '{$$1 = ""; printf(\"%s\t\",$$0)}' | awk '{for (i = 2 ; i <= NF ; ++i) print $$1\".\"toupper($$i)}'`" ; fi)))
+ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell res="`grep \"exclude_from_atlas:\" $(file) | wc -l`"; if [[ "$$res" -eq "0" ]] ; then echo "`awk '/phenotype:/ ; /- boltlmm/ || /- saige/ {$$1 = \"algorithm:\" ; print $$0}' $(file) | sort -r | awk '{$$1 = ""; printf(\"%s\t\",$$0)}' | awk '{for (i = 2 ; i <= NF ; ++i) print $$1\".\"toupper($$i)}'`" ; fi)))
 
 ## remove plink targets
 ALL_TARGETS := $(filter-out %.PLINK,$(ALL_TARGETS))
@@ -28,7 +28,17 @@ ALL_TARGETS := $(filter-out %.PLINK,$(ALL_TARGETS))
 ## add prefixes and suffixes appropriately
 ALL_TARGETS := $(addprefix $(OUTPUT_DIR)/,$(addsuffix .tsv.gz$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)))
 
-all: $(ALL_TARGETS)
+all: $(ALL_TARGETS) $(subst .tsv.gz,.tsv.gz.checksum,$(ALL_TARGETS))
+
+
+## patterns:
+##    output: globus/{PHENOTYPE}.{METHOD}.tsv.gz.checksum
+##    input:  globus/{PHENOTYPE}.{METHOD}.tsv.gz
+## Notes: compute md5 checksum for globus files. not really essential right now but trying to have
+##        standards and potentially futureproof
+COMMA:=,
+$(OUTPUT_DIR)/%.tsv.gz.checksum$(TRACKING_SUCCESS_SUFFIX): $$(subst .checksum,,$$@) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),md5sum -b $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's$(COMMA)$(OUTPUT_DIR)/$(COMMA)$(COMMA)' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## this rule is a minor nightmare, because there's no guarantee what files are going to be present for any particular analysis, regardless of the request
 ## patterns:
@@ -36,7 +46,7 @@ all: $(ALL_TARGETS)
 ##    input(s):  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.tsv.gz
 ## Notes: arbitrarily large number of inputs depending on what flavor of analysis has been run
 ##        for reasons, leave it to the merge software to figure out what is what
-$(OUTPUT_DIR)/%.tsv.gz$(TRACKING_SUCCESS_SUFFIX): $$(shell find $$(RESULTS_DIR) -maxdepth 4 -path "*/$$(firstword $$(subst ., ,$$(notdir $$@)))*/*/$$(lastword $$(subst ., ,$$(subst .tsv.gz$(TRACKING_SUCCESS_SUFFIX),,$$(notdir $$@))))/*.$$(lastword $$(subst ., ,$$(subst .tsv.gz$(TRACKING_SUCCESS_SUFFIX),,$$(notdir $$@)))).tsv.gz" -print)
+$(OUTPUT_DIR)/%.tsv.gz$(TRACKING_SUCCESS_SUFFIX): $$(shell find $$(RESULTS_DIR) -maxdepth 4 -path "*/$$(firstword $$(subst ., ,$$(notdir $$@)))*/*/$$(lastword $$(subst ., ,$$(subst .tsv.gz$(TRACKING_SUCCESS_SUFFIX),,$$(notdir $$@))))/*.$$(lastword $$(subst ., ,$$(subst .tsv.gz$(TRACKING_SUCCESS_SUFFIX),,$$(notdir $$@)))).tsv.gz" -print) | $$(dir $$@)
 	if [[ -d "$(RESULTS_DIR)/$(firstword $(subst ., ,$(notdir $@)))_female" ]] ; then \
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MERGE_SOFTWARE) $^ $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) yes) ; \
 	else \
