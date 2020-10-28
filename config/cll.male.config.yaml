@@ -36,3 +36,4 @@ algorithm:
   - plink
 sex-specific: male
 id_mode: rsid
+control_type: no-cancer

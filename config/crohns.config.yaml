@@ -1,4 +1,4 @@
-analysis_prefix: j_endo_cancer
+analysis_prefix: bq_crohns_disease_b
 chips:
   - Omni25
   - OmniX
@@ -8,10 +8,10 @@ chips:
   - GSA_batch4
   - GSA_batch5
   - Oncoarray
-phenotype: j_endo_cancer
+phenotype: bq_crohns_disease_b
 covariates:
-  - bq_age_co
   - sex
+  - bq_age_co
   - is.other.asian
   - PC1
   - PC2
@@ -33,6 +33,4 @@ ancestries:
   - East_Asian
 algorithm:
   - saige
-  - plink
 id_mode: rsid
-control_type: no-cancer

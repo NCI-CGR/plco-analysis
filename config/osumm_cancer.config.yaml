@@ -35,3 +35,4 @@ algorithm:
   - saige
   - plink
 id_mode: rsid
+control_type: no-cancer
