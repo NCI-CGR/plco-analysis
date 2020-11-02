@@ -1,7 +1,7 @@
 require(stringr)
 cargs <- commandArgs(trailingOnly = TRUE)
-if (length(cargs) != 10) {
-   stop(paste("Arguments to construct_model_matrix.R: phenotype_filename chip_samplefile ancestry chip phenotype_name covariate_list output_filename phenotype_category_filename(or NA) transformation(or none) sex-specific(or combined) (expected 10, received ", length(cargs), sep=""))
+if (length(cargs) != 11) {
+   stop(paste("Arguments to construct_model_matrix.R: phenotype_filename chip_samplefile ancestry chip phenotype_name covariate_list output_filename phenotype_category_filename(or NA) transformation(or none) sex-specific(or combined) control-type(no-cancer or all) (expected 11, received ", length(cargs), sep=""))
 }
 phenotype.filename <- cargs[1]
 chip.samplefile <- cargs[2]
@@ -15,13 +15,15 @@ output.filename <- cargs[7]
 category.filename <- cargs[8]
 transformation <- cargs[9]
 sex.specific <- cargs[10]
+control.type <- cargs[11]
 
 ## do some mild error checking on the transformation and sex.specific freetext options
 stopifnot(transformation == "none" | transformation == "post.split.INT")
 stopifnot(sex.specific == "female" | sex.specific == "male" | sex.specific == "combined")
+stopifnot(control.type == "no-cancer" | control.type == "all")
 
 id.colname <- "plco_id"
-
+clean.cancer.colname <- "clean_control"
 possible.pcs <- paste("PC", 1:10, sep="")
 
 ## try to read phenotype data
@@ -48,12 +50,17 @@ if (length(covariate.list) > 0) {
 ## apply inverse normalization to continuous variables
 inverse.normalize <- function(i) {
 ## from SAIGE code https://github.com/weizhouUMICH/SAIGE/blob/master/R/SAIGE_fitGLMM_fast.R
-	qnorm((rank(i, na.last="keep", ties.method="random") - 0.5)/sum(!is.na(i)))
+    qnorm((rank(i, na.last="keep", ties.method="random") - 0.5)/sum(!is.na(i)))
 }
 
 ## try to hack diagnose phenotype distribution for mild consistency checking
 unique.outcomes <- unique(h[,phenotype.name][!is.na(h[,phenotype.name])])
 trait.is.binary <- length(unique.outcomes) == 2 & length(c(0,1) %in% unique.outcomes) == 2
+
+## apply control type filtering, if the trait is binary and the configuration requests it
+if (trait.is.binary & control.type == "no-cancer") {
+    h <- h[(h[,phenotype.name] == 0 & h[,clean.cancer.colname] == 1) | h[,phenotype.name] != 0,]
+}
 
 # load PCs for ANC/CHIP combo
 pc.filename <- paste("/CGF/GWAS/Scans/PLCO/builds/1/cleaned-chips-by-ancestry/", ancestry, "/", chip.nosubsets, ".step7.evec", sep="")
