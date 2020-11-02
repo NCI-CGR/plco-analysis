@@ -52,6 +52,9 @@ do
     sex_specific_present=0
     sex_specific_valid=0
 
+    control_selection_present=0
+    control_selection_valid=0
+    
     id_mode_present=0
     id_mode_valid=0
 
@@ -154,6 +157,16 @@ do
 		fi
 	    fi
 
+	    ## may optionally include a single "control_type:" entry
+	    control_selection_present=$(yaml_check_exists control_type)
+	    ## the control_type line can specify: "all" or "no-cancer" and defaults to "all"
+	    if [[ "$control_selection_present" ]] ; then
+		control_selection_requested=$(yaml control_type)
+		if [[ "`echo $control_selection_requested | awk '$1 == \"all\" || $1 == \"no-cancer\"' | wc -l`" -eq "1" ]] ; then
+		    control_selection_valid=1
+		fi
+	    fi
+
 	    ## may optionally include a single "id_mode:" entry
 	    id_mode_present=$(yaml_check_exists id_mode)
 	    ## the id_mode line can specify: "rsid" or "chrpos", and defaults to "chrpos"
@@ -196,6 +209,8 @@ do
 	echo "not ok - $config_file: key \"transformation:\" must have value \"none\" or \"post.split.INT\""
     elif [[ "$sex_specific_present" && "$sex_specific_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: key \"sex-specific:\" must have value \"combined\" or \"female\" or \"male\""
+    elif [[ "$control_selection_present" && "$control_selection_valid" -ne "1" ]] ; then
+	echo "not ok - $config_file: key \"control_type:\" must have value \"all\" or \"no-cancer\""
     elif [[ "$id_mode_present" && "$id_mode_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: key \"id_mode:\" must have value \"rsid\" or \"chrpos\""
     else
