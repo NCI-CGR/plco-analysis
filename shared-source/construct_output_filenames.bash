@@ -1,6 +1,6 @@
 #!/bin/bash
-if [ "$#" -ne 18 ]; then
-    echo "the command 'construct_output_filenames.bash' requires sixteen command line arguments: the name of the config file, the software (saige, bolt, fastgwa) requested, the minimum sample count for the software, the directory prefix for all bgen files, the pipeline results toplevel directory, the phenotype file currently in use, the column extractor program, the phenotype file used tracker file suffix, the frequency mode tracker file suffix, the id mode tracker file suffix, the phenotype model tracker file suffix, the covariate model tracker file suffix, the category level tracker file suffix, the phenotype transformation tracker file suffix, the sex-specific analysis selection tracker file suffix, the finalized analysis tracker file suffix, binary indicator of whether make -B is in effect, and a binary indicator of whether make -n is in effect"
+if [ "$#" -ne 19 ]; then
+    echo "the command 'construct_output_filenames.bash' requires nineteen command line arguments: the name of the config file, the software (saige, bolt, fastgwa) requested, the minimum sample count for the software, the directory prefix for all bgen files, the pipeline results toplevel directory, the phenotype file currently in use, the column extractor program, the phenotype file used tracker file suffix, the frequency mode tracker file suffix, the id mode tracker file suffix, the phenotype model tracker file suffix, the covariate model tracker file suffix, the category level tracker file suffix, the phenotype transformation tracker file suffix, the sex-specific analysis selection tracker file suffix, the control selection type tracker file suffix, the finalized analysis tracker file suffix, binary indicator of whether make -B is in effect, and a binary indicator of whether make -n is in effect"
 else
     CONFIG_FILE="$1"
     REQUESTED_SOFTWARE="$2"
@@ -17,9 +17,10 @@ else
     CATEGORY_TRACKER_SUFFIX="${13}"
     TRANSFORMATION_TRACKER_SUFFIX="${14}"
     SEX_SPECIFIC_TRACKER_SUFFIX="${15}"
-    FINALIZED_ANALYSIS_TRACKER_SUFFIX="${16}"
-    FORCE_RUN="${17}"
-    PRETEND_RUN="${18}"
+    CONTROL_SELECTION_TRACKER_SUFFIX="${16}"
+    FINALIZED_ANALYSIS_TRACKER_SUFFIX="${17}"
+    FORCE_RUN="${18}"
+    PRETEND_RUN="${19}"
 
     ## python yaml helper functions
     declare -A PARSED_YAML
@@ -91,6 +92,7 @@ else
 		    COVARIATES_SELECTED_TRACKER="$RESULTS_PREFIX/$RESULT$COVARIATES_SELECTED_TRACKER_SUFFIX"
 		    TRANSFORMATION_TRACKER="$RESULTS_PREFIX/$RESULT$TRANSFORMATION_TRACKER_SUFFIX"
 		    SEX_SPECIFIC_TRACKER="$RESULTS_PREFIX/$RESULT$SEX_SPECIFIC_TRACKER_SUFFIX"
+		    CONTROL_SELECTION_TRACKER="$RESULTS_PREFIX/$RESULT$CONTROL_SELECTION_TRACKER_SUFFIX"
 		    FINALIZED_ANALYSIS_TRACKER="$RESULTS_PREFIX/$RESULT$FINALIZED_ANALYSIS_TRACKER_SUFFIX"
 		    
 
@@ -244,6 +246,20 @@ else
 			UPDATE_BUNDLE="1"
 		    fi
 
+		    ## run control selection tracking/version difference teting
+		    CONTROL_SELECTION="all"
+		    if [[ ! -z $(yaml_check_exists control_type) ]] ; then
+			CONTROL_SELECTION=$(yaml control_type)
+		    fi
+		    if [[ -f "$CONTROL_SELECTION_TRACKER" ]] ; then
+			EXISTING_CONTROL_SELECTION=`cat $CONTROL_SELECTION_TRACKER`
+			if [[ "$EXISTING_CONTROL_SELECTION" != "$CONTROL_SELECTION" ]] ; then
+			    UPDATE_BUNDLE="1"
+			fi
+		    else
+			UPDATE_BUNDLE="1"
+		    fi
+
 		    ## if any of the model matrix configuration options need updating,
 		    ## update all of them to ensure synchronicity.
 		    if [[ "$PRETEND_RUN" -gt "0" ]] ; then
@@ -255,6 +271,7 @@ else
 			echo "$COVARIATES" > "$COVARIATES_SELECTED_TRACKER"
 			echo "$TRANSFORMATION" > "$TRANSFORMATION_TRACKER"
 			echo "$SEX_SPECIFIC" > "$SEX_SPECIFIC_TRACKER"
+			echo "$CONTROL_SELECTION" > "$CONTROL_SELECTION_TRACKER"
 			rm -f "$FINALIZED_ANALYSIS_TRACKER"
 		    fi
 
