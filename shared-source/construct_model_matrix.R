@@ -25,12 +25,12 @@ stopifnot(sex.specific == "female" | sex.specific == "male" | sex.specific == "c
 ## both control inclusion and control exclusion should be comma-delimited lists
 ## of dataset variable names, or NA
 stopifnot(is.vector(control.inclusion, mode = "character"))
-control.inclusion <- unlist(strsplit(control.inclusion))
+control.inclusion <- unlist(strsplit(control.inclusion, ","))
 if (length(control.inclusion) == 1) {
     if (control.inclusion == "NA") control.inclusion <- NA
 }
 stopifnot(is.vector(control.exclusion, mode = "character"))
-control.exclusion <- unlist(strsplit(control.exclusion))
+control.exclusion <- unlist(strsplit(control.exclusion, ","))
 if (length(control.exclusion) == 1) {
     if (control.exclusion == "NA") control.exclusion <- NA
 }
