@@ -52,8 +52,11 @@ do
     sex_specific_present=0
     sex_specific_valid=0
 
-    control_selection_present=0
-    control_selection_valid=0
+    control_inclusion_present=0
+    control_inclusion_valid=0
+
+    control_exclusion_present=0
+    control_exclusion_valid=0
     
     id_mode_present=0
     id_mode_valid=0
@@ -157,13 +160,27 @@ do
 		fi
 	    fi
 
-	    ## may optionally include a single "control_type:" entry
-	    control_selection_present=$(yaml_check_exists control_type)
-	    ## the control_type line can specify: "all" or "no-cancer" and defaults to "all"
-	    if [[ "$control_selection_present" ]] ; then
-		control_selection_requested=$(yaml control_type)
-		if [[ "`echo $control_selection_requested | awk '$1 == \"all\" || $1 == \"no-cancer\"' | wc -l`" -eq "1" ]] ; then
-		    control_selection_valid=1
+	    ## may optionally include a "control_inclusion:" entry
+	    control_inclusion_present=$(yaml_check_exists control_inclusion)
+	    ## the control_inclusion parameter can specify any number of covariates in the phenotype file for masking
+	    if [[ "$control_inclusion_present" ]] ; then
+		control_inclusion_requested=$(yaml control_inclusion)
+		n_inclusion_requested=`echo $control_inclusion_requested | sed 's/ /\n/g ; s/\t/\n/g' | sort | uniq | wc -l`
+		phenotype_header=`head -1 "$phenotype_file" | sed 's/\t/\n/g' | sort | uniq`
+		if [[ "`echo $phenotype_header $control_inclusion_requested | sed 's/ /\n/g ; s/\t/\n/g' | sort | uniq -d | wc -l`" -eq "$n_inclusion_requested" ]] ; then
+		    control_inclusion_valid=1
+		fi
+	    fi
+
+	    ## may optionally include a "control_exclusion:" entry
+	    control_exclusion_present=$(yaml_check_exists control_exclusion)
+	    ## the control_exclusion parameter can specify any number of covariates in the phenotype file for masking
+	    if [[ "$control_exclusion_present" ]] ; then
+		control_exclusion_requested=$(yaml control_exclusion)
+		n_exclusion_requested=`echo $control_exclusion_requested | sed 's/ /\n/g ; s/\t/\n/g' | sort | uniq | wc -l`
+		phenotype_header=`head -1 "$phenotype_file" | sed 's/\t/\n/g' | sort | uniq`
+		if [[ "`echo $phenotype_header $control_exclusion_requested | sed 's/ /\n/g ; s/\t/\n/g' | sort | uniq -d | wc -l`" -eq "$n_exclusion_requested" ]] ; then
+		    control_exclusion_valid=1
 		fi
 	    fi
 
@@ -209,8 +226,10 @@ do
 	echo "not ok - $config_file: key \"transformation:\" must have value \"none\" or \"post.split.INT\""
     elif [[ "$sex_specific_present" && "$sex_specific_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: key \"sex-specific:\" must have value \"combined\" or \"female\" or \"male\""
-    elif [[ "$control_selection_present" && "$control_selection_valid" -ne "1" ]] ; then
-	echo "not ok - $config_file: key \"control_type:\" must have value \"all\" or \"no-cancer\""
+    elif [[ "$control_inclusion_present" && "$control_inclusion_valid" -ne "1" ]] ; then
+	echo "not ok - $config_file: key \"control_inclusion:\" values \"$control_inclusion_requested\" must all be present in the header of $phenotype_file"
+    elif [[ "$control_exclusion_present" && "$control_exclusion_valid" -ne "1" ]] ; then
+	echo "not ok - $config_file: key \"control_exclusion:\" values \"$control_exclusion_requested\" must all be present in the header of $phenotype_file"
     elif [[ "$id_mode_present" && "$id_mode_valid" -ne "1" ]] ; then
 	echo "not ok - $config_file: key \"id_mode:\" must have value \"rsid\" or \"chrpos\""
     else
