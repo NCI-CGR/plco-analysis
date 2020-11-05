@@ -1,6 +1,6 @@
 #!/bin/bash
-if [ "$#" -ne 19 ]; then
-    echo "the command 'construct_output_filenames.bash' requires nineteen command line arguments: the name of the config file, the software (saige, bolt, fastgwa) requested, the minimum sample count for the software, the directory prefix for all bgen files, the pipeline results toplevel directory, the phenotype file currently in use, the column extractor program, the phenotype file used tracker file suffix, the frequency mode tracker file suffix, the id mode tracker file suffix, the phenotype model tracker file suffix, the covariate model tracker file suffix, the category level tracker file suffix, the phenotype transformation tracker file suffix, the sex-specific analysis selection tracker file suffix, the control selection type tracker file suffix, the finalized analysis tracker file suffix, binary indicator of whether make -B is in effect, and a binary indicator of whether make -n is in effect"
+if [ "$#" -ne 20 ]; then
+    echo "the command 'construct_output_filenames.bash' requires nineteen command line arguments: the name of the config file, the software (saige, bolt, fastgwa) requested, the minimum sample count for the software, the directory prefix for all bgen files, the pipeline results toplevel directory, the phenotype file currently in use, the column extractor program, the phenotype file used tracker file suffix, the frequency mode tracker file suffix, the id mode tracker file suffix, the phenotype model tracker file suffix, the covariate model tracker file suffix, the category level tracker file suffix, the phenotype transformation tracker file suffix, the sex-specific analysis selection tracker file suffix, the control inclusion tracker file suffix, the control exclusion tracker file suffix, the finalized analysis tracker file suffix, binary indicator of whether make -B is in effect, and a binary indicator of whether make -n is in effect"
 else
     CONFIG_FILE="$1"
     REQUESTED_SOFTWARE="$2"
@@ -17,10 +17,11 @@ else
     CATEGORY_TRACKER_SUFFIX="${13}"
     TRANSFORMATION_TRACKER_SUFFIX="${14}"
     SEX_SPECIFIC_TRACKER_SUFFIX="${15}"
-    CONTROL_SELECTION_TRACKER_SUFFIX="${16}"
-    FINALIZED_ANALYSIS_TRACKER_SUFFIX="${17}"
-    FORCE_RUN="${18}"
-    PRETEND_RUN="${19}"
+    CONTROL_INCLUSION_TRACKER_SUFFIX="${16}"
+    CONTROL_EXCLUSION_TRACKER_SUFFIX="${17}"
+    FINALIZED_ANALYSIS_TRACKER_SUFFIX="${18}"
+    FORCE_RUN="${19}"
+    PRETEND_RUN="${20}"
 
     ## python yaml helper functions
     declare -A PARSED_YAML
@@ -92,7 +93,8 @@ else
 		    COVARIATES_SELECTED_TRACKER="$RESULTS_PREFIX/$RESULT$COVARIATES_SELECTED_TRACKER_SUFFIX"
 		    TRANSFORMATION_TRACKER="$RESULTS_PREFIX/$RESULT$TRANSFORMATION_TRACKER_SUFFIX"
 		    SEX_SPECIFIC_TRACKER="$RESULTS_PREFIX/$RESULT$SEX_SPECIFIC_TRACKER_SUFFIX"
-		    CONTROL_SELECTION_TRACKER="$RESULTS_PREFIX/$RESULT$CONTROL_SELECTION_TRACKER_SUFFIX"
+		    CONTROL_INCLUSION_TRACKER="$RESULTS_PREFIX/$RESULT$CONTROL_INCLUSION_TRACKER_SUFFIX"
+		    CONTROL_EXCLUSION_TRACKER="$RESULTS_PREFIX/$RESULT$CONTROL_EXCLUSION_TRACKER_SUFFIX"
 		    FINALIZED_ANALYSIS_TRACKER="$RESULTS_PREFIX/$RESULT$FINALIZED_ANALYSIS_TRACKER_SUFFIX"
 		    
 
@@ -246,14 +248,30 @@ else
 			UPDATE_BUNDLE="1"
 		    fi
 
-		    ## run control selection tracking/version difference teting
-		    CONTROL_SELECTION="all"
-		    if [[ ! -z $(yaml_check_exists control_type) ]] ; then
-			CONTROL_SELECTION=$(yaml control_type)
+		    ## run control inclusion tracking/version difference testing
+		    ## defaults to: don't use any filters, just include everyone valid
+		    CONTROL_INCLUSION="NA"
+		    if [[ ! -z $(yaml_check_exists control_inclusion) ]] ; then
+			CONTROL_INCLUSION=$(yaml control_inclusion)
 		    fi
-		    if [[ -f "$CONTROL_SELECTION_TRACKER" ]] ; then
-			EXISTING_CONTROL_SELECTION=`cat $CONTROL_SELECTION_TRACKER`
-			if [[ "$EXISTING_CONTROL_SELECTION" != "$CONTROL_SELECTION" ]] ; then
+		    if [[ -f "$CONTROL_INCLUSION_TRACKER" ]] ; then
+			EXISTING_CONTROL_INCLUSION=`cat $CONTROL_INCLUSION_TRACKER`
+			if [[ "$EXISTING_CONTROL_INCLUSION" != "$CONTROL_INCLUSION" ]] ; then
+			    UPDATE_BUNDLE="1"
+			fi
+		    else
+			UPDATE_BUNDLE="1"
+		    fi
+		    
+		    ## run control exclusion tracking/version difference testing
+		    ## defaults to: don't use any filters, just include everyone valid
+		    CONTROL_EXCLUSION="NA"
+		    if [[ ! -z $(yaml_check_exists control_exclusion) ]] ; then
+			CONTROL_EXCLUSION=$(yaml control_exclusion)
+		    fi
+		    if [[ -f "$CONTROL_EXCLUSION_TRACKER" ]] ; then
+			EXISTING_CONTROL_EXCLUSION=`cat $CONTROL_EXCLUSION_TRACKER`
+			if [[ "$EXISTING_CONTROL_EXCLUSION" != "$CONTROL_EXCLUSION" ]] ; then
 			    UPDATE_BUNDLE="1"
 			fi
 		    else
@@ -271,7 +289,8 @@ else
 			echo "$COVARIATES" > "$COVARIATES_SELECTED_TRACKER"
 			echo "$TRANSFORMATION" > "$TRANSFORMATION_TRACKER"
 			echo "$SEX_SPECIFIC" > "$SEX_SPECIFIC_TRACKER"
-			echo "$CONTROL_SELECTION" > "$CONTROL_SELECTION_TRACKER"
+			echo "$CONTROL_INCLUSION" > "$CONTROL_INCLUSION_TRACKER"
+			echo "$CONTROL_EXCLUSION" > "$CONTROL_EXCLUSION_TRACKER"
 			rm -f "$FINALIZED_ANALYSIS_TRACKER"
 		    fi
 
@@ -301,7 +320,8 @@ else
 				    COVARIATES_SELECTED_TRACKER_CMP="$RESULTS_PREFIX/$RESULT$COVARIATES_SELECTED_TRACKER_SUFFIX"
 				    TRANSFORMATION_TRACKER_CMP="$RESULTS_PREFIX/$RESULT$TRANSFORMATION_TRACKER_SUFFIX"
 				    SEX_SPECIFIC_TRACKER_CMP="$RESULTS_PREFIX/$RESULT$SEX_SPECIFIC_TRACKER_SUFFIX"
-				    CONTROL_SELECTION_TRACKER_CMP="$RESULTS_PREFIX/$RESULT$CONTROL_SELECTION_TRACKER_SUFFIX"
+				    CONTROL_INCLUSION_TRACKER_CMP="$RESULTS_PREFIX/$RESULT$CONTROL_INCLUSION_TRACKER_SUFFIX"
+				    CONTROL_EXCLUSION_TRACKER_CMP="$RESULTS_PREFIX/$RESULT$CONTROL_EXCLUSION_TRACKER_SUFFIX"
 				    FINALIZED_ANALYSIS_TRACKER_CMP="$RESULTS_PREFIX/$RESULT$FINALIZED_ANALYSIS_TRACKER_SUFFIX"
 				    CATEGORY_TRACKER_CMP="$RESULTS_PREFIX/$RESULT$CATEGORY_TRACKER_SUFFIX"
 				    ## make the directory if needed
@@ -320,7 +340,8 @@ else
 					cp "$COVARIATES_SELECTED_TRACKER" "$COVARIATES_SELECTED_TRACKER_CMP"
 					cp "$TRANSFORMATION_TRACKER" "$TRANSFORMATION_TRACKER_CMP"
 					cp "$SEX_SPECIFIC_TRACKER" "$SEX_SPECIFIC_TRACKER_CMP"
-					cp "$CONTROL_SELECTION_TRACKER" "$CONTROL_SELECTION_TRACKER_CMP"
+					cp "$CONTROL_INCLUSION_TRACKER" "$CONTROL_INCLUSION_TRACKER_CMP"
+					cp "$CONTROL_EXCLUSION_TRACKER" "$CONTROL_EXCLUSION_TRACKER_CMP"
 					NEW_CATEGORIES=`echo "$FACTORIZATION" | awk -v target=$i 'NR == target' | sed 's/\t/\n/g ; s/+/\n/g'`
 					if [[ ! -f "$CATEGORY_TRACKER_CMP" ]] ; then
 					    echo "$NEW_CATEGORIES" > "$CATEGORY_TRACKER_CMP"
