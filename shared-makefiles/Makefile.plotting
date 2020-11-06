@@ -36,10 +36,12 @@ NOT_META_TARGETS := $(shell find $(RESULTS_DIR) \( -name "*$(FORMATTED_TARGET_NO
 ## manipulate non-meta targets to have unambiguous filenames that match the format of the meta plots
 NOT_META_TARGETS := $(foreach target,$(NOT_META_TARGETS),$(dir $(target))$(firstword $(subst ., ,$(notdir $(target)))).$(call extract_ancestry,$(target)).$(call extract_chip,$(target)).$(call extract_method,$(target)).manhattan.jpg$(TRACKING_SUCCESS_SUFFIX))
 
+HETEROGENEITY_TARGETS := $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),.heterogeneity.manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),$(META_TARGETS))
+
 MANHATTAN_PLOT_SCRIPT := $(SHARED_SOURCE)/manhattan_loci_colored_launcher.R
 LAMBDA_N_PLOT := $(RESULTS_DIR)/lambda-n.jpg$(TRACKING_SUCCESS_SUFFIX)
 LAMBDA_N_PLOT_SCRIPT := $(SHARED_SOURCE)/lambda-n_plot_launcher.R
-all: $(META_TARGETS) $(NOT_META_TARGETS) # $(LAMBDA_N_PLOT)
+all: $(META_TARGETS) $(HETEROGENEITY_TARGETS) $(NOT_META_TARGETS) # $(LAMBDA_N_PLOT)
 
 
 ## patterns:
@@ -60,6 +62,25 @@ $(META_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.tsv.gz
 $(subst .manhattan.jpg,.plot_ready,$(META_TARGETS)): $$(subst .plot_ready$(TRACKING_SUCCESS_SUFFIX),.tsv.gz,$$@)
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk 'BEGIN {pcol=1} ; NR == 1 {print "CHR\tPOS\tSNP\tP" ; for ( i = 1; i <= NF; i++ ) {if ($$i == "P" || $$i == "P_CONSENSUS") {pcol=i}}} ; NR > 1 {loc = index($$3, ":") ; loc > 0 && $$3 ~ /rs/ ? id = substr($$3, 1, loc - 1) : id = $$3 ; print $$1"\t"$$2"\t"id"\t"$$pcol}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.heterogeneity.manhattan.jpg$(TRACKING_SUCCESS_SUFFIX)
+##    input:  shared-source/manhattan_loci_colored_launcher.R
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.heterogeneity.plot_ready$(TRACKING_SUCCESS_SUFFIX)
+##    input:  known-signals/{PHENOTYPE}.txt
+## Notes: final dependency is optional file of rsid->gene correspondence for known signal plotting. It will be ignored if not present
+$(HETEROGENEITY_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$@) $$(shell ls -l $$(KNOWN_SIGNALS_INPUT_DIR) | awk '$$$$9 == "$$(subst _female,,$$(subst _male,,$$(call extract_phenotype,$$@))).txt" {print "$$(KNOWN_SIGNALS_INPUT_DIR)/"$$$$9}')
+	if [[ "$(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) | awk '{print $$1}')" -gt "1" ]] ; then \
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/heterogeneity $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(word 3,$^) $(SHARED_SOURCE)) ; \
+	else \
+	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
+	fi
+
+## patterns:
+##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.heterogeneity.plot_ready$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.tsv.gz
+$(subst .heterogeneity.manhattan.jpg,.heterogeneity.plot_ready,$(HETEROGENEITY_TARGETS)): $$(subst .heterogeneity.plot_ready$(TRACKING_SUCCESS_SUFFIX),.tsv.gz,$$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk 'BEGIN {pcol=1} ; NR == 1 {print "CHR\tPOS\tSNP\tP" ; for ( i = 1; i <= NF; i++ ) {if ($$i == "PHet") {pcol=i}}} ; NR > 1 {loc = index($$3, ":") ; loc > 0 && $$3 ~ /rs/ ? id = substr($$3, 1, loc - 1) : id = $$3 ; print $$1"\t"$$2"\t"id"\t"$$pcol}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{CHIP}.{method}.manhattan.jpg$(TRACKING_SUCCESS_SUFFIX)
