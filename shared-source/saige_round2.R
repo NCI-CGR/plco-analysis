@@ -11,4 +11,17 @@ sample.filename <- cargs[6]
 output.prefix <- cargs[7]
 chromosome <- cargs[8]
 
-SAIGE::SPAGMMATtest(bgenFile=bgen.filename, bgenFileIndex=bgi.filename, vcfField="DS", chrom=chromosome, minMAF=0.01, GMMATmodelFile=rda.filename, sampleFile=sample.filename, minMAC=1, varianceRatioFile=varrat.filename, SAIGEOutputFile=paste(output.prefix, ".txt", sep=""), IsOutputAFinCaseCtrl=TRUE, sparseSigmaFile=sparsesigma.filename)
+SAIGE::SPAGMMATtest(
+  bgenFile = bgen.filename,
+  bgenFileIndex = bgi.filename,
+  vcfField = "DS",
+  chrom = chromosome,
+  minMAF = 0.01,
+  GMMATmodelFile = rda.filename,
+  sampleFile = sample.filename,
+  minMAC = 1,
+  varianceRatioFile = varrat.filename,
+  SAIGEOutputFile = paste(output.prefix, ".txt", sep = ""),
+  IsOutputAFinCaseCtrl = TRUE,
+  sparseSigmaFile = sparsesigma.filename
+)

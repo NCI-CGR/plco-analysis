@@ -190,7 +190,7 @@ do
 	    if [[ "$analysis_not_requested" -gt "0" ]] ; then
 		echo "ok - $output_tag ancestry/chip combination not requested # SKIP"
 	    elif [[ "$analysis_directory_missing" -gt "0" ]] ; then
-		if [[ "$analyis_file_missing" -eq "0" ]] ; then
+		if [[ "$analysis_file_missing" -eq "0" ]] ; then
 		    echo "not ok - $output_tag test logic failure: directory absent but file present?"
 		elif [[ "$expected_absence_no_chip" -gt "0" ]] ; then
 		    echo "not ok - $output_tag no corresponding chip data present # TODO"

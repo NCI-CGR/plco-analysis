@@ -53,20 +53,22 @@ Optional depending on individual requirements:
   - [x] support for fastGWA
   - [x] support for BOLT-LMM
   - [x] support for SAIGE/binary
-  - [ ] support for SAIGE/categorical (#1)
-- [ ] full resumability
+  - [ ] support for SAIGE/categorical (#1 #27 #30)
+- [x] rsID support request (#28)
+- [x] full resumability
   - [x] resumable for cluster-submitted jobs
-  - [ ] resumable for non-cluster jobs (#9)
-- [ ] full logging
+  - [x] resumable for non-cluster jobs (#9)
+- [x] full logging
   - [x] logging for cluster-submitted jobs
-  - [ ] logging for non-cluster jobs (#9)
+  - [x] logging for non-cluster jobs (#9)
 - [x] SGE/qsub support
 - [x] configuration via YAML
-- [ ] more efficient yaml access in preprocessor (#25)
+- [x] more efficient yaml access in preprocessor (#25)
 - [ ] testing via yaml (#13)
-- [ ] heuristic testing to support above (#4 #5 #6)
+- [ ] heuristic testing to support above (#4 #5 #6 #18 #19 #21)
 - [ ] hunt down last untracked auxiliary files (#24)
 - [ ] documentation: barebones installation instructions, conda for saige (#2)
+- [ ] documentation: doxygen support (#29)
 - [ ] this README (#3)
 
 ##### v2.0 (approximately corresponding with the end of PLCO Atlas)

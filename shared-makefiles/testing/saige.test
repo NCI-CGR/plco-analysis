@@ -15,245 +15,289 @@ minimum_cases="$MINIMUM_CASES"
 #minimum_subjects=1000
 #minimum_cases=30
 
-arbitrary_valid_entry_threshold=2000000
-sampling_count=100001
+
+## python yaml helper functions
+declare -A PARSED_YAML
+## previous versons of this implementation had distinct behaviors for these two functions; leaving as is for now
+yaml() {
+    echo "${PARSED_YAML[$1]//,/ }"
+}
+yaml_check_exists() {
+    echo "${PARSED_YAML[$1]//,/ }"
+}
 
 total_tests=0
 tests_per_analysis=16
+arbitrary_valid_entry_threshold=2000000
+sampling_count=100001
 
-## determine how many tests need to be run in the end
-saige_config_files=`grep saige $config_dir/*config.yaml | sed 's/:/\t/g' | awk '{print $1}'`
-saige_analysis_prefixes=""
-for file in $saige_config_files ;
+for config_file in `ls $config_dir/*config.yaml` ;
 do
-    prefix=`awk '/analysis_prefix/ {print $NF}' $file`
-    saige_analysis_prefixes="$saige_analysis_prefixes $prefix"
-    (( total_tests = total_tests + tests_per_analysis ))    
+    ## assume config-check has been run
+    ## for version reasons, this can't be wrapped in a function
+    raw_lines=`python3 -c "import yaml; print(yaml.safe_load(open('$config_file')))" 2> /dev/null`
+    lines=`echo "$raw_lines" | sed -E "s/('[^:,']+'): ('[^']+')/\1: \2\n/g ; s/],/]\n/g ; s/\{// ; s/\}//" | sed "s/^,// ; s/\[// ; s/]// ; s/ //g ; s/'//g"`
+    declare -A PARSED_YAML
+    for line in `echo "$lines" | sed 's/ /\n/g'`;
+    do
+        PARSED_YAML[`echo "$line" | cut -f 1 -d ":"`]=`echo "$line" | cut -f 2 -d ":"`
+    done
+    analysis=$(yaml analysis_prefix)
+    ancestries="European East_Asian"
+    for ancestry in $ancestries ;
+    do
+	## for saige only: autoappend comparison suffixes if they are present in the output directories
+	##   note that this does not check for *correctness* of the kinds of comparison directories present;
+	##   that's handled in a different test
+	comparison_suffixes=`find "$results_dir/$analysis/$ancestry/SAIGE" -maxdepth 1 -name "comparison*" -print 2>/dev/null | awk -F"/" '{print $NF}'`
+	if [[ -z "$comparison_suffixes" ]] ; then
+	    comparison_suffixes="."
+	fi
+	for comparison_suffix in $comparison_suffixes ;
+	do
+	    chips="GSA_batch1 GSA_batch2 GSA_batch3 GSA_batch4 GSA_batch5 Omni25 OmniX Oncoarray"
+	    for chip in $chips ;
+	    do
+		expected_absence_no_chip=0
+		expected_absence_no_imputed=0
+		analysis_directory_missing=0
+		analysis_not_requested=0
+		analysis_file_missing=0
+		tracking_file_missing=0
+		model_matrix_missing=0
+		insufficient_chip_subjects=1
+		insufficient_imputed_subjects=1
+		insufficient_phenotyped_subjects=1
+		insufficient_cases=1
+		malformed_phenotype=0
+		binary_outcome_failure=0
+		sex_specific=0
+		sex_alternate_missing=0
+		sex_disjoint_subjects=0
+		analysis_successful=0
+		frequencies_present=0
+		frequencies_reference=0
+		frequencies_requested="reference"
+		frequency_mismatch=0
+		pvalues_broken=0
+		betas_broken=0
+		stderrs_broken=0
+		
+
+		## first test to see if analysis was requested at all
+		##  maybe the user doesn't want this ancestry/chip/algorithm combination?
+		config_ancestries=$(yaml ancestries)
+		config_chips=$(yaml chips)
+		config_algorithms=$(yaml algorithm)
+		if [[ "`echo $config_algorithms | grep -w saige | wc -l`" -eq "0" ]] ; then
+		    ## this isn't even a saige analysis, skip entirely
+		    continue
+		elif [[ "`echo $config_ancestries | grep -w $ancestry | wc -l`" -eq "0" ]] ; then
+		    analysis_not_requested=1
+		elif [[ "`echo $config_chips | grep -w $chip | wc -l`" -eq "0" ]] ; then
+		    analysis_not_requested=1
+		else
+		    ## assume cleaned-chip-by-ancestry and bgen checks have already been run. then absence means valid exclusion
+		    chip_no_batch=`echo $chip | sed 's/_/ /' | awk '{print $1}'`
+		    chip_slash_batch=`echo $chip | sed 's/_/\//'`
+		    chip_prefix="$chip_dir/$ancestry/$chip_no_batch.nohet.autosomes"
+		    if [[ ! -f "$chip_prefix.bed" || ! -f "$chip_prefix.bim" || ! -f "$chip_prefix.fam" ]] ; then
+			expected_absence_no_chip=1
+		    else
+			chip_subjects=`cat $chip_prefix.fam | wc -l`
+			if [[ "$chip_subjects" -ge "$minimum_subjects" ]] ; then
+			    insufficient_chip_subjects=0
+			fi
+		    fi
+		    if [[ ! -f "$imputed_dir/$chip_slash_batch/$ancestry/chr22-filtered-noNAs.sample" ]] ; then
+			expected_absence_no_imputed=1
+		    else
+			imputed_subjects=`cat $imputed_dir/$chip_slash_batch/$ancestry/chr22-filtered-noNAs.sample | awk 'NR > 2' | wc -l`
+			if [[ "$imputed_subjects" -ge "$minimum_subjects" ]] ; then
+			    insufficient_imputed_subjects=0
+			fi
+		    fi
+		    prefix="$results_dir/$analysis/$ancestry/SAIGE/$comparison_suffix/$analysis.$chip.saige"
+		    output_file="$prefix.tsv.gz"
+		    model_matrix="$prefix.model_matrix"
+		    if [[ -f "$model_matrix" ]] ; then
+			if [[ "`awk 'NR > 1 && $3 == 1' $model_matrix | wc -l`" -gt "$minimum_cases" ]] ; then
+			    insufficient_cases=0
+			fi
+		    else
+			model_matrix_missing=1
+		    fi
+		    if [[ ! -d "$results_dir/$analysis/$ancestry/SAIGE/$comparison_suffix" ]] ; then
+			analysis_directory_missing=1
+			analysis_file_missing=1
+		    else
+			if [[ ! -f "$output_file" ]] ; then
+			    ##  maybe the overall subject count is ok, but the phenotyped count is not?
+			    if [[ -f "$model_matrix" ]] ; then
+				model_matrix_count=`awk 'NR > 1' $model_matrix | wc -l`
+				if [[ "$model_matrix_count" -ge "$minimum_subjects" ]] ; then
+				    insufficient_phenotyped_subjects=0
+				fi
+			    else
+				model_matrix_missing=1
+			    fi
+			    analysis_file_missing=1
+			else
+			    ## run consistency checks
+			    ## tracking files based on config.yaml
+                            if [[ ! -f "$prefix.phenotype_dataset" ||
+                                      ! -f "$prefix.phenotype_selected" ||
+                                      ! -f "$prefix.covariates_selected" ||
+                                      ! -f "$prefix.transform" ||
+                                      ! -f "$prefix.sex-specific" ||
+                                      ! -f "$prefix.frequency_mode" ||
+                                      ! -f "$prefix.id_mode" ]] ; then
+				tracking_file_missing=1
+                            fi
+			    ## model matrix: at least three columns, third is phenotype, phenotype is normal
+			    if [[ -f "$model_matrix" ]] ; then
+				invalid_row_count=`awk -F"\t" 'NF < 3' $model_matrix | wc -l`
+				if [[ "$invalid_row_count" -gt "0" ]] ; then
+				    malformed_phenotype=1
+				else
+				    ## test column 3 binary case/control status
+				    binary_outcome_failure=`awk 'NR > 1 && $3 != "0" && $3 != "1" && $3 != "NA"' $model_matrix | wc -l` 
+				fi
+				
+				if [[ "$analysis" =~ ^.*_female$ || "$analysis" =~ ^.*_male$ ]] ; then
+				    sex_specific=1
+				fi
+				
+				if [[ "$sex_specific" -eq "1" ]] ; then
+				    other_analysis="$analysis"
+				    if [[ "$other_analysis" =~ ^.*_female$ ]] ; then
+					other_analysis=`echo $other_analysis | sed 's/_female/_male/'`
+				    else
+					other_analysis=`echo $other_analysis | sed 's/_male/_female/'`
+				    fi
+				    other_model_matrix="$results_dir/$other_analysis/$ancestry/SAIGE/$comparison_suffix/$other_analysis.$chip.saige.model_matrix"
+				    if [[ -f "$other_model_matrix" ]] ; then
+					duplicate_lines=`cat $model_matrix $other_model_matrix | awk 'NR > 1 {print $2}' | sort | uniq -d | wc -l`
+					if [[ "$duplicate_lines" -eq "0" ]] ; then
+					    sex_disjoint_subjects=1
+					fi
+				    else
+					sex_alternate_missing=1
+				    fi
+				fi
+				
+				## analysis file definitely exists. probe it for things
+				## enough entries that it seems like the entire analysis didn't fail!!
+				if [[ "`gunzip -c $output_file | wc -l`" -ge "$arbitrary_valid_entry_threshold" ]] ; then
+				    analysis_successful=1
+				fi
+				## frequencies that exist!!
+				if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $6 != "NA"' | wc -l`" -gt "0" ]] ; then
+				    frequencies_present=1
+				fi
+				## frequencies that seem consistent with the requested frequency mode!!
+				frequency_override=$(yaml frequency_mode)
+				if [[ "$frequency_override" == "subject" ]] ; then
+				    frequencies_requested="subject"
+				fi
+				sampled_long_freq_count=`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && length($6) > 10' | wc -l`
+				if [[ "$sampled_long_freq_count" -eq "0" && "$frequencies_requested" != "reference" ]] ; then
+				    frequency_mismatch=1
+				elif [[ "$sampled_long_freq_count" -gt "0" && "$frequencies_requested" != "subject" ]] ; then
+				    frequency_mismatch=1
+				fi
+				## p-values that make sense!!
+				if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $9 < 1e-400' | wc -l`" -gt "0" ]] ; then
+				    pvalues_broken=1
+				fi
+				## betas that look like betas!
+				if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $7 < 0' | wc -l`" -eq "0" ]] ; then
+				    betas_broken=1
+				fi
+				## stderrs that look like stderrs!
+				if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $8 < 1e-10' | wc -l`" -gt "0" ]] ; then
+				    stderrs_broken=1
+				fi
+			    else
+				model_matrix_missing=1
+			    fi
+			fi
+		    fi
+		fi
+
+		output_tag="$analysis/$comparison_suffix/$chip/$ancestry"
+		if [[ "$analysis_not_requested" -gt "0" ]] ; then
+		    echo "ok - $output_tag ancestry/chip combination not requested # SKIP"
+		elif [[ "$analysis_directory_missing" -gt "0" ]] ; then
+		    if [[ "$analysis_file_missing" -eq "0" ]] ; then
+			echo "not ok - $output_tag test logic failure: directory absent but file present?"
+		    elif [[ "$expected_absence_no_chip" -gt "0" ]] ; then
+			echo "not ok - $output_tag no corresponding chip data present # TODO"
+		    elif [[ "$insufficient_chip_subjects" -gt "0" ]] ; then
+			echo "ok - $output_tag has chip data but not enough subjects for method # SKIP"
+		    elif [[ "$expected_absence_no_imputed" -gt "0" ]] ; then
+			echo "not ok - $output_tag no corresponding imputed data present # TODO"
+		    elif [[ "$insufficient_imputed_subjects" -gt "0" ]] ; then
+			echo "ok - $output_tag has imputed data but not enough subjects for method # SKIP"
+		    elif [[ "$model_matrix_missing" -gt "0" ]] ; then
+			echo "not ok - $output_tag both output file and model matrix missing"
+		    elif [[ "$insufficient_phenotyped_subjects" -gt "0" ]] ; then
+			echo "ok - $output_tag has data but not enough phenotyped subjects for method # SKIP"
+		    elif [[ "$insufficient_cases" ]] ; then
+			echo "ok - $output_tag has data but not enough phenotyped cases for method # SKIP"
+		    else
+			echo "not ok - $output_tag no results directory detected"
+		    fi
+		elif [[ "$analysis_file_missing" -gt "0" ]] ; then
+		    if [[ "$expected_absence_no_chip" -gt "0" ]] ; then
+			echo "not ok - $output_tag no corresponding chip data present # TODO"
+		    elif [[ "$insufficient_chip_subjects" -gt "0" ]] ; then
+			echo "ok - $output_tag has chip data but not enough subjects for method # SKIP"
+		    elif [[ "$expected_absence_no_imputed" -gt "0" ]] ; then
+			echo "not ok - $output_tag no corresponding imputed data present # TODO"
+		    elif [[ "$insufficient_imputed_subjects" -gt "0" ]] ; then
+			echo "ok - $output_tag has imputed data but not enough subjects for method # SKIP"
+		    elif [[ "$model_matrix_missing" -gt "0" ]] ; then
+			echo "not ok - $output_tag both output file and model matrix missing"
+		    elif [[ "$insufficient_phenotyped_subjects" -gt "0" ]] ; then
+			echo "ok - $output_tag has data but not enough phenotyped subjects for method # SKIP"
+		    elif [[ "$insufficient_cases" ]] ; then
+			echo "ok - $output_tag has data but not enough phenotyped cases for method # SKIP"
+		    else
+			echo "not ok - $output_tag no results file detected"
+		    fi
+		elif [[ "$tracking_file_missing" -gt "0" ]] ; then
+		    echo "not ok - $output_tag tracking file(s) missing from output directory"
+		elif [[ "$model_matrix_missing" -gt "0" ]] ; then
+		    echo "not ok - $output_tag output file present but model matrix missing"
+		elif [[ "$malformed_phenotype" -gt "0" ]] ; then
+		    echo "not ok - $output_tag model matrix had insufficient columns"
+		elif [[ "$binary_outcome_failure" -gt "0" ]] ; then
+		    echo "not ok - $output_tag model matrix phenotype not binary"
+		elif [[ "$sex_specific" -gt "0" && "$sex_alternate_missing" -gt "0" ]] ; then
+		    echo "not ok - $output_tag missing corresponding sex-specific analysis"
+		elif [[ "$sex_specific" -gt "0" && "$sex_disjoint_subjects" -eq "0" ]] ; then
+		    echo "not ok - $output_tag subjects present in both this and other sex-specific analysis"
+		elif [[ "$analysis_successful" -eq "0" ]] ; then
+		    echo "not ok - $output_tag output file has fewer than $arbitrary_valid_entry_threshold entries, which seems bad"
+		elif [[ "$frequencies_present" -eq "0" ]] ; then
+		    echo "not ok - $output_tag output file does not have annotated frequencies"
+		elif [[ "$frequency_mismatch" -gt "0" ]] ; then
+		    echo "not ok - $output_tag output file seems to have frequencies that do not match the request type"
+		elif [[ "$betas_broken" -gt "0" ]] ; then
+		    echo "not ok - $output_tag output file is for binary trait analysis but needs to convert from OR->logIR; currently has OR-like coefficients that are never negative"
+		elif [[ "$stderrs_broken" -gt "0" ]] ; then
+		    echo "not ok - $output_tag output file has extremely unlikely standard errors"
+		elif [[ "$pvalues_broken" -gt "0" ]] ; then
+		    echo "not ok - $output_tag output file seems to have divergent p-values"
+		else
+		    echo "ok - $output_tag results: trait is binary; output exists; frequencies, p-values, betas, stderrs ok; variant count acceptable"
+		fi
+		(( total_tests = total_tests + 1 ))
+	    done
+	done
+    done
 done
 
 echo "1..$total_tests"
 
-for analysis in $saige_analysis_prefixes ;
-do
-    ancestries="European East_Asian"
-    for ancestry in $ancestries ;
-    do
-	chips="GSA_batch1 GSA_batch2 GSA_batch3 GSA_batch4 GSA_batch5 Omni25 OmniX Oncoarray"
-	for chip in $chips ;
-	do
-	    expected_absence_no_chip=0
-	    expected_absence_no_imputed=0
-	    analysis_directory_missing=0
-	    analysis_not_requested=0
-	    analysis_file_missing=0
-	    model_matrix_missing=0
-	    insufficient_chip_subjects=1
-	    insufficient_imputed_subjects=1
-	    insufficient_phenotyped_subjects=1
-	    insufficient_cases=1
-	    malformed_phenotype=0
-	    binary_outcome_failure=0
-	    sex_specific=0
-	    sex_alternate_missing=0
-	    sex_disjoint_subjects=0
-	    analysis_successful=0
-	    frequencies_present=0
-	    frequencies_reference=0
-	    frequencies_requested="reference"
-	    frequency_mismatch=0
-	    pvalues_broken=0
-	    betas_broken=0
-	    stderrs_broken=0
-	    ## assume cleaned-chip-by-ancestry and bgen checks have already been run. then absence means valid exclusion
-	    chip_no_batch=`echo $chip | sed 's/_/ /' | awk '{print $1}'`
-	    chip_slash_batch=`echo $chip | sed 's/_/\//'`
-	    chip_prefix="$chip_dir/$ancestry/$chip_no_batch.nohet.autosomes"
-	    if [[ ! -f "$chip_prefix.bed" || ! -f "$chip_prefix.bim" || ! -f "$chip_prefix.fam" ]] ; then
-		expected_absence_no_chip=1
-	    else
-		chip_subjects=`cat $chip_prefix.fam | wc -l`
-		if [[ "$chip_subjects" -ge "$minimum_subjects" ]] ; then
-		    insufficient_chip_subjects=0
-		fi
-	    fi
-	    if [[ ! -f "$imputed_dir/$chip_slash_batch/$ancestry/chr22-filtered-noNAs.sample" ]] ; then
-		expected_absence_no_imputed=1
-	    else
-		imputed_subjects=`cat $imputed_dir/$chip_slash_batch/$ancestry/chr22-filtered-noNAs.sample | awk 'NR > 2' | wc -l`
-		if [[ "$imputed_subjects" -ge "$minimum_subjects" ]] ; then
-		    insufficient_imputed_subjects=0
-		fi
-	    fi
-	    prefix="$results_dir/$analysis/$ancestry/SAIGE/$analysis.$chip.saige"
-	    output_file="$prefix.tsv.gz"
-	    model_matrix="$prefix.model_matrix"
-	    if [[ -f "$model_matrix" ]] ; then
-		if [[ "`awk 'NR > 1 && $3 == 1' $model_matrix | wc -l`" -gt "$minimum_cases" ]] ; then
-		    insufficient_cases=0
-		fi
-	    else
-		model_matrix_missing=1
-	    fi
-	    if [[ ! -d "$results_dir/$analysis/$ancestry/SAIGE" ]] ; then
-		analysis_directory_missing=1
-	    else
-		if [[ ! -f "$output_file" ]] ; then
-		    ## there are reasons this may be valid, test for them
-		    ##  maybe the user doesn't want this ancestry/chip combination?
-		    config_file=`grep -l $analysis $config_dir/*config`
-		    if [[ "`grep -w \"ancestries:\" $config_file | grep -w \"$ancestry\" | wc -l`" -eq "0" ]] ; then
-			analysis_not_requested=1
-		    elif [[ "`grep -w \"chips:\" $config_file | grep -w \"$chip\" | wc -l`" -eq "0" ]] ; then
-			analysis_not_requested=1
-		    ##  maybe the overall subject count is ok, but the phenotyped count is not?
-		    elif [[ -f "$model_matrix" ]] ; then
-			model_matrix_count=`awk 'NR > 1' $model_matrix | wc -l`
-			if [[ "$model_matrix_count" -ge "$minimum_subjects" ]] ; then
-			    insufficient_phenotyped_subjects=0
-			fi
-		    else
-			model_matrix_missing=1
-		    fi
-		    analysis_file_missing=1
-		else
-		    ## run consistency checks
-		    ## model matrix: at least three columns, third is phenotype, phenotype is normal
-		    if [[ -f "$model_matrix" ]] ; then
-			invalid_row_count=`awk -F"\t" 'NF < 3' $model_matrix | wc -l`
-			if [[ "$invalid_row_count" -gt "0" ]] ; then
-			    malformed_phenotype=1
-			else
-			    ## test column 3 binary case/control status
-			    binary_outcome_failure=`awk 'NR > 1 && $3 != "0" && $3 != "1" && $3 != "NA"' $model_matrix | wc -l` 
-			fi
-
-			if [[ "$analysis" =~ ^.*_female$ || "$analysis" =~ ^.*_male$ ]] ; then
-			    sex_specific=1
-			fi
-
-			if [[ "$sex_specific" -eq "1" ]] ; then
-			    other_analysis="$analysis"
-			    if [[ "$other_analysis" =~ ^.*_female$ ]] ; then
-				other_analysis=`echo $other_analysis | sed 's/_female/_male/'`
-			    else
-				other_analysis=`echo $other_analysis | sed 's/_male/_female/'`
-			    fi
-			    other_model_matrix="$results_dir/$other_analysis/$ancestry/FASTGWA/$other_analysis.$chip.fastgwa.model_matrix"
-			    if [[ -f "$other_model_matrix" ]] ; then
-				duplicate_lines=`cat $model_matrix $other_model_matrix | awk 'NR > 1 {print $2}' | sort | uniq -d | wc -l`
-				if [[ "$duplicate_lines" -eq "0" ]] ; then
-				    sex_disjoint_subjects=1
-				fi
-			    else
-				sex_alternate_missing=1
-			    fi
-			fi
-
-			## analysis file definitely exists. probe it for things
-			## enough entries that it seems like the entire analysis didn't fail!!
-			if [[ "`gunzip -c $output_file | wc -l`" -ge "$arbitrary_valid_entry_threshold" ]] ; then
-			    analysis_successful=1
-			fi
-			## frequencies that exist!!
-			if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $6 != "NA"' | wc -l`" -gt "0" ]] ; then
-			    frequencies_present=1
-			fi
-			## frequencies that seem consistent with the requested frequency mode!!
-			config_file=`grep -l $analysis $config_dir/*config`
-			frequency_override=`grep "frequency_mode:" $config_file | awk '{print $2}'`
-			if [[ "$frequency_override" == "subject" ]] ; then
-			    frequencies_requested="subject"
-			fi
-			sampled_long_freq_count=`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && length($6) > 10' | wc -l`
-			if [[ "$sampled_long_freq_count" -eq "0" && "$frequencies_requested" != "reference" ]] ; then
-			    frequency_mismatch=1
-			elif [[ "$sampled_long_freq_count" -gt "0" && "$frequencies_requested" != "subject" ]] ; then
-			    frequency_mismatch=1
-			fi
-			## p-values that make sense!!
-			if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $9 < 1e-400' | wc -l`" -gt "0" ]] ; then
-			    pvalues_broken=1
-			fi
-			## betas that look like betas!
-			if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $7 < 0' | wc -l`" -eq "0" ]] ; then
-			    betas_broken=1
-			fi
-			## stderrs that look like stderrs!
-			if [[ "`gunzip -c $output_file | head -n $sampling_count | awk 'NR > 1 && $8 < 1e-10' | wc -l`" -gt "0" ]] ; then
-			    stderrs_broken=1
-			fi
-		    else
-			model_matrix_missing=1
-		    fi
-		fi
-	    fi
-
-	    output_tag="$analysis/$chip/$ancestry"
-	    if [[ "$analysis_not_requested" -gt "0" ]] ; then
-		echo "ok - $output_tag ancestry/chip combination not requested # SKIP"
-	    elif [[ "$analysis_directory_missing" -gt "0" ]] ; then
-		if [[ "$analyis_file_missing" -eq "0" ]] ; then
-		    echo "not ok - $output_tag test logic failure: directory absent but file present?"
-		elif [[ "$expected_absence_no_chip" -gt "0" ]] ; then
-		    echo "not ok - $output_tag no corresponding chip data present # TODO"
-		elif [[ "$insufficient_chip_subjects" -gt "0" ]] ; then
-		    echo "ok - $output_tag has chip data but not enough subjects for method # SKIP"
-		elif [[ "$expected_absence_no_imputed" -gt "0" ]] ; then
-		    echo "not ok - $output_tag no corresponding imputed data present # TODO"
-		elif [[ "$insufficient_imputed_subjects" -gt "0" ]] ; then
-		    echo "ok - $output_tag has imputed data but not enough subjects for method # SKIP"
-		elif [[ "$model_matrix_missing" -gt "0" ]] ; then
-		    echo "not ok - $output_tag both output file and model matrix missing"
-		elif [[ "$insufficient_phenotyped_subjects" -gt "0" ]] ; then
-		    echo "ok - $output_tag has data but not enough phenotyped subjects for method # SKIP"
-		elif [[ "$insufficient_cases" ]] ; then
-		    echo "ok - $output_tag has data but not enough phenotyped cases for method # SKIP"
-		else
-		    echo "not ok - $output_tag no results directory detected"
-		fi
-	    elif [[ "$analysis_file_missing" -gt "0" ]] ; then
-		if [[ "$expected_absence_no_chip" -gt "0" ]] ; then
-		    echo "not ok - $output_tag no corresponding chip data present # TODO"
-		elif [[ "$insufficient_chip_subjects" -gt "0" ]] ; then
-		    echo "ok - $output_tag has chip data but not enough subjects for method # SKIP"
-		elif [[ "$expected_absence_no_imputed" -gt "0" ]] ; then
-		    echo "not ok - $output_tag no corresponding imputed data present # TODO"
-		elif [[ "$insufficient_imputed_subjects" -gt "0" ]] ; then
-		    echo "ok - $output_tag has imputed data but not enough subjects for method # SKIP"
-		elif [[ "$model_matrix_missing" -gt "0" ]] ; then
-		    echo "not ok - $output_tag both output file and model matrix missing"
-		elif [[ "$insufficient_phenotyped_subjects" -gt "0" ]] ; then
-		    echo "ok - $output_tag has data but not enough phenotyped subjects for method # SKIP"
-		elif [[ "$insufficient_cases" ]] ; then
-		    echo "ok - $output_tag has data but not enough phenotyped cases for method # SKIP"
-		else
-		    echo "not ok - $output_tag no results file detected"
-		fi
-	    elif [[ "$model_matrix_missing" -gt "0" ]] ; then
-		echo "not ok - $output_tag output file present but model matrix missing"
-	    elif [[ "$malformed_phenotype" -gt "0" ]] ; then
-		echo "not ok - $output_tag model matrix had insufficient columns"
-	    elif [[ "$binary_outcome_failure" -gt "0" ]] ; then
-		echo "not ok - $output_tag model matrix phenotype not binary"
-	    elif [[ "$sex_specific" -gt "0" && "$sex_alternate_missing" -gt "0" ]] ; then
-		echo "not ok - $output_tag missing corresponding sex-specific analysis"
-	    elif [[ "$sex_specific" -gt "0" && "$sex_disjoint_subjects" -eq "0" ]] ; then
-		echo "not ok - $output_tag subjects present in both this and other sex-specific analysis"
-	    elif [[ "$analysis_successful" -eq "0" ]] ; then
-		echo "not ok - $output_tag output file has fewer than $arbitrary_valid_entry_threshold entries, which seems bad"
-	    elif [[ "$frequencies_present" -eq "0" ]] ; then
-		echo "not ok - $output_tag output file does not have annotated frequencies"
-	    elif [[ "$frequency_mismatch" -gt "0" ]] ; then
-		echo "not ok - $output_tag output file seems to have frequencies that do not match the request type"
-	    elif [[ "$betas_broken" -gt "0" ]] ; then
-		echo "not ok - $output_tag output file is for binary trait analysis but needs to convert from OR->logIR; currently has OR-like coefficients that are never negative"
-	    elif [[ "$stderrs_broken" -gt "0" ]] ; then
-		echo "not ok - $output_tag output file has extremely unlikely standard errors"
-	    elif [[ "$pvalues_broken" -gt "0" ]] ; then
-		echo "not ok - $output_tag output file seems to have divergent p-values"
-	    else
-		echo "ok - $output_tag results: trait is binary; output exists; frequencies, p-values, betas, stderrs ok; variant count acceptable"
-	    fi
-	done
-    done
-done

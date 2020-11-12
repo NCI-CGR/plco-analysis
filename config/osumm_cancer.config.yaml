@@ -35,3 +35,7 @@ algorithm:
   - saige
   - plink
 id_mode: rsid
+control_inclusion:
+  - clean_control
+control_exclusion:
+  - bq_ovariesr_f_ca

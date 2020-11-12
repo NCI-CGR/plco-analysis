@@ -116,3 +116,12 @@ $(patsubst %,1KG_%.merge_list$(TRACKING_SUCCESS_SUFFIX),$(1KG_POPS)): $$(patsubs
 ## Notes: extract relevant chromosome and fix format of recombination data for use with LDSC
 genetic_map_chr%.txt$(TRACKING_SUCCESS_SUFFIX): $(HG38_CM_MAP)
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk 'NR == 1 {print "pposition rrate gposition"} ; NR > 1 && $$1 == "$(subst genetic_map_chr,,$(subst .txt$(TRACKING_SUCCESS_SUFFIX),,$@))" {print $$2" "$$3" "$$4}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+
+## test set to run after completion
+check: testing/Makefile$(TRACKING_SUCCESS_SUFFIX)
+	$(MAKE) -C testing check
+
+testing/Makefile$(TRACKING_SUCCESS_SUFFIX): testing/Makefile.am testing/configure.ac
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cd testing && autoreconf -vi && ./configure && cd ../)
+
+

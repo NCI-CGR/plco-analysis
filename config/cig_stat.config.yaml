@@ -30,7 +30,6 @@ covariates:
   - batch.Omni25
 ancestries:
   - European
-  - East_Asian
 algorithm:
   - saige
 id_mode: rsid

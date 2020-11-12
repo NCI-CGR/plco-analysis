@@ -1,34 +1,36 @@
 /*!
   \file utilities.cc
   \brief implementations of nontemplated global utility functions
+  \copyright Released under the MIT License.
+  Copyright 2020 Cameron Palmer
  */
 
 #include "qsub_job_monitor/utilities.h"
 
-bool qsub_job_monitor::cicompare(const std::string &s1,
-				      const std::string &s2) {
+bool qsub_job_monitor::cicompare(const std::string &s1, const std::string &s2) {
   if (s1.size() == s2.size()) {
     for (unsigned i = 0; i < s1.size(); ++i) {
-      if (tolower(s1.at(i)) != tolower(s2.at(i)))
-	return false;
+      if (tolower(s1.at(i)) != tolower(s2.at(i))) return false;
     }
     return true;
   }
   return false;
 }
-	
+
 void qsub_job_monitor::splitline(const std::string &s,
-				      std::vector<std::string> &vec,
-				      const std::string &sep) {
+                                 std::vector<std::string> *vec,
+                                 const std::string &sep) {
   std::string::size_type loc = 0, cur = 0;
-  vec.clear();
+  if (!vec)
+    throw std::domain_error("splitline: called with null vector pointer");
+  vec->clear();
   while (true) {
     loc = s.find(sep, cur);
     if (loc == std::string::npos) {
-      vec.push_back(s.substr(cur));
+      vec->push_back(s.substr(cur));
       break;
     }
-    vec.push_back(s.substr(cur, loc - cur));
+    vec->push_back(s.substr(cur, loc - cur));
     cur = loc + sep.size();
   }
   return;
@@ -75,8 +77,9 @@ char qsub_job_monitor::reverse_complement(char c) {
 std::string qsub_job_monitor::reverse_complement(const std::string &s) {
   std::string t = "";
   std::vector<std::string> split_alleles;
-  // assuming the possibility of VCF-style alternate alleles with comma delimiters
-  splitline(s, split_alleles, ",");
+  // assuming the possibility of VCF-style alternate alleles with comma
+  // delimiters
+  splitline(s, &split_alleles, ",");
   std::ostringstream o;
   // for each split out allele
   for (unsigned i = 0; i < split_alleles.size(); ++i) {
@@ -88,39 +91,47 @@ std::string qsub_job_monitor::reverse_complement(const std::string &s) {
     // report the results in the same order as input
     if (i) {
       if (!(o << ','))
-	throw std::domain_error("reverse_complement: cannot emit delimiter to stream");
+        throw std::domain_error(
+            "reverse_complement: cannot emit delimiter to stream");
     }
     if (!(o << t))
-      throw std::domain_error("reverse_complement: cannot emit flipped allele to stream");
+      throw std::domain_error(
+          "reverse_complement: cannot emit flipped allele to stream");
   }
   return o.str();
 }
 
-unsigned qsub_job_monitor::get_bin_index(const double &p,
-					      unsigned total_bins) {
+unsigned qsub_job_monitor::get_bin_index(const double &p, unsigned total_bins) {
   unsigned res = 0;
-  if (fabs(p) < DBL_EPSILON) res = 0;
-  else if (p - 1.0 >= -DBL_EPSILON) res = total_bins - 1;
-  else res = ceil(p * static_cast<double>(total_bins)) - 1;
+  if (fabs(p) < DBL_EPSILON)
+    res = 0;
+  else if (p - 1.0 >= -DBL_EPSILON)
+    res = total_bins - 1;
+  else
+    res = ceil(p * static_cast<double>(total_bins)) - 1;
   if (res > 1000000)
-    throw std::domain_error("get_bin_index: likely underflow error for "
-			    "result " + to_string<unsigned>(res) + " with probability "
-			    + to_string<double>(p) + " and storage size " + to_string<unsigned>(total_bins));
+    throw std::domain_error(
+        "get_bin_index: likely underflow error for "
+        "result " +
+        to_string<unsigned>(res) + " with probability " + to_string<double>(p) +
+        " and storage size " + to_string<unsigned>(total_bins));
   return res;
 }
 
+// from
+// https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po
 
-//from https://stackoverflow.com/questions/478898/how-do-i-execute-a-command-and-get-the-output-of-the-command-within-c-using-po
-
-int qsub_job_monitor::exec(const char *cmd, std::string &screenoutput) {
+int qsub_job_monitor::exec(const char *cmd, std::string *screenoutput) {
   char buffer[128];
-  screenoutput = "";
+  if (!screenoutput)
+    throw std::domain_error("exec: called with null string pointer");
+  *screenoutput = "";
   FILE *pipe = 0;
   try {
     pipe = popen(cmd, "r");
     if (!pipe) throw std::runtime_error("popen() failed");
     while (fgets(buffer, sizeof buffer, pipe) != NULL) {
-      screenoutput += buffer;
+      *screenoutput += buffer;
     }
     return pclose(pipe);
   } catch (...) {
@@ -129,26 +140,32 @@ int qsub_job_monitor::exec(const char *cmd, std::string &screenoutput) {
   }
 }
 
-int qsub_job_monitor::exec(const std::string &cmd, std::string &screenoutput) {
+int qsub_job_monitor::exec(const std::string &cmd, std::string *screenoutput) {
   return exec(cmd.c_str(), screenoutput);
 }
 
 void qsub_job_monitor::get_job_ids(const std::string &qstat,
-				   std::map<unsigned, bool> &target) {
+                                   std::map<unsigned, bool> *target) {
+  if (!target)
+    throw std::domain_error("get_job_ids: called with null target pointer");
   std::vector<std::string> lines;
   unsigned jobid = 0;
-  target.clear();
-  splitline(qstat, lines, "\n");
+  std::string catcher = "", jobstat = "";
+  target->clear();
+  splitline(qstat, &lines, "\n");
   std::vector<std::string>::const_iterator line = lines.begin();
   for (unsigned i = 0; i < 2; ++i, ++line) {
-    if (line == lines.end()) throw std::domain_error("inadequate total line count in qstat data: \"" + qstat + "\"");
+    if (line == lines.end())
+      throw std::domain_error("inadequate total line count in qstat data: \"" +
+                              qstat + "\"");
   }
   for (; line != lines.end(); ++line) {
     if (line->empty()) continue;
     std::istringstream strm1(*line);
-    if (!(strm1 >> jobid))
+    if (!(strm1 >> jobid >> catcher >> catcher >> catcher >> jobstat))
       throw std::domain_error("cannot parse qstat line \"" + *line + "\"");
-    target[jobid] = true;
+    // report if the job is present and whether it is in a valid run state
+    (*target)[jobid] = jobstat.compare("Eqw");
   }
 }
 
@@ -157,7 +174,12 @@ unsigned qsub_job_monitor::get_job_id(const std::string &echo_output) {
   std::string catcher = "";
   unsigned res = 0;
   if (!(strm1 >> catcher >> catcher >> res))
-    throw std::domain_error("cannot parse job id from echo output \"" + echo_output + "\"");
+    throw std::domain_error("cannot parse job id from echo output \"" +
+                            echo_output + "\"");
   return res;
 }
 
+void qsub_job_monitor::kill_job(unsigned jobid) {
+  std::string command = "qdel " + to_string<unsigned>(jobid);
+  system(command.c_str());
+}

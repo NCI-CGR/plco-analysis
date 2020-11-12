@@ -12,7 +12,7 @@ ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## empirical approximate minimum subject count, specific to BOLTLMM
 MINIMUM_VALID_SUBJECT_COUNT := $(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)
 ## construct analysis targets for all config entries that request BOLT
-ANALYSIS_RESULTS_BOLTLMM := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) boltlmm $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash $(PHENOTYPE_DATASET_TRACKER_SUFFIX) $(FREQUENCY_MODE_TRACKER_SUFFIX) $(ID_MODE_TRACKER_SUFFIX) $(PHENOTYPE_NAME_TRACKER_SUFFIX) $(COVARIATE_NAME_TRACKER_SUFFIX) NA $(TRANSFORMATION_TRACKER_SUFFIX) $(SEX_SPECIFIC_TRACKER_SUFFIX) $(FINALIZATION_TRACKER_SUFFIX) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
+ANALYSIS_RESULTS_BOLTLMM := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) boltlmm $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash $(PHENOTYPE_DATASET_TRACKER_SUFFIX) $(FREQUENCY_MODE_TRACKER_SUFFIX) $(ID_MODE_TRACKER_SUFFIX) $(PHENOTYPE_NAME_TRACKER_SUFFIX) $(COVARIATE_NAME_TRACKER_SUFFIX) NA $(TRANSFORMATION_TRACKER_SUFFIX) $(SEX_SPECIFIC_TRACKER_SUFFIX) $(CONTROL_INCLUSION_TRACKER_SUFFIX) $(CONTROL_EXCLUSION_TRACKER_SUFFIX) $(FINALIZATION_TRACKER_SUFFIX) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
 
 .SECONDEXPANSION:
 .SECONDARY:
@@ -25,6 +25,11 @@ $(ANALYSIS_RESULTS_BOLTLMM): $$(addsuffix .tsv.gz$(TRACKING_SUCCESS_SUFFIX),$$@)
 ## get a saved config parameter setting from a tracking file
 define get_tracked_parameter =
 $(shell cat $(1))
+endef
+
+## get a set of config parameter settings as a comma-delimited list
+define get_tracked_parameter_list =
+$(shell cat $(1) | tr '\n' ' ' | sed 's/ /,/g ; s/\t/,/g' | sed 's/,$$//')
 endef
 
 ## model matrix handling for association pipelines
@@ -236,7 +241,7 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.samples.plink-format$(TRACKING_SUCCESS_SUFFIX)
-##    input:  results/{PHENTOYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.samples$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.samples$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: take single column subject ID list and duplicate it into two columns, for plink --keep convention.
 %.boltlmm.samples.plink-format$(TRACKING_SUCCESS_SUFFIX): %.boltlmm.samples$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print $$1}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's/_/\t/g' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
@@ -263,13 +268,15 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(COVARIATE_NAME_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(TRANSFORMATION_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(SEX_SPECIFIC_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(CONTROL_INCLUSION_TRACKER_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(CONTROL_EXCLUSION_TRACKER_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.samples$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: build a model matrix containing phenotype and covariate data for all relevant subjects. for truly esoteric reasons
 ## this is separately submitted to the cluster. Direct config file dependency has been removed to prevent
 ## repeated reruns due to version control, unrelated database updates, and other trivial issues.
-%.boltlmm.model_matrix$(TRACKING_SUCCESS_SUFFIX): %.boltlmm$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.boltlmm$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.boltlmm$(COVARIATE_NAME_TRACKER_SUFFIX) %.boltlmm$(TRANSFORMATION_TRACKER_SUFFIX) %.boltlmm$(SEX_SPECIFIC_TRACKER_SUFFIX) %.boltlmm.samples$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix$(TRACKING_SUCCESS_SUFFIX),,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) NA $(call get_tracked_parameter,$(word 4,$^)) $(call get_tracked_parameter,$(word 5,$^)))
+%.boltlmm.model_matrix$(TRACKING_SUCCESS_SUFFIX): %.boltlmm$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.boltlmm$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.boltlmm$(COVARIATE_NAME_TRACKER_SUFFIX) %.boltlmm$(TRANSFORMATION_TRACKER_SUFFIX) %.boltlmm$(SEX_SPECIFIC_TRACKER_SUFFIX) %.boltlmm$(CONTROL_INCLUSION_TRACKER_SUFFIX) %.boltlmm$(CONTROL_EXCLUSION_TRACKER_SUFFIX) %.boltlmm.samples$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .boltlmm.model_matrix$(TRACKING_SUCCESS_SUFFIX),,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) NA $(call get_tracked_parameter,$(word 4,$^)) $(call get_tracked_parameter,$(word 5,$^)) $(call get_tracked_parameter_list,$(word 6,$^)) $(call get_tracked_parameter_list,$(word 7,$^)))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/

@@ -47,7 +47,7 @@ $(LDSCORE_SUMMARY): $(subst .ldsc.log$(TRACKING_SUCCESS_SUFFIX),.ldsc.report,$(A
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {ldsc_data_GRCh38}/{CHR}.l2.M_5_50
-## Notes: actually run ldscore regression. Do heritabiity estimation as they term it on their wiki, then extract the values from the log file
+## Notes: actually run ldscore regression. Do heritability estimation as they term it on their wiki, then extract the values from the log file
 %.ldsc.log$(TRACKING_SUCCESS_SUFFIX): %.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX) $(LD_TARGETS)
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(LDSC_PY) --h2 $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) --ref-ld-chr $(LD_CHR_GRCh38) --w-ld-chr $(LD_CHR_GRCh38) --out $(subst .log$(TRACKING_SUCCESS_SUFFIX),,$@))
 

@@ -11,8 +11,11 @@ QSUB_JOB_MONITOR_DIR := qsub_job_monitor
 JOB_MONITOR_DIRS := $(QSUB_JOB_MONITOR_DIR)
 LIB_FILEINTERFACE := fileinterface/libfileinterface.a
 
-SUBDIR_TARGETS := $(LIB_FILEINTERFACE) $(foreach dir,$(JOB_MONITOR_DIRS),$(dir)/$(dir).out)
+SUBDIR_TARGETS := fileinterface $(JOB_MONITOR_DIRS)
 
+#$(foreach dir,$(JOB_MONITOR_DIRS),$(dir)/$(dir).out)
+
+.PHONY: $(SUBDIR_TARGETS)
 all: $(OUT) $(SUBDIR_TARGETS)
 
 %.out: %.o $(LIB_FILEINTERFACE)
@@ -22,5 +25,5 @@ all: $(OUT) $(SUBDIR_TARGETS)
 	$(GCC) $(CXXFLAGS) -I$(dir $(LIB_FILEINTERFACE)) -o $@ -c $<
 
 $(SUBDIR_TARGETS):
-	cd $(dir $@) && ./configure --prefix=$(shell pwd) $(if $(filter %/$(LIB_FILEINTERFACE),$@),,--with-boost=/home/palmercd/Development/stage) && cd ..
-	$(MAKE) -C $(dir $@)
+	cd $@ && ./configure --prefix=$(shell pwd) --with-boost=/home/palmercd/Development/stage && cd ..
+	$(MAKE) -C $@
