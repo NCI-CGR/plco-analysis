@@ -1,0 +1,30 @@
+repos:
+- repo: https://gitlab.com/daverona/pre-commit/cpp
+  rev: 0.8.0
+  hooks:
+  - id: clang-format
+  - id: cpplint
+    args: ["--includeorder=default"]
+  - id: cppcheck
+- repo: https://github.com/lorenzwalthert/precommit
+  rev: v0.1.3
+  hooks:
+  - id: style-files
+  - id: parsable-R
+  - id: no-browser-statement
+  - id: spell-check
+#  - id: roxygenize
+#  - id: deps-in-desc
+#  - id: use-tidy-description
+  - id: lintr
+    verbose: true
+#- repo: http://10.133.130.114/palmercd/pre-commit-hooks-go.git
+#  rev: v1.0
+#  hooks:
+#  - id: checkmake
+#- repo: meta
+#  hooks:
+#    - id: identity
+#      files: ^.*[Mm]akefile.*$
+#      exclude: ^.*\.(am|in|config)$
+#      types: ["file", "makefile"]

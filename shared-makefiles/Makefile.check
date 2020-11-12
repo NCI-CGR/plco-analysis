@@ -10,7 +10,7 @@ include $(PROJECT_BASE_DIR)/Makefile.config
 ## all targets are: each platform, without Omni5 because it has no non-redundant subjects
 all: check
 
-## test set to run after completion of other pipeliens
+## test set to run after completion of other pipelines
 check: testing/Makefile$(TRACKING_SUCCESS_SUFFIX)
 	$(MAKE) -C testing check
 

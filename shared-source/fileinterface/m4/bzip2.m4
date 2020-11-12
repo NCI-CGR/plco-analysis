@@ -21,7 +21,7 @@
 #
 #   If both header file and library are found, shell commands
 #   'action-if-found' is run. If 'action-if-found' is not specified, the
-#   default action appends '-I${ZLIB_HOME}/include' to CPFLAGS, appends
+#   default action appends '-I${ZLIB_HOME}/include' to CPPFLAGS, appends
 #   '-L$ZLIB_HOME}/lib' to LDFLAGS, prepends '-lz' to LIBS, and calls
 #   AC_DEFINE(HAVE_LIBBZ2). You should use autoheader to include a definition
 #   for this symbol in a config.h file. Sample usage in a C/C++ source is as
@@ -35,7 +35,6 @@
 #
 #   Copyright (c) 2008 Loic Dachary <loic@senga.org>
 #   Copyright (c) 2010 Bastien Chevreux <bach@chevreux.org>
-#   Copyright (c) 2014 Cameron Palmer <cdp2130@columbia.edu>
 #
 #   This program is free software; you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published by the

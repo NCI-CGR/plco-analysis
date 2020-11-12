@@ -278,7 +278,7 @@ $(sort $(dir $(ANALYSIS_RESULTS_SAIGE))):
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples.plink-format$(TRACKING_SUCCESS_SUFFIX)
-##    input:  results/{PHENTOYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.saige.samples$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: take single column subject ID list and duplicate it into two columns, for plink --keep convention.
 %.saige.samples.plink-format$(TRACKING_SUCCESS_SUFFIX): %.saige.samples$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print $$1"\t"$$1}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))

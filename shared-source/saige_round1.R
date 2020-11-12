@@ -10,7 +10,15 @@ output.prefix <- cargs[6]
 
 covar.col.list <- NULL
 if (covariates != "NA") {
-   covar.col.list <- unlist(strsplit(covariates, ","))
+  covar.col.list <- unlist(strsplit(covariates, ","))
 }
 
-SAIGE::fitNULLGLMM(plink.prefix, model.matrix, phenotype, sampleIDColinphenoFile="IID", covarColList=covar.col.list, nThreads=4, traitType="binary", outputPrefix=output.prefix, IsSparseKin=TRUE, relatednessCutoff=relatedness.cutoff)
+SAIGE::fitNULLGLMM(plink.prefix, model.matrix, phenotype,
+  sampleIDColinphenoFile = "IID",
+  covarColList = covar.col.list,
+  nThreads = 4,
+  traitType = "binary",
+  outputPrefix = output.prefix,
+  IsSparseKin = TRUE,
+  relatednessCutoff = relatedness.cutoff
+)
