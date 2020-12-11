@@ -36,6 +36,6 @@ algorithm:
   - plink
 id_mode: rsid
 control_inclusion:
-  - clean_control
+  clean_control: 1
 control_exclusion:
-  - bq_hyster_f_b
+  bq_hyster_f_b: 1
