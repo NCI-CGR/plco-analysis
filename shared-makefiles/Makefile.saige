@@ -11,7 +11,7 @@ ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## empirical approximate minimum subject count (+1), specific to SAIGE
 MINIMUM_VALID_SUBJECT_COUNT := $(SAIGE_MINIMUM_VALID_SUBJECT_COUNT)
 
-ANALYSIS_RESULTS_SAIGE := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) saige $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash $(PHENOTYPE_DATASET_TRACKER_SUFFIX) $(FREQUENCY_MODE_TRACKER_SUFFIX) $(ID_MODE_TRACKER_SUFFIX) $(PHENOTYPE_NAME_TRACKER_SUFFIX) $(COVARIATE_NAME_TRACKER_SUFFIX) $(CATEGORY_TRACKER_SUFFIX) $(TRANSFORMATION_TRACKER_SUFFIX) $(SEX_SPECIFIC_TRACKER_SUFFIX) $(CONTROL_INCLUSION_TRACKER_SUFFIX) $(CONTROL_EXCLUSION_TRACKER_SUFFIX) $(FINALIZATION_TRACKER_SUFFIX) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
+ANALYSIS_RESULTS_SAIGE := $(foreach config,$(ANALYSIS_CONFIGS),$(shell $(INITIALIZE_OUTPUT_DIRECTORIES) -e $(EXTENSION_CONFIG) -p $(config) -D $(PHENOTYPE_FILENAME) -I plco_id -b $(IMPUTED_DIR) -r $(RESULTS_DIR) -s saige -N $(MINIMUM_VALID_SUBJECT_COUNT) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),-B,)))
 
 .SECONDEXPANSION:
 .SECONDARY:
@@ -24,11 +24,6 @@ $(ANALYSIS_RESULTS_SAIGE): $$(addsuffix .tsv.gz$(TRACKING_SUCCESS_SUFFIX),$$@) |
 ## get a saved config parameter setting from a tracking file
 define get_tracked_parameter =
 $(shell cat $(1))
-endef
-
-## get a set of config parameter settings as a comma-delimited list
-define get_tracked_parameter_list =
-$(shell cat $(1) | tr '\n' ' ' | sed 's/ /,/g ; s/\t/,/g' | sed 's/,$$//')
 endef
 
 ## model matrix handling for association pipelines
@@ -177,7 +172,7 @@ endef
 ## this is separately submitted to the cluster. Direct config file dependency has been removed to prevent
 ## repeated reruns due to version control, unrelated database updates, and other trivial issues.
 %.saige.model_matrix$(TRACKING_SUCCESS_SUFFIX): %.saige$(PHENOTYPE_DATASET_TRACKER_SUFFIX) %.saige$(PHENOTYPE_NAME_TRACKER_SUFFIX) %.saige$(COVARIATE_NAME_TRACKER_SUFFIX) %.saige$(CATEGORY_TRACKER_SUFFIX) %.saige$(SEX_SPECIFIC_TRACKER_SUFFIX) %.saige$(CONTROL_INCLUSION_TRACKER_SUFFIX) %.saige$(CONTROL_EXCLUSION_TRACKER_SUFFIX) %.saige.samples$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix$(TRACKING_SUCCESS_SUFFIX),,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) $(word 4,$^) none $(call get_tracked_parameter,$(word 5,$^)) $(call get_tracked_parameter_list,$(word 6,$^)) $(call get_tracked_parameter_list,$(word 7,$^)))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SHARED_SOURCE)/construct_model_matrix.R $(PHENOTYPE_FILENAME) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) $(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$@))) $(lastword $(subst ., ,$(subst .saige.model_matrix$(TRACKING_SUCCESS_SUFFIX),,$@))) $(call get_tracked_parameter,$(word 2,$^)) $(call get_tracked_parameter,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) $(word 4,$^) none $(call get_tracked_parameter,$(word 5,$^)) $(word 6,$^) $(word 7,$^))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
