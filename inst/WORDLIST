@@ -91,6 +91,7 @@ AmJkDg
 AMR
 AMTAR
 aN
+anaysis
 aNdbnj
 ansi
 Anw
@@ -110,6 +111,7 @@ ar
 ArBggoqGpfqqdI
 arceb
 archiver
+aretiny
 ARFLAGS
 arg
 ARG
@@ -237,6 +239,7 @@ beos
 BeOS
 BePC
 bEqdpj
+Berndt
 bernotok
 berok
 BeSZl
@@ -387,6 +390,7 @@ bZZvjwCGxtMOD
 cac
 cach
 cachedir
+cachevar
 caf
 callsites
 cameron
@@ -443,6 +447,7 @@ CGZriJWmfNGfloH
 changelog
 ChangeLog
 chardet
+CharT
 chdir
 chevreux
 Chevreux
@@ -529,6 +534,7 @@ compat
 compilable
 compileline
 concat
+cond
 conda
 conf
 confcache
@@ -552,6 +558,7 @@ CONNEC
 Consor
 const
 CONST
+constexpr
 contrib
 ControlCount
 conv
@@ -678,6 +685,7 @@ dashXmstdout
 datad
 datadi
 datadir
+datapoint
 datar
 dataro
 dataroo
@@ -709,6 +717,7 @@ decl
 DECL
 decls
 declspec
+decltype
 deCq
 decstation
 decstatn
@@ -1075,6 +1084,7 @@ EykJT
 EYudVwEcMQNxd
 Fabrice
 fabs
+fallthrough
 fam
 famfile
 fastcall
@@ -1653,6 +1663,7 @@ init
 INIT
 INIT's
 Initializations
+initializer
 INITINSTANCE
 InitTerm
 INIX
@@ -1780,6 +1791,7 @@ ISLOWER
 isobject
 isrc
 ist
+istiny
 istringstream
 isystem
 iter
@@ -1834,6 +1846,7 @@ IuDGALsNVbGg
 iUehDcsFctYz
 iuO
 iupac
+ivii
 ivyNENctx
 Iw
 iX
@@ -2309,6 +2322,7 @@ libexecdi
 libexecdir
 libext
 libfileinterface
+LIBFLAGS
 libid
 libm
 LIBM
@@ -2331,6 +2345,7 @@ librarie
 libs
 Libs
 LIBS
+libstd
 libsubdir
 libsubdirs
 libsuff
@@ -2715,6 +2730,7 @@ MinGW
 MINGW
 miniconda
 miniframe
+minimac
 minimatch
 minimist
 minix
@@ -2957,11 +2973,14 @@ nodefaultrpath
 nodefs
 nodename
 nodep
+nodiscard
 nodtk
 nodups
 NoE
 noenvvar
+noexcept
 NOEXPORT
+noext
 nofile
 nofor
 nofreq
@@ -3032,6 +3051,7 @@ ntlqFxiRc
 nto
 nucleotides
 NUL
+nullary
 NULLCMD
 num
 numtries
@@ -3699,7 +3719,10 @@ rsID
 RSID
 rsids
 rsIDs
+rsq
+Rsq
 RSQ
+rsqs
 RsWDJZayj
 rswp
 rtems
@@ -3716,6 +3739,7 @@ runpath
 RUNPATH
 runtimelinking
 rutgers
+rvalue
 rVEZAhcNi
 rvMB
 rw
@@ -3790,6 +3814,7 @@ SESBuE
 setopt
 setuid
 SfFNTr
+sfinae
 sfw
 SGE
 sgi
@@ -3949,9 +3974,11 @@ stripname
 STRIPNAME
 stripprog
 STRIPPROG
+strlen
 strm
 strncmp
 strongarm
+strsubst
 struct
 stune
 su
@@ -3978,6 +4005,8 @@ suff
 suffi
 SUFFIXn
 suIpIWD
+sumf
+sumi
 sumstats
 SUMSTATS
 sunCC
@@ -4077,6 +4106,8 @@ tDs
 TdUlukEy
 tDyas
 te
+tEAF
+tEFFECT
 tEgii
 Tek
 TEkMH
@@ -4095,6 +4126,7 @@ TEXI
 texinfo
 Texinfo
 TEXINFOS
+textracting
 TFE
 TfHahueqXc
 tfound
@@ -4109,6 +4141,7 @@ th
 thomas
 thusly
 tinflation
+tINFO
 tintercept
 TION
 tirtos
@@ -4129,6 +4162,7 @@ TLKyA
 TLS
 tlZG
 tM
+tMAC
 tMAF
 tmeD
 tmethod
@@ -4152,6 +4186,7 @@ tOGPrsMhtJA
 ToHg
 tokenized
 tolower
+toN
 TONUMERICVERSION
 TOOdI
 toolchain
@@ -4183,6 +4218,7 @@ Tprelink
 tprocessed
 TpugqhmYtVmMO
 tPVAL
+tPVALUE
 tpyN
 TQPf
 TQTlerQQ
@@ -4220,6 +4256,7 @@ tti
 TTlYpa
 ttouch
 tvalid
+tVCF
 tvVnVv
 twizzler
 Twizzler
@@ -4230,6 +4267,7 @@ tx
 TyasXcmKDb
 typedef
 typedefs
+typename
 tYUSxa
 TZjPJx
 TZmHxxUfuJqPXSOm
@@ -4607,6 +4645,7 @@ va
 vAFlcMEcqmkoG
 validator
 vals
+variadic
 varianceRatio
 VARNAME
 varnames
@@ -4897,6 +4936,7 @@ xpx
 xpz
 xQ
 xQLQ
+xr
 xray
 XRgnDl
 xRl
@@ -4913,6 +4953,7 @@ xstormy
 xSYM
 xt
 xtensa
+xtrue
 XTS
 XtZLMb
 XuNEl
