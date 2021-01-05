@@ -6,7 +6,7 @@ phenotype_filename="$PHENOTYPE_FILENAME"
 
 config_dir="../../config"
 results_dir="../../results"
-
+phenotype_filename="../../phenotypes/v8/atlas_v8.with_na.augmented.03august2020.tsv"
 total_tests=0
 
 ## python yaml helper functions
@@ -31,21 +31,55 @@ do
         PARSED_YAML[`echo "$line" | cut -f 1 -d ":"`]=`echo "$line" | cut -f 2 -d ":"`
     done
 
-    phenotype_file_missing=0
-    phenotype_missing=0
-    results_dir_missing=0
-    comparison_dir_missing=0
-    comparison_dir_trait_n_failure=0
-    
     ## check that it's saige
     algorithms=$(yaml algorithm)
     if [[ ! -z "`echo $algorithms | grep saige`" ]] ; then
 	## extract the phenotype from the phenotype file
 	phenotype_name=$(yaml phenotype)
 	if [[ ! -f "$phenotype_filename" ]] ; then
-	    phenotype_file_missing=1
+	    echo "not ok - $config_file phenotype file $phenotype_filename missing"
+	    (( total_tests = total_tests + 1 ))
 	else
-	    
+	    ## assume config-check has been run and phenotype is guaranteed to be present in both config and phenotype file
+	    pheno_vals=`awk 'BEGIN {pheno_col = 1}
+	    	 	     NR == 1 {for ( i = 1 ; i <= NF ; i++ ) { if ($i == "$phenotype_name") {pheno_col = i}}}
+			     NR > 1  {print $pheno_col}' $phenotype_filename | sort | uniq -c | awk '{print $1}' | sort -k 1,1g | awk 'NR > 1'`
+	    n_large_groups=0
+	    n_small_groups=0
+	    n_comparisons=0
+	    for i in $pheno_vals ;
+	    do
+		if [[ "$i" < 100 ]] ; then
+		    (( n_large_groups = n_large_groups + 1))
+		else
+		    n_small_groups=1
+		fi
+	    done
+	    (( n_comparisons = n_large_groups + n_small_groups ))
+
+	    ## iterate through each requested ancestry
+	    for ancestry in $(yaml ancestry);
+	    do
+		(( total_tests = total_tests + 1 ))
+		prefix="$results_dir/$phenotype_name/$ancestry/SAIGE"
+		comparison_dirs=`find $prefix -maxdepth 1 -name "comparison*" -print`
+		if [[ "$n_comparisons" -eq "1" ]] ; then
+		    if [[ -z "$comparison_dirs" ]] ; then
+			echo "ok - $config_file output dirs look like binary analysis"
+		    else
+			echo "not ok - $config_file output dirs should be binary but look categorical"
+		    fi
+		elif [[ "$n_comparisons" -gt "1" ]] ; then
+		    if [[ `echo "$comparison_dirs" | wc -l` -eq "$n_comparisons" ]] ; then
+			echo "ok - $config_file output dirs have correct number of categorical comparisons"
+		    else
+			echo "not ok - $config_file output dirs have wrong number of comparisons"
+		    fi
+		else
+		    echo "not ok - $config_file comparison count less than 1"
+		fi
+	    done
 	fi
     fi
 done
+echo "1..$total_tests"
