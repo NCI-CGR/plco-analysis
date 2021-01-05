@@ -59,7 +59,7 @@ $(subst .tsv,.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX),$(CATEGORICAL_TARGETS)): $
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/comparison#/*model_matrix
 ## TODO: implement this connection for comparison, along with another, to link up with the final-ids rule
 %.categorical-combined.tsv$(TRACKING_SUCCESS_SUFFIX): $$(addsuffix /$$(subst .categorical-combined.tsv,.sorted.tsv,$$(notdir $$@)),$$(shell find $$(dir $$@) -name "comparison*" -print)) $$(shell find $$(dir $$@)comparison* -name "*.model_matrix" -print)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(SHARED_SOURCE)/combine_categorical_runs.out $(filter %.sorted.tsv,$(subst $(TRACKING_SUCCESS_SUFFIX),,$^)) $(filter %.model_matrix,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),/home/palmercd/Development/combine_categorical_runs/combine_categorical_runs.out $(filter %.sorted.tsv,$(subst $(TRACKING_SUCCESS_SUFFIX),,$^)) $(filter %.model_matrix,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.sorted.tsv$(TRACKING_SUCCESS_SUFFIX)
