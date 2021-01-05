@@ -7,9 +7,9 @@ RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 
 ## acquire targets for methods separately; probably will merge later
 ## only acquire EUR analysis targets until ldsc run is resolved
-SAIGE_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/*saige.tsv" -print)
-BOLT_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/*boltlmm.tsv" -print)
-FASTGWA_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/*fastgwa.tsv" -print)
+SAIGE_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/SAIGE/*saige.tsv" -print)
+BOLT_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/BOLTLMM/*boltlmm.tsv" -print)
+#FASTGWA_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/FASTGWA/*fastgwa.tsv" -print)
 
 ALL_OUTPUT := $(subst .tsv,.ldsc.log$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_TARGETS) $(BOLT_TARGETS) $(FASTGWA_TARGETS))
 
@@ -61,7 +61,7 @@ COMMA := ,
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.ldsc-processed.tsv
-##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.tsv
+##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.tsv
 ## Notes: since their ridiculous "munge_sumstats" script doesn't really munge very well, preprocess data
 ##    to contain signed test statistic, and then just the other columns it expects.
 %.ldsc.ldsc-processed.tsv: %.tsv
