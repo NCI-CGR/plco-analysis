@@ -9,9 +9,13 @@ RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 ## only acquire EUR analysis targets until ldsc run is resolved
 SAIGE_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/SAIGE/*saige.tsv" -print)
 BOLT_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/BOLTLMM/*boltlmm.tsv" -print)
-#FASTGWA_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/FASTGWA/*fastgwa.tsv" -print)
+BOLT_META_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/BOLTLMM/*BOLTLMM.tsv.gz" -print)
+## SAIGE meta-analysis files need different rules for categorical final output files
+SAIGE_CATEGORICAL_META_TARGETS := $(shell find $(RESULTS_DIR) -maxdepth 4 -wholename "*/European/SAIGE/*_o.European.SAIGE.tsv.gz" -print)
+SAIGE_META_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/SAIGE/*SAIGE.tsv.gz" -print)
+SAIGE_OTHER_META_TARGETS := $(shell echo $(SAIGE_META_TARGETS) $(SAIGE_CATEGORICAL_META_TARGETS) | sed 's/ /\n/g' | sort | uniq -u)
 
-ALL_OUTPUT := $(subst .tsv,.ldsc.log$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_TARGETS) $(BOLT_TARGETS) $(FASTGWA_TARGETS))
+ALL_OUTPUT := $(subst .tsv,.ldsc.log$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_TARGETS) $(BOLT_TARGETS)) $(subst .tsv.gz,.ldsc.log$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_CATEGORICAL_META_TARGETS) $(SAIGE_OTHER_META_TARGETS) $(BOLT_META_TARGETS))
 
 ## eventually add to global config
 MUNGE_SUMSTATS := ~/Development/ldsc/munge_sumstats.py
@@ -44,6 +48,16 @@ $(LDSCORE_SUMMARY): $(subst .ldsc.log$(TRACKING_SUCCESS_SUFFIX),.ldsc.report,$(A
 	grep -E "Lambda GC|Intercept" $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | sed 's/:/\t/g' | awk '/Lambda GC/ {printf("%s\t",$$3)} ; /Intercept/ {print $$2"\t"$$3}' >> $@
 
 ## patterns:
+##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report
+##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
+## Notes: pull out GC lambda and ldscore regression intercept into a single line file
+## this rule is intended for SAIGE categorical results embedded in "comparison[0-9]+" subdirectories
+$(subst .tsv,.ldsc.report,$(shell echo $(SAIGE_TARGETS) | sed 's/ /\n/g' | grep comparison)): $$(subst .ldsc.report,.ldsc.log$$(TRACKING_SUCCESS_SUFFIX),$$@)
+	echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(word 4,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log$(TRACKING_SUCCESS_SUFFIX)// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\t%s\t%s\t%s/%s\t", $$3, $$4, $$1, $$5, $$2)}' > $@
+	grep -E "Lambda GC|Intercept" $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | sed 's/:/\t/g' | awk '/Lambda GC/ {printf("%s\t",$$3)} ; /Intercept/ {print $$2"\t"$$3}' >> $@
+
+
+## patterns:
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {ldsc_data_GRCh38}/{CHR}.l2.M_5_50
@@ -66,6 +80,18 @@ COMMA := ,
 ##    to contain signed test statistic, and then just the other columns it expects.
 %.ldsc.ldsc-processed.tsv: %.tsv
 	awk 'NR > 1 {$$7 = $$7 / $$8 ; print $$1":"$$2"\t"$$4"\t"$$5"\t"$$6"\t"$$7"\t"$$9"\t"$$10} ; NR == 1 {print "SNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tSTAT\tP\tN"}' $< > $@
+
+## patterns:
+##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.ldsc-processed.tsv
+##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.tsv.gz
+## Notes: since their ridiculous "munge_sumstats" script doesn't really munge very well, preprocess data
+##    to contain signed test statistic, and then just the other columns it expects. Note also that this
+##    modified rule is designed for meta-analysis summary files
+$(subst .tsv.gz,.ldsc.ldsc-processed.tsv,$(SAIGE_OTHER_META_TARGETS) $(BOLT_META_TARGETS)): $$(subst .ldsc.ldsc-processed.tsv,.tsv.gz,$$@)
+	gunzip -c $< | awk 'NR > 1 {$$7 = $$7 / $$8 ; print $$1":"$$2"\t"$$4"\t"$$5"\t"$$6"\t"$$7"\t"$$9"\t"$$10} ; NR == 1 {print "SNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tSTAT\tP\tN"}' > $@
+
+$(subst .tsv.gz,.ldsc.ldsc-processed.tsv,$(SAIGE_CATEGORICAL_META_TARGETS)): $$(subst .ldsc.ldsc-processed.tsv,.tsv.gz,$$@)
+	Rscript shared-source/parse_categorical_output.R $< $@
 
 ## patterns:
 ##    output: {ldsc_data_GRCh38}/{CHR}.l2.M_5_50
