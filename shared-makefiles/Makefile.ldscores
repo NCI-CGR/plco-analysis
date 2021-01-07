@@ -24,7 +24,7 @@ LD_CHR_GRCh38 := $(subst w_ld_chr/,w_ld_chr_GRCh38/,$(LD_CHR))
 LD_TARGETS := $(patsubst %,$(LD_CHR_GRCh38)%.l2.M_5_50,$(CHRS))
 
 ## final output target with summary information for all analyses in one place
-LDSCORE_SUMMARY := $(RESULTS_DIR)/ldscore_summary.tsv
+LDSCORE_SUMMARY := $(RESULTS_DIR)/ldscore_summary.tsv$(TRACKING_SUCCESS_SUFFIX)
 
 .PHONY: all
 .DELETE_ON_ERROR:
@@ -33,34 +33,40 @@ LDSCORE_SUMMARY := $(RESULTS_DIR)/ldscore_summary.tsv
 all: $(ALL_OUTPUT) $(LDSCORE_SUMMARY)
 
 ## patterns:
-##    output: results/ldscore_summary.tsv
-##    input:  results/{PHENOTYPES}/European/{METHODS}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report
+##    output: results/ldscore_summary.tsv$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPES}/European/{METHODS}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: combine summary results from all runs into a single top-level file
-$(LDSCORE_SUMMARY): $(subst .ldsc.log$(TRACKING_SUCCESS_SUFFIX),.ldsc.report,$(ALL_OUTPUT))
-	cat $^ | sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 | awk 'NR == 1 {print "phenotype\tplatform\tancestry\tmethod\tinflation_factor\tintercept\terror"} ; {print $$0}' | sed 's/(// ; s/)//' > $@
+$(LDSCORE_SUMMARY): $(subst .ldsc.log,.ldsc.report,$(ALL_OUTPUT))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 | awk 'NR == 1 {print "phenotype\tplatform\tancestry\tmethod\tinflation_factor\tintercept\terror"} ; {print $$0}' | sed 's/(// ; s/)//' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report
+##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
+## Notes: postprocessing folded into its own rule from prior version of this rule that combined this step and
+## precursor generation
+%.ldsc.report$(TRACKING_SUCCESS_SUFFIX): %.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX) %.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),grep -E "Lambda GC|Intercept" $(subst $(TRACKING_SUCCESS_SUFFIX),,$(filter-out %.precursor$(TRACKING_SUCCESS_SUFFIX),$^)) | sed 's/:/\t/g' | awk '/Lambda GC/ {printf("%s\t",$$3)} ; /Intercept/ {print $$2"\t"$$3}' | cat $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) - > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+
+## patterns:
+##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: pull out GC lambda and ldscore regression intercept into a single line file
-%.ldsc.report: %.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
-	echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log$(TRACKING_SUCCESS_SUFFIX)// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\t%s\t%s\t%s\t", $$2, $$3, $$1, $$4)}' > $@
-	grep -E "Lambda GC|Intercept" $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | sed 's/:/\t/g' | awk '/Lambda GC/ {printf("%s\t",$$3)} ; /Intercept/ {print $$2"\t"$$3}' >> $@
+%.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX): %.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log$(TRACKING_SUCCESS_SUFFIX)// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\t%s\t%s\t%s\t", $$2, $$3, $$1, $$4)}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report
+##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: pull out GC lambda and ldscore regression intercept into a single line file
 ## this rule is intended for SAIGE categorical results embedded in "comparison[0-9]+" subdirectories
-$(subst .tsv,.ldsc.report,$(shell echo $(SAIGE_TARGETS) | sed 's/ /\n/g' | grep comparison)): $$(subst .ldsc.report,.ldsc.log$$(TRACKING_SUCCESS_SUFFIX),$$@)
-	echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(word 4,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log$(TRACKING_SUCCESS_SUFFIX)// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\t%s\t%s\t%s/%s\t", $$3, $$4, $$1, $$5, $$2)}' > $@
-	grep -E "Lambda GC|Intercept" $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | sed 's/:/\t/g' | awk '/Lambda GC/ {printf("%s\t",$$3)} ; /Intercept/ {print $$2"\t"$$3}' >> $@
-
+$(subst .tsv,.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX),$(shell echo $(SAIGE_TARGETS) | sed 's/ /\n/g' | grep comparison)): $$(subst .ldsc.report.precursor,.ldsc.log,$$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(word 4,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log$(TRACKING_SUCCESS_SUFFIX)// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\t%s\t%s\t%s/%s\t", $$3, $$4, $$1, $$5, $$2)}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX)
-##    input:  {ldsc_data_GRCh38}/{CHR}.l2.M_5_50
+##    input:  {ldsc_data_GRCh38}/{CHR}.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: actually run ldscore regression. Do heritability estimation as they term it on their wiki, then extract the values from the log file
 %.ldsc.log$(TRACKING_SUCCESS_SUFFIX): %.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX) $(LD_TARGETS)
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(LDSC_PY) --h2 $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) --ref-ld-chr $(LD_CHR_GRCh38) --w-ld-chr $(LD_CHR_GRCh38) --out $(subst .log$(TRACKING_SUCCESS_SUFFIX),,$@))
@@ -79,7 +85,7 @@ COMMA := ,
 ## Notes: since their ridiculous "munge_sumstats" script doesn't really munge very well, preprocess data
 ##    to contain signed test statistic, and then just the other columns it expects.
 %.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX): %.tsv
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk 'NR > 1 {$$7 = $$7 / $$8 ; print $$1":"$$2"\t"$$4"\t"$$5"\t"$$6"\t"$$7"\t"$$9"\t"$$10} ; NR == 1 {print "SNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tSTAT\tP\tN"}' $< > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk 'NR > 1 {$$7 = $$7 / $$8 ; print $$1":"$$2"\t"$$4"\t"$$5"\t"$$6"\t"$$7"\t"$$9"\t"$$10} ; NR == 1 {print "SNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tSTAT\tP\tN"}' $< > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX)
@@ -88,7 +94,7 @@ COMMA := ,
 ##    to contain signed test statistic, and then just the other columns it expects. Note also that this
 ##    modified rule is designed for meta-analysis summary files
 $(subst .tsv.gz,.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_OTHER_META_TARGETS) $(BOLT_META_TARGETS)): $$(subst .ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),.tsv.gz,$$@)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk 'NR > 1 {$$7 = $$7 / $$8 ; print $$1":"$$2"\t"$$4"\t"$$5"\t"$$6"\t"$$7"\t"$$9"\t"$$10} ; NR == 1 {print "SNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tSTAT\tP\tN"}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk 'NR > 1 {$$7 = $$7 / $$8 ; print $$1":"$$2"\t"$$4"\t"$$5"\t"$$6"\t"$$7"\t"$$9"\t"$$10} ; NR == 1 {print "SNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tSTAT\tP\tN"}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX)
@@ -98,40 +104,40 @@ $(subst .tsv.gz,.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_OTHER
 ##    modified rule is designed for categorical meta-analysis summary files, in which standard errors
 ##    for the consensus p-value are not available so R is used to reverse engineer them
 $(subst .tsv.gz,.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_CATEGORICAL_META_TARGETS)): $$(subst .ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),.tsv.gz,$$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript shared-source/parse_categorical_output.R $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SHARED_SOURCE)/parse_categorical_output.R $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: {ldsc_data_GRCh38}/{CHR}.l2.M_5_50
-##    input:  {ldsc_data_GRCh38}/{CHR}.l2.ldscore.gz
+##    output: {ldsc_data_GRCh38}/{CHR}.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX)
+##    input:  {ldsc_data_GRCh38}/{CHR}.l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {ldsc_data_GRCh38}
 ## Notes: take a set of ldsc output data and emit the bizarre summary file with a single number, the
 ##    number of variants with MAF >= 5% in the corresponding ldsc file :(
-$(LD_CHR_GRCh38)%.l2.M_5_50: $(LD_CHR_GRCh38)%.l2.ldscore.gz | $$(dir $$@)
-	gunzip -c $< | awk 'NR > 1 && $$5 >= 0.05' | wc -l > $@
+$(LD_CHR_GRCh38)%.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX): $(LD_CHR_GRCh38)%.l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk 'NR > 1 && $$5 >= 0.05' | wc -l > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: {ldsc_data_GRCh38}/{CHR}.l2.ldscore.gz
-##    input:  {ldsc_data_GRCh38}/{CHR}.lifted.bed
+##    output: {ldsc_data_GRCh38}/{CHR}.l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX)
+##    input:  {ldsc_data_GRCh38}/{CHR}.lifted.bed$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {ldsc_data_GRCh38}
 ## Notes: take liftOver output and reformat it back into ldsc compatible format.
-$(LD_CHR_GRCh38)%.l2.ldscore.gz: $(LD_CHR_GRCh38)%.lifted.bed | $$(dir $$@)
-	sed 's/:/\t/g ; s/^chr//' $< | awk 'NR == 1 {print "CHR\tSNP\tBP\tCM\tMAF\tL2"} ; {print $$1"\t"$$1":"$$2+1"\t"$$2+1"\t0\t"$$5"\t"$$6}' | gzip -c > $@
+$(LD_CHR_GRCh38)%.l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX): $(LD_CHR_GRCh38)%.lifted.bed$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),sed 's/:/\t/g ; s/^chr//' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk 'NR == 1 {print "CHR\tSNP\tBP\tCM\tMAF\tL2"} ; {print $$1"\t"$$1":"$$2+1"\t"$$2+1"\t0\t"$$5"\t"$$6}' | gzip -c > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
-##    output: {ldsc_data_GRCh38}/{CHR}.lifted.bed
-##    input:  {ldsc_data_GRCh38}/{CHR}.input.bed
+##    output: {ldsc_data_GRCh38}/{CHR}.lifted.bed$(TRACKING_SUCCESS_SUFFIX)
+##    input:  {ldsc_data_GRCh38}/{CHR}.input.bed$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {ldsc_data_GRCh38}
 ## Notes: run liftOver from 19->38; use hacked bed format to simplify things
-$(LD_CHR_GRCh38)%.lifted.bed: $(LD_CHR_GRCh38)%.input.bed | $$(dir $$@)
-	$(LIFTOVER_EXECUTABLE) $< $(LIFTOVER_19_TO_38) $@ $(subst .bed,$(TRACKING_FAIL_SUFFIX),$@)
+$(LD_CHR_GRCh38)%.lifted.bed$(TRACKING_SUCCESS_SUFFIX): $(LD_CHR_GRCh38)%.input.bed$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(LIFTOVER_EXECUTABLE) $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) $(LIFTOVER_19_TO_38) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.liftover_failure,$@))
 
 ## patterns:
-##    output: {ldsc_data_GRCh38}/{CHR}.input.bed
+##    output: {ldsc_data_GRCh38}/{CHR}.input.bed$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {ldsc_data_GRCh37}/{CHR}.l2.ldscore.gz
 ##    input:  {ldsc_data_GRCh38}
 ## Notes: take old build ldsc data and convert it to hacked bed format for liftOver
-$(LD_CHR_GRCh38)%.input.bed: $$(subst $$(LD_CHR_GRCh38),$$(LD_CHR),$$(subst .input.bed,.l2.ldscore.gz,$$@)) | $$(dir $$@)
-	gunzip -c $< | awk 'NR > 1 {print "chr"$$1"\t"$$3-1"\t"$$3"\t"$$2":"$$5":"$$6}' > $@
+$(LD_CHR_GRCh38)%.input.bed$(TRACKING_SUCCESS_SUFFIX): $$(subst $$(LD_CHR_GRCh38),$$(LD_CHR),$$(subst .input.bed$$(TRACKING_SUCCESS_SUFFIX),.l2.ldscore.gz,$$@)) | $$(dir $$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$$@),gunzip -c $< | awk 'NR > 1 {print "chr"$$1"\t"$$3-1"\t"$$3"\t"$$2":"$$5":"$$6}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {ldsc_data_GRCh38}
