@@ -7,12 +7,12 @@ RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 
 ## acquire targets for methods separately; probably will merge later
 ## only acquire EUR analysis targets until ldsc run is resolved
-SAIGE_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/SAIGE/*saige.tsv" -print)
-BOLT_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/BOLTLMM/*boltlmm.tsv" -print)
-BOLT_META_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/BOLTLMM/*BOLTLMM.tsv.gz" -print)
+SAIGE_TARGETS := $(shell find $(RESULTS_DIR) -path "*/European/SAIGE/*saige.tsv" -print)
+BOLT_TARGETS := $(shell find $(RESULTS_DIR) -path "*/European/BOLTLMM/*boltlmm.tsv" -print)
+BOLT_META_TARGETS := $(shell find $(RESULTS_DIR) -path "*/European/BOLTLMM/*BOLTLMM.tsv.gz" -print)
 ## SAIGE meta-analysis files need different rules for categorical final output files
-SAIGE_CATEGORICAL_META_TARGETS := $(shell find $(RESULTS_DIR) -maxdepth 4 -wholename "*/European/SAIGE/*_o.European.SAIGE.tsv.gz" -print)
-SAIGE_META_TARGETS := $(shell find $(RESULTS_DIR) -wholename "*/European/SAIGE/*SAIGE.tsv.gz" -print)
+SAIGE_CATEGORICAL_META_TARGETS := $(shell find $(RESULTS_DIR) -maxdepth 4 \( -path "*/European/SAIGE/*_o.European.SAIGE.tsv.gz" -o -path "*/European/SAIGE/*_o_female.European.SAIGE.tsv.gz" -o -path "*/European/SAIGE/*_o_male.European.SAIGE.tsv.gz" \) -print)
+SAIGE_META_TARGETS := $(shell find $(RESULTS_DIR) -path "*/European/SAIGE/*SAIGE.tsv.gz" -print)
 SAIGE_OTHER_META_TARGETS := $(shell echo $(SAIGE_META_TARGETS) $(SAIGE_CATEGORICAL_META_TARGETS) | sed 's/ /\n/g' | sort | uniq -u)
 
 ALL_OUTPUT := $(subst .tsv,.ldsc.log$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_TARGETS) $(BOLT_TARGETS)) $(subst .tsv.gz,.ldsc.log$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_CATEGORICAL_META_TARGETS) $(SAIGE_OTHER_META_TARGETS) $(BOLT_META_TARGETS))
