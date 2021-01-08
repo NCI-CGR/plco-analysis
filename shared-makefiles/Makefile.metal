@@ -59,7 +59,7 @@ $(subst .tsv,.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX),$(CATEGORICAL_TARGETS)): $
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/comparison#/*model_matrix
 ## TODO: implement this connection for comparison, along with another, to link up with the final-ids rule
 %.categorical-combined.tsv$(TRACKING_SUCCESS_SUFFIX): $$(addsuffix /$$(subst .categorical-combined.tsv,.sorted.tsv,$$(notdir $$@)),$$(shell find $$(dir $$@) -name "comparison*" -print)) $$(shell find $$(dir $$@)comparison* -name "*.model_matrix" -print)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),/home/palmercd/Development/combine_categorical_runs/combine_categorical_runs.out $(filter %.sorted.tsv,$(subst $(TRACKING_SUCCESS_SUFFIX),,$^)) $(filter %.model_matrix,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(COMBINE_CATEGORICAL_RUNS) $(filter %.sorted.tsv,$(subst $(TRACKING_SUCCESS_SUFFIX),,$^)) $(filter %.model_matrix,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.sorted.tsv$(TRACKING_SUCCESS_SUFFIX)
@@ -102,21 +102,3 @@ $(subst .tsv,1.par$(TRACKING_SUCCESS_SUFFIX),$(shell echo $(ALL_TARGETS) | sed '
 ##        will eventually need to be generalized and added to configuration level
 $(subst .tsv,1.par$(TRACKING_SUCCESS_SUFFIX),$(shell echo $(ALL_TARGETS) | sed 's/ /\n/g' | grep -i saige)): $$(shell find $$(dir $$@) -name "*[e].rawids.tsv" -print)
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo -e "MARKERLABEL SNP\nALLELELABELS Tested_Allele Other_Allele\nEFFECTLABEL BETA\nSTDERRLABEL SE\nFREQLABEL Freq_Tested_Allele_in_TOPMed\nCUSTOMVARIABLE TotalSampleSize\nLABEL TotalSampleSize as N\nCUSTOMVARIABLE CaseCount\nLABEL CaseCount as Ncases\nCUSTOMVARIABLE ControlCount\nLABEL ControlCount as Ncontrols\nSCHEME STDERR\nGENOMICCONTROL ON\nAVERAGEFREQ ON\nMINMAXFREQ ON\n$(patsubst %,PROCESSFILE %\n,$^)OUTFILE $(subst 1.par$(TRACKING_SUCCESS_SUFFIX),,$@) .raw.tsv\nANALYZE HETEROGENEITY\nQUIT" > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
-
-
-
-
-
-
-
-#$(subst .tsv,1.par,$(CATEGORICAL_TARGETS)): $$(foreach target,$$(shell find $$(dir $$@) -name "*saige.rawids.tsv" -print),$$(if $$(shell echo $$(target) | grep -E "*/comparison[1-9]+/*"),$$(firstword $$(subst /comparison,/ ,$$(target)))$$(notdir $$(target)),$$(target)))
-#	echo -e "MARKERLABEL SNP\nALLELELABELS Tested_Allele Other_Allele\nEFFECTLABEL BETA\nSTDERRLABEL SE\nWEIGHTLABEL N\nFREQLABEL Freq_Tested_Allele_in_TOPMed\nCUSTOMVARIABLE TotalSampleSize\nLABEL TotalSampleSize as N\nSCHEME SAMPLESIZE\nGENOMICCONTROL ON\nAVERAGEFREQ ON\nMINMAXFREQ ON\n$(patsubst %,PROCESSFILE %\n,$^)OUTFILE $(subst 1.par,,$@) .raw.tsv\nANALYZE HETEROGENEITY\nQUIT" > $@
-
-#$(sort $(foreach target,$(sort $(dir $(CATEGORICAL_TARGETS))),$(shell find $(target) -name "*saige.rawids.tsv" -print | awk '/SAIGE\/comparison/' | sed -E 's/^(.*)\/comparison[0-9]+\/(.*)$$/\1\/\2/'))): $$(shell find $$(dir $$@)comparison* -name "$$(notdir $$@)" -print) $$(shell find $$(dir $$@)comparison* -name "$$(subst .rawids.tsv,.model_matrix,$$(notdir $$@))" -print)
-#	$(eval EFFECTIVE_N := $(shell cat $(filter %.model_matrix,$^) | awk '! /FID/ {print $$2}' | sort | uniq | wc -l))
-#	if [[ "$(words $(filter-out %.model_matrix,$^))" == "1" ]] ; then ; \
-#	ln -fs $< $@ ; \
-#	else \
-#	$(SHARED_SOURCE)/combine_categorical_runs.out $^ $@ $(EFFECTIVE_N) ; \
-#	fi
-
