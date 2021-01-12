@@ -51,6 +51,7 @@ remap.p.values <- function(input.p,
 
 render.qq.plot <- function(raw.data,
                            pval.col.header,
+                           y.max,
                            qq.sim.nsims,
                            qq.sim.npoints,
                            output.filestem) {
@@ -141,6 +142,7 @@ compute.manhattan.settings <- function(raw.data,
                                        chr.col.header,
                                        pos.col.header,
                                        rsid.col.header,
+                                       pval.col.header,
                                        snp.color.one,
                                        snp.color.two,
                                        prev.loci.color,
@@ -162,7 +164,7 @@ compute.manhattan.settings <- function(raw.data,
     prev.hits <- read.table(filename.prev.hits, header = FALSE)
     prev.hits[, 1] <- as.vector(prev.hits[, 1], mode = "character")
     prev.hits[, 2] <- as.vector(prev.hits[, 2], mode = "character")
-    for (i in seq_len(prev.hits)) {
+    for (i in seq_len(nrow(prev.hits))) {
       snp <- prev.hits[i, 1]
       snp.label <- prev.hits[i, 2]
       print(paste("annotating snp ", snp, sep = ""))
@@ -230,10 +232,10 @@ compute.manhattan.settings <- function(raw.data,
     }
   }
   list(
-    snp.labels,
-    snp.label.x.positions,
-    snp.label.y.positions,
-    all.colors
+    snp.labels = snp.labels,
+    snp.label.x.positions = snp.label.x.positions,
+    snp.label.y.positions = snp.label.y.positions,
+    all.colors = all.colors
   )
 }
 
@@ -251,11 +253,18 @@ render.manhattan.plot <- function(raw.data,
                                   y.max,
                                   filename.prev.hits,
                                   filename.novel.hits,
+                                  write.locus.labels,
                                   snp.labels,
                                   snp.label.x.positions,
                                   snp.label.y.positions,
                                   output.filestem) {
   print(paste("rendering manhattan plot"))
+  print(head(raw.data))
+  print(pos.col.header)
+  print(pval.col.header)
+  print(length(all.colors))
+  print(head(all.colors))
+  print("constructing overall dataset")
   manhattan.data <- data.frame(
     x = raw.data[, pos.col.header],
     y = raw.data[, pval.col.header],
@@ -327,6 +336,7 @@ render.manhattan.plot <- function(raw.data,
   my.plot <- my.plot + ggplot2::scale_y_continuous(breaks = 0:y.max)
 
   if (!is.na(filename.novel.hits)) {
+    print("constructing novel hit data")
     novel.hit.data <- data.frame(
       x = raw.data[, pos.col.header][all.colors == novel.loci.color],
       y = raw.data[, pval.col.header][all.colors == novel.loci.color]
@@ -340,6 +350,7 @@ render.manhattan.plot <- function(raw.data,
     )
   }
   if (!is.na(filename.prev.hits)) {
+    print("constructing previous hit data")
     prev.hit.data <- data.frame(
       x = raw.data[, pos.col.header][all.colors == prev.loci.color],
       y = raw.data[, pval.col.header][all.colors == prev.loci.color]
@@ -363,6 +374,7 @@ render.manhattan.plot <- function(raw.data,
   ggsave(paste(output.filestem, ".manhattan.jpg", sep = ""),
     plot = my.plot, height = 10, width = 16 / 9 * 10, units = "in"
   )
+  print("all done")
 }
 
 manhattan.coded.hits <- function(filename.pvals,
@@ -521,6 +533,7 @@ manhattan.coded.hits <- function(filename.pvals,
       chr.col.header,
       pos.col.header,
       rsid.col.header,
+      pval.col.header,
       snp.color.one,
       snp.color.two,
       prev.loci.color,
@@ -529,10 +542,10 @@ manhattan.coded.hits <- function(filename.pvals,
       filename.novel.hits,
       locus.width
     )
-    snp.labels <- manhattan.settings@snp.labels
-    snp.label.x.positions <- manhattan.settings@snp.label.x.positions
-    snp.label.y.positions <- manhattan.settings@snp.label.y.positions
-    all.colors <- manhattan.settings@all.colors
+    snp.labels <- manhattan.settings[["snp.labels"]]
+    snp.label.x.positions <- manhattan.settings[["snp.label.x.positions"]]
+    snp.label.y.positions <- manhattan.settings[["snp.label.y.positions"]]
+    all.colors <- manhattan.settings[["all.colors"]]
   }
 
   ## get confidence bounds for qq plot
@@ -540,6 +553,7 @@ manhattan.coded.hits <- function(filename.pvals,
   render.qq.plot(
     raw.data,
     pval.col.header,
+    y.max,
     qq.sim.nsims,
     qq.sim.npoints,
     output.filestem
@@ -560,6 +574,7 @@ manhattan.coded.hits <- function(filename.pvals,
       y.max,
       filename.prev.hits,
       filename.novel.hits,
+      write.locus.labels,
       snp.labels,
       snp.label.x.positions,
       snp.label.y.positions,

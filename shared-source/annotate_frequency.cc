@@ -82,9 +82,9 @@ class freq_handler {
     if (_input) delete _input;
   }
   void initialize(const std::string &supercontinent) {
-    _input = reconcile_reader(_filename);
+    _input = fileinterface::reconcile_reader(_filename);
     std::string line = "", id = "";
-    if (!_input->getline(line))
+    if (!_input->getline(&line))
       throw std::domain_error("no header available from file \"" + _filename +
                               "\"");
     std::istringstream strm1(line);
@@ -131,7 +131,7 @@ bool freq_handler::align(unsigned chr, unsigned pos, const std::string &id) {
   bool dup_position_failure = false;
   if (!_input) throw std::domain_error("align called on null input pointer");
   while (next_chr < chr || (next_chr == chr && next_pos <= pos)) {
-    if (!_input->getline(line)) break;
+    if (!_input->getline(&line)) break;
     std::istringstream strm1(line);
     if (!(strm1 >> catcher >> next_chr >> next_pos >> ref >> alt)) {
       throw std::domain_error("cannot parse frequency file \"" + _filename +
@@ -153,12 +153,28 @@ bool freq_handler::align(unsigned chr, unsigned pos, const std::string &id) {
       _freq.at(0) = freq;
       return true;
     }
-    if (next_chr == chr && next_pos == pos) dup_position_failure = true;
+    if (next_chr == chr && next_pos == pos) {
+      dup_position_failure = true;
+    }
   }
+  /*
+    this condition was added to detect situations in which multiallelics were
+    split and ordered in such a way that you could reasonably miss one of the
+    alternates because your input file's ordering differed from that of the
+    reference file. this then promptly never came up as an issue during the
+    entire first imputation round with PLCO. it has however come up as an issue
+    for the second round. i don't think the severity of the issue will be
+    very high? for the moment, going to change this to emit a warning message
+    to better evaluate the number of possible instances of this being a problem
+
+    I think overriding the error is fine because the logic seems to indicate
+    that the issue will just introduce sporadic NA frequencies where in fact
+    some data were available. but compared to the total number of variants,
+    this really isn't much of a problem; and the code should still run...
+  */
   if (dup_position_failure)
-    throw std::domain_error(
-        "duplicate position logic failure detected, query " +
-        to_string<unsigned>(chr) + " " + to_string<unsigned>(pos));
+    std::cerr << "warning: possible multiallelic sorting issue for chr " << chr
+              << " pos " << pos << std::endl;
   return false;
 }
 
@@ -229,9 +245,9 @@ void process_file(const std::string &input_filename,
   try {
     input = fileinterface::reconcile_reader(input_filename);
     output = fileinterface::reconcile_writer(output_filename);
-    input->getline(line);
+    input->getline(&line);
     output->writeline(line);
-    while (input->getline(line)) {
+    while (input->getline(&line)) {
       ++total_input;
       std::istringstream strm1(line);
       if (!(strm1 >> chr >> pos >> id >> a1 >> a2 >> catcher >> beta >> se >>
@@ -239,7 +255,7 @@ void process_file(const std::string &input_filename,
         throw std::domain_error("cannot parse file \"" + input_filename +
                                 "\" line \"" + line + "\"");
       std::ostringstream o;
-      if (freq.find(chr, pos, id, a2, a1, updated_freq)) {
+      if (freq.find(chr, pos, id, a2, a1, &updated_freq)) {
         ++mapped_input;
         if (!(o << chr << '\t' << pos << '\t' << id << '\t' << a1 << '\t' << a2
                 << '\t' << updated_freq << '\t' << beta << '\t' << se << '\t'

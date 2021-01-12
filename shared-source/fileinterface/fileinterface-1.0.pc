@@ -1,4 +1,4 @@
-prefix=/usr/local
+prefix=/mnt/nfs/gigantor/ifs/DCEG/CGF/GWAS/Scans/PLCO/builds/1/plco-analysis/shared-source/fileinterface
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include

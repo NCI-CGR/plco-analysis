@@ -9,10 +9,10 @@ RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
 
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config.yaml)
-## empirical approximate minimum subject count, specific to fastGWA
+## empirical approximate minimum subject count, specific to plink
 MINIMUM_VALID_SUBJECT_COUNT := $(PLINK_MINIMUM_VALID_SUBJECT_COUNT)
-## construct analysis targets for all config entries that request fastGWA
-ANALYSIS_RESULTS_PLINK := $(addprefix $(RESULTS_DIR)/,$(foreach config,$(ANALYSIS_CONFIGS),$(shell $(SHARED_SOURCE)/construct_output_filenames.bash $(config) plink $(MINIMUM_VALID_SUBJECT_COUNT) $(IMPUTED_DIR) $(RESULTS_DIR) $(PHENOTYPE_FILENAME) $(SHARED_SOURCE)/extract_columns.bash $(PHENOTYPE_DATASET_TRACKER_SUFFIX) $(FREQUENCY_MODE_TRACKER_SUFFIX) $(ID_MODE_TRACKER_SUFFIX) $(PHENOTYPE_NAME_TRACKER_SUFFIX) $(COVARIATE_NAME_TRACKER_SUFFIX) NA $(TRANSFORMATION_TRACKER_SUFFIX) $(SEX_SPECIFIC_TRACKER_SUFFIX) $(FINALIZATION_TRACKER_SUFFIX) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),1,0) $(if $(findstring n,$(firstword -$(MAKEFLAGS))),1,0))))
+## construct analysis targets for all config entries that request plink
+ANALYSIS_RESULTS_PLINK := $(foreach config,$(ANALYSIS_CONFIGS),$(shell $(INITIALIZE_OUTPUT_DIRECTORIES) -e $(EXTENSION_CONFIG) -p $(config) -D $(PHENOTYPE_FILENAME) -I plco_id -b $(IMPUTED_DIR) -r $(RESULTS_DIR) -s plink -N $(MINIMUM_VALID_SUBJECT_COUNT) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),-B,)))
 
 ANALYSIS_RESULTS_PLINK_TRUNCATED := $(subst .assoc.logistic,,$(subst .assoc.linear,,$(ANALYSIS_RESULTS_PLINK)))
 

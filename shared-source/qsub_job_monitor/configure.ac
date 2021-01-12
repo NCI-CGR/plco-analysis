@@ -5,7 +5,7 @@ AC_PREREQ([2.69])
 AC_INIT(qsub_job_monitor, 1.0, palmercd@nih.gov)
 AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([-Wall -Werror subdir-objects])
-AM_SILENT_RULES([yes])
+AM_SILENT_RULES([no])
 AM_PROG_AR
 LT_INIT
 AC_CONFIG_SRCDIR([qsub_job_monitor/main.cc])
@@ -32,7 +32,7 @@ AX_BOOST_BASE([1.71.0],[found the thing],[did not find the thing])
 #	    [AX_PTHREAD]) #([CFLAGS=$CFLAGS $PTHREAD_CFLAGS])
 #fi
 
-#AX_CXX_COMPILE_STDCXX_11([ext], [optional])
+AX_CXX_COMPILE_STDCXX_17([noext], [mandatory])
 
 # Checks for libraries.
 
