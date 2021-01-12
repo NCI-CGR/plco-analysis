@@ -36,8 +36,9 @@ all: $(ALL_OUTPUT) $(LDSCORE_SUMMARY)
 ##    output: results/ldscore_summary.tsv$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPES}/European/{METHODS}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: combine summary results from all runs into a single top-level file
+COMMA := ,
 $(LDSCORE_SUMMARY): $(subst .ldsc.log,.ldsc.report,$(ALL_OUTPUT))
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | sort -k 1,1 -k 2,2 -k 3,3 -k 4,4 | awk 'NR == 1 {print "phenotype\tplatform\tancestry\tmethod\tinflation_factor\tintercept\terror"} ; {print $$0}' | sed 's/(// ; s/)//' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | sort -k 1$(COMMA)1 -k 2$(COMMA)2 -k 3$(COMMA)3 -k 4$(COMMA)4 | awk 'NR == 1 {print "phenotype\tplatform\tancestry\tmethod\tinflation_factor\tintercept\terror"} ; {print $$0}' | sed 's/(// ; s/)//' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report$(TRACKING_SUCCESS_SUFFIX)
@@ -59,7 +60,33 @@ $(LDSCORE_SUMMARY): $(subst .ldsc.log,.ldsc.report,$(ALL_OUTPUT))
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: pull out GC lambda and ldscore regression intercept into a single line file
-## this rule is intended for SAIGE categorical results embedded in "comparison[0-9]+" subdirectories
+## this rule is intended for meta-analysis files not part of categorical data analysis
+$(subst .tsv.gz,.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX),$(shell echo "$(SAIGE_OTHER_META_TARGETS) $(BOLT_META_TARGETS)" | sed 's/ /\n/g' | grep -v comparison)): $$(subst .ldsc.report.precursor,.ldsc.log,$$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log$(TRACKING_SUCCESS_SUFFIX)// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\tmeta\t%s\t%s\t", $$2, $$1, tolower($$4))}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+
+
+## patterns:
+##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
+## Notes: pull out GC lambda and ldscore regression intercept into a single line file
+## this rule is intended for meta-analysis files part of categorical data analysis
+$(subst .tsv.gz,.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX),$(shell echo "$(SAIGE_OTHER_META_TARGETS)" | sed 's/ /\n/g' | grep comparison)): $$(subst .ldsc.report.precursor,.ldsc.log,$$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(word 4,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log$(TRACKING_SUCCESS_SUFFIX)// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\tmeta-%s\t%s\t%s\t", $$3, $$2, $$1, tolower($$5))}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+
+## patterns:
+##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
+## Notes: pull out GC lambda and ldscore regression intercept into a single line file
+## this rule is intended for meta-analysis files that are combined from categorical data comparisons with Bonferroni
+$(subst .tsv.gz,.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_CATEGORICAL_META_TARGETS)): $$(subst .ldsc.report.precursor,.ldsc.log,$$@)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log$(TRACKING_SUCCESS_SUFFIX)// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\tmeta-all-categories\t%s\t%s\t", $$2, $$1, tolower($$4))}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+
+
+## patterns:
+##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX)
+##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.log$(TRACKING_SUCCESS_SUFFIX)
+## Notes: pull out GC lambda and ldscore regression intercept into a single line file
+## this rule is intended for SAIGE non-meta categorical results embedded in "comparison[0-9]+" subdirectories
 $(subst .tsv,.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX),$(shell echo $(SAIGE_TARGETS) | sed 's/ /\n/g' | grep comparison)): $$(subst .ldsc.report.precursor,.ldsc.log,$$@)
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo "$(word 2,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(word 4,$(subst /, ,$(subst $(RESULTS_DIR),,$(dir $<)))) $(notdir $<)" | sed 's/.ldsc.log$(TRACKING_SUCCESS_SUFFIX)// ; s/\./\t/ ; s/\./\t/' | awk '{printf("%s\t%s\t%s\t%s/%s\t", $$3, $$4, $$1, $$5, $$2)}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
@@ -75,7 +102,6 @@ $(subst .tsv,.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX),$(shell echo $(SAI
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: run their ridiculous "munge_sumstats" script to get the analysis results in a format ldsc accepts
-COMMA := ,
 %.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX): %.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX)
 	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MUNGE_SUMSTATS) --signed-sumstats STAT$(COMMA)0 --out $(subst .sumstats.gz$(TRACKING_SUCCESS_SUFFIX),,$@) --a1-inc --frq Freq_Tested_Allele_in_TOPMed --N-col N --a1 Tested_Allele --a2 Other_Allele --snp SNP --sumstats $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) --p P)
 
