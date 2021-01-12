@@ -1,4 +1,4 @@
-prefix=/mnt/nfs/gigantor/ifs/DCEG/CGF/GWAS/Scans/PLCO/builds/1/plco-analysis/shared-source
+prefix=/mnt/nfs/gigantor/ifs/DCEG/CGF/GWAS/Scans/PLCO/builds/1/plco-analysis/shared-source/qsub_job_monitor
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
