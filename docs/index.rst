@@ -10,6 +10,14 @@ Welcome to plco-analysis's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   Installation
+   Preprocessing
+   Primary Analysis
+   Meta-Analysis
+   Postprocessing
+   Globus Distribution
+   User Vignette
+   Advanced Development Notes
 
 
 Indices and tables
