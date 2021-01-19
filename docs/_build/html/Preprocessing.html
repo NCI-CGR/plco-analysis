@@ -14,8 +14,8 @@
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="&lt;no title&gt;" href="Primary%20Analysis.html" />
-    <link rel="prev" title="&lt;no title&gt;" href="Installation.html" />
+    <link rel="next" title="Primary Analysis" href="Primary%20Analysis.html" />
+    <link rel="prev" title="Installation" href="Installation.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
   
@@ -38,10 +38,9 @@
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>This content should provide an overview of the one-time steps you’ll need to perform when running this pipeline for the first time
 on a given chip or imputation build. You do not need to run this multiple times for the same build! This should save you lots of time.</p>
-<p>:: <span class="target" id="relatedness-pipeline">relatedness pipeline</span>:
-Relatedness
-~~~~~~~~~~~</p>
-<p>Relatedness estimation is primarily required as an intermediate in the ancestry estimation process using <a href="#id1"><span class="problematic" id="id2">graf_</span></a>. The files are stored
+<div class="section" id="relatedness">
+<span id="relatedness-pipeline"></span><h3>Relatedness<a class="headerlink" href="#relatedness" title="Permalink to this headline">¶</a></h3>
+<p>Relatedness estimation is primarily required as an intermediate in the ancestry estimation process using <a class="reference external" href="https://github.com/ncbi/graf">graf</a>. The files are stored
 and can be used for other QC reasons of course; see <cite>relatedness/PLCO_{chip_name}.relatedness.txt</cite> for relevant output files in standard
 graf format.</p>
 <ul class="simple">
@@ -53,21 +52,19 @@ graf format.</p>
 </li>
 <li><p>Assumptions:</p>
 <ul>
-<li><p>input chip data are in <a href="#id3"><span class="problematic" id="id4">plink_</span></a> bed/bim/fam format</p></li>
+<li><p>input chip data are in <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> bed/bim/fam format</p></li>
 <li><p>variant annotations are in GRCh38</p></li>
 </ul>
 </li>
 </ul>
-<p>:: _graf: <a class="reference external" href="https://github.com/ncbi/graf">https://github.com/ncbi/graf</a>
-:: _plink: <a class="reference external" href="https://www.cog-genomics.org/plink/">https://www.cog-genomics.org/plink/</a></p>
-<p>:: <span class="target" id="ancestry-pipeline">ancestry pipeline</span>:
-Ancestry Estimation
-~~~~~~~~~~~~~~~~~~~</p>
-<p>Ancestry estimation is required for chip processing and various sanity checks. As with relatedness, this is computed with <a href="#id5"><span class="problematic" id="id6">graf_</span></a>. The files
+</div>
+<div class="section" id="ancestry-estimation">
+<span id="ancestry-pipeline"></span><h3>Ancestry Estimation<a class="headerlink" href="#ancestry-estimation" title="Permalink to this headline">¶</a></h3>
+<p>Ancestry estimation is required for chip processing and various sanity checks. As with relatedness, this is computed with <a class="reference external" href="https://github.com/ncbi/graf">graf</a>. The files
 are stored and can be used for various QC purposes; see <cite>ancestry/PLCO_{chip_name}.graf_estimates.txt</cite>.</p>
 <p>Note that the final ancestry calls listed above are modified according to the consensus instructions of the “Atlas” analysis group.
-Subjects from the default “African” <a href="#id7"><span class="problematic" id="id8">graf_</span></a> ancestry are merged into the “African American” label to more consistently represent
-the sampling distribution of the PLCO project. Subjects from the default “Other Asian or Pacific Islander” <a href="#id9"><span class="problematic" id="id10">graf_</span></a> ancestry are merged
+Subjects from the default “African” <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry are merged into the “African American” label to more consistently represent
+the sampling distribution of the PLCO project. Subjects from the default “Other Asian or Pacific Islander” <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry are merged
 into the “East Asian” label according to the instructions of collaborators.</p>
 <ul class="simple">
 <li><p>Usage: <cite>make ancestry</cite></p></li>
@@ -83,23 +80,21 @@ into the “East Asian” label according to the instructions of collaborators.<
 </ul>
 </li>
 </ul>
-<p>::<span class="target" id="cleaned-chip-by-ancestry-pipeline">cleaned chip by ancestry pipeline</span>:
-Genotype Cleaning by Ancestry
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</p>
-<p>The PLCO chip freeze provides five files: one for each platform (GSA, Oncoarray, OmniX, Omni25, Omni5), with each <a href="#id11"><span class="problematic" id="id12">graf_</span></a> ancestry group
-combined into a single <a href="#id13"><span class="problematic" id="id14">plink_</span></a> bed/bim/fam dataset. These files need to be processed and cleaned with the following aims:</p>
+</div>
+<div class="section" id="genotype-cleaning-by-ancestry">
+<span id="cleaned-chip-by-ancestry-pipeline"></span><h3>Genotype Cleaning by Ancestry<a class="headerlink" href="#genotype-cleaning-by-ancestry" title="Permalink to this headline">¶</a></h3>
+<p>The PLCO chip freeze provides five files: one for each platform (GSA, Oncoarray, OmniX, Omni25, Omni5), with each <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry group
+combined into a single <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> bed/bim/fam dataset. These files need to be processed and cleaned with the following aims:</p>
 <ul class="simple">
 <li><p>GWAS chip cleaning must take place on a per-ancestry level. This pipeline does not assume this step has been correctly handled,
 and will apply such cleaning as is minimally required for successful execution</p></li>
-<li><p>Individual <a href="#id15"><span class="problematic" id="id16">plink_</span></a> files by ancestry/platform are required for certain downstream processing steps</p></li>
+<li><p>Individual <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> files by ancestry/platform are required for certain downstream processing steps</p></li>
 <li><p>PCA estimation by ancestry/platform are required for certain downstream association steps</p></li>
 <li><p>An intermediate of PCA and IBS/IBD estimation, LD pruned genotypes by ancestry/platform, are required for certain downstream
 processing steps</p></li>
 </ul>
-<p>Note that some of these files and calculations, such as <a class="reference internal" href="#heterozygosity-outliers">heterozygosity outliers</a> and <a class="reference internal" href="#ibs-ibd-estimates">IBS/IBD estimates</a>, are not directly
+<p>Note that some of these files and calculations, such as <a class="reference external" href="https://www.cog-genomics.org/plink/1.9/basic_stats#ibc">heterozygosity outliers</a> and <a class="reference external" href="https://www.cog-genomics.org/plink/1.9/ibd">IBS/IBD estimates</a>, are not directly
 used by the pipeline in its current form but were useful in the processing of the PLCO chip freeze, and are included for posterity.</p>
-<p>:: <span class="target" id="heterozygosity-outliers">heterozygosity outliers</span>: <a class="reference external" href="https://www.cog-genomics.org/plink/1.9/basic_stats#ibc">https://www.cog-genomics.org/plink/1.9/basic_stats#ibc</a>
-:: <span class="target" id="ibs-ibd-estimates">IBS/IBD estimates</span>: <a class="reference external" href="https://www.cog-genomics.org/plink/1.9/ibd">https://www.cog-genomics.org/plink/1.9/ibd</a></p>
 <ul class="simple">
 <li><p>Usage: <cite>make cleaned-chips-by-ancestry</cite></p></li>
 <li><p>Dependencies:</p>
@@ -110,7 +105,7 @@ used by the pipeline in its current form but were useful in the processing of th
 </li>
 <li><p>Assumptions:</p>
 <ul>
-<li><p>same as <a href="#id17"><span class="problematic" id="id18">ancestry_</span></a> pipeline</p></li>
+<li><p>same as <a class="reference internal" href="#ancestry-pipeline">ancestry pipeline</a></p></li>
 <li><p>this was developed separately from the rest of the pipeline and folded in later. thus there exist some redundancies
 between this and other aspects of the pipeline that might be refactored out in later development. this is also one
 of the oldest of the subpipelines, so structurally it differs from some of the other pipelines. nevertheless the
@@ -124,21 +119,16 @@ method is implemented here. if there’s interest, this might be the place to do
 </ul>
 </li>
 </ul>
-<p>:: <span class="target" id="bgen-pipeline">bgen_pipeline</span>:
-Imputed Data Reformatting
-~~~~~~~~~~~~~~~~~~~~~~~~~</p>
-<p>PLCO uses imputed data files from <a href="#id19"><span class="problematic" id="id20">minimac4_</span></a> from the <a class="reference internal" href="#michigan-imputation-server">Michigan Imputation Server</a>. These files come in a standard VCF +
+</div>
+<div class="section" id="imputed-data-reformatting">
+<span id="bgen-pipeline"></span><h3>Imputed Data Reformatting<a class="headerlink" href="#imputed-data-reformatting" title="Permalink to this headline">¶</a></h3>
+<p>PLCO uses imputed data files from <a class="reference external" href="https://genome.sph.umich.edu/wiki/Minimac4">minimac4</a> from the <a class="reference external" href="https://imputationserver.sph.umich.edu/index.html">Michigan Imputation Server</a>. These files come in a standard VCF +
 annotation format; the pipeline further assumes that post-imputation (Rsq-based) QC has been applied to the files, and you’re
 working with something like an imputed data freeze.</p>
 <p>Association tools sometimes handle VCF format input, but often offer speed improvements when operating on other formats.
-Thus, based on the tools requested during the initial “Atlas” testing phase, the format <a href="#id21"><span class="problematic" id="id22">bgen_</span></a> has been selected as a common
+Thus, based on the tools requested during the initial “Atlas” testing phase, the format <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> has been selected as a common
 analysis format for all tools. Imputed data files for each platform/ancestry combination are generated once per dataset,
 and then used as fixed input for all association testing.</p>
-<p>:: _minimac4: <a class="reference external" href="https://genome.sph.umich.edu/wiki/Minimac4">https://genome.sph.umich.edu/wiki/Minimac4</a>
-:: <span class="target" id="michigan-imputation-server">Michigan Imputation Server</span>: <a class="reference external" href="https://imputationserver.sph.umich.edu/index.html">https://imputationserver.sph.umich.edu/index.html</a>
-:: _bgen: <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">https://www.well.ox.ac.uk/~gav/bgen_format/</a>
-:: _saige: <a class="reference external" href="https://github.com/weizhouUMICH/SAIGE">https://github.com/weizhouUMICH/SAIGE</a>
-:: _bolt-lmm: <a class="reference external" href="https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html">https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html</a></p>
 <ul class="simple">
 <li><p>Usage: <cite>make bgen</cite></p></li>
 <li><p>Dependencies:</p>
@@ -149,22 +139,21 @@ and then used as fixed input for all association testing.</p>
 </li>
 <li><p>Assumptions:</p>
 <ul>
-<li><p>currently <a href="#id23"><span class="problematic" id="id24">saige_</span></a> and <a href="#id25"><span class="problematic" id="id26">bolt-lmm_</span></a> use <a href="#id27"><span class="problematic" id="id28">bgen_</span></a> as an input format. if you’re not using those tools, or another that accepts
-<a href="#id29"><span class="problematic" id="id30">bgen_</span></a> input, then there’s no reason to run this pipeline and waste a ton of hard drive space</p></li>
-<li><p>the <a href="#id31"><span class="problematic" id="id32">bgen_</span></a> format in use here is v1.2, based on <a href="#id33"><span class="problematic" id="id34">bolt-lmm_</span></a> documentation and other software support suggesting that
+<li><p>currently <a class="reference external" href="https://github.com/weizhouUMICH/SAIGE">saige</a> and <a class="reference external" href="https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html">bolt-lmm</a> use <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> as an input format. if you’re not using those tools, or another that accepts
+<a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> input, then there’s no reason to run this pipeline and waste a ton of hard drive space</p></li>
+<li><p>the <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> format in use here is v1.2, based on <a class="reference external" href="https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html">bolt-lmm</a> documentation and other software support suggesting that
 that’s the most efficient version accepted by all current tools. this may need to be changed in the future</p></li>
-<li><p>the <a href="#id35"><span class="problematic" id="id36">bgen_</span></a> reformatting process is conducted using <a href="#id37"><span class="problematic" id="id38">plink_</span></a>. the resultant <cite>*.sample</cite> files are slightly malformatted,
+<li><p>the <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> reformatting process is conducted using <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a>. the resultant <cite>*.sample</cite> files are slightly malformatted,
 and so an additional step fixes the included <cite>NA</cite> values by setting them to <cite>0</cite>. this could well be changed in
 a future version depending on upstream behavior</p></li>
 </ul>
 </li>
 </ul>
-<p>:: <span class="target" id="genomes-pipeline">1000 Genomes pipeline</span>:
-1000 Genomes Reference Data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~</p>
-<p>Certain pipelines (see below) use derived information from the <a class="reference internal" href="#genomes-project">1000 Genomes Project</a>. This is (always?) split
+</div>
+<div class="section" id="genomes-reference-data">
+<span id="genomes-pipeline"></span><h3>1000 Genomes Reference Data<a class="headerlink" href="#genomes-reference-data" title="Permalink to this headline">¶</a></h3>
+<p>Certain pipelines (see below) use derived information from the <a class="reference external" href="https://www.internationalgenome.org">1000 Genomes Project</a>. This is (always?) split
 by supercontinent.</p>
-<p>:: <span class="target" id="genomes-project">1000 Genomes Project</span>: <a class="reference external" href="https://www.internationalgenome.org">https://www.internationalgenome.org</a></p>
 <ul class="simple">
 <li><p>Usage: <cite>make 1KG_files</cite></p></li>
 <li><p>Dependencies:</p>
@@ -182,13 +171,12 @@ if you really want</p></li>
 </ul>
 </li>
 </ul>
-<p>:: <span class="target" id="ldsc-pipeline">ldsc pipeline</span>:
-LD Score/BOLT Reference Files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</p>
-<p><a href="#id39"><span class="problematic" id="id40">ldsc_</span></a> and <a href="#id41"><span class="problematic" id="id42">bolt-lmm_</span></a> use data files derived from 1000 Genomes reference supercontinental data. Though some standard
+</div>
+<div class="section" id="ld-score-bolt-reference-files">
+<span id="ldsc-pipeline"></span><h3>LD Score/BOLT Reference Files<a class="headerlink" href="#ld-score-bolt-reference-files" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a> and <a class="reference external" href="https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html">bolt-lmm</a> use data files derived from 1000 Genomes reference supercontinental data. Though some standard
 reference data are provided in these packages (at least at time of initial download), that information only
 covered European subjects, and more generalized data were/are needed.</p>
-<p>:: _ldsc: <a class="reference external" href="https://github.com/bulik/ldsc">https://github.com/bulik/ldsc</a></p>
 <ul class="simple">
 <li><p>Usage: <cite>make ldsc</cite></p></li>
 <li><p>Dependencies:</p>
@@ -199,8 +187,8 @@ covered European subjects, and more generalized data were/are needed.</p>
 </li>
 <li><p>Assumptions:</p>
 <ul>
-<li><p>the reference files included with <a href="#id43"><span class="problematic" id="id44">bolt-lmm_</span></a> have a description of (in theory) how they were generated, but when you
-actually run <a href="#id45"><span class="problematic" id="id46">ldsc_</span></a> you find that none of the output matches the included reference files exactly. this is probably
+<li><p>the reference files included with <a class="reference external" href="https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html">bolt-lmm</a> have a description of (in theory) how they were generated, but when you
+actually run <a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a> you find that none of the output matches the included reference files exactly. this is probably
 some sort of weird versioning issue. regardless, this pipeline just hacks the result into submission. that results
 in some discrepancies from the stock reference files, but there’s no indication of exactly which subjects/variants
 were used for those files, so that’s not unexpected. basically: ymmv</p></li>
@@ -210,6 +198,7 @@ that this reference group will be appropriate for a given set of African America
 </ul>
 </li>
 </ul>
+</div>
 </div>
 </div>
 
@@ -232,18 +221,25 @@ that this reference group will be appropriate for a given set of African America
 <h3>Navigation</h3>
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Preprocessing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="Primary%20Analysis.html">Primary Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Meta-Analysis.html">Meta-Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Postprocessing.html">Postprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Globus%20Distribution.html">Globus Distribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="User%20Vignette.html">User Vignette</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Advanced%20Development%20Notes.html">Advanced Development Notes</a></li>
 </ul>
 
 <div class="relations">
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="Installation.html" title="previous chapter">&lt;no title&gt;</a></li>
-      <li>Next: <a href="Primary%20Analysis.html" title="next chapter">&lt;no title&gt;</a></li>
+      <li>Previous: <a href="Installation.html" title="previous chapter">Installation</a></li>
+      <li>Next: <a href="Primary%20Analysis.html" title="next chapter">Primary Analysis</a></li>
   </ul></li>
 </ul>
 </div>

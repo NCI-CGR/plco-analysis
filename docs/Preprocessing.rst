@@ -7,7 +7,8 @@ Overview
 This content should provide an overview of the one-time steps you'll need to perform when running this pipeline for the first time
 on a given chip or imputation build. You do not need to run this multiple times for the same build! This should save you lots of time.
 
-:: _`relatedness pipeline`:
+.. _`relatedness pipeline`:
+
 Relatedness
 ~~~~~~~~~~~
 
@@ -25,11 +26,13 @@ graf format.
    *  input chip data are in plink_ bed/bim/fam format
    *  variant annotations are in GRCh38
 
-:: _graf: https://github.com/ncbi/graf
-:: _plink: https://www.cog-genomics.org/plink/
+.. _graf: https://github.com/ncbi/graf
+
+.. _plink: https://www.cog-genomics.org/plink/
 
 
-:: _`ancestry pipeline`:
+.. _`ancestry pipeline`:
+
 Ancestry Estimation
 ~~~~~~~~~~~~~~~~~~~
 
@@ -51,7 +54,8 @@ into the "East Asian" label according to the instructions of collaborators.
 
    *  same as `relatedness pipeline`_
 
-::_`cleaned chip by ancestry pipeline`:
+.. _`cleaned chip by ancestry pipeline`:
+
 Genotype Cleaning by Ancestry
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -68,8 +72,9 @@ combined into a single plink_ bed/bim/fam dataset. These files need to be proces
 Note that some of these files and calculations, such as `heterozygosity outliers`_ and `IBS/IBD estimates`_, are not directly
 used by the pipeline in its current form but were useful in the processing of the PLCO chip freeze, and are included for posterity.
 
-:: _`heterozygosity outliers`: https://www.cog-genomics.org/plink/1.9/basic_stats#ibc
-:: _`IBS/IBD estimates`: https://www.cog-genomics.org/plink/1.9/ibd
+.. _`heterozygosity outliers`: https://www.cog-genomics.org/plink/1.9/basic_stats#ibc
+
+.. _`IBS/IBD estimates`: https://www.cog-genomics.org/plink/1.9/ibd
 
 *  Usage: `make cleaned-chips-by-ancestry`
 *  Dependencies:
@@ -79,7 +84,7 @@ used by the pipeline in its current form but were useful in the processing of th
 
 *  Assumptions:
 
-   *  same as ancestry_ pipeline
+   *  same as `ancestry pipeline`_
    *  this was developed separately from the rest of the pipeline and folded in later. thus there exist some redundancies
       between this and other aspects of the pipeline that might be refactored out in later development. this is also one
       of the oldest of the subpipelines, so structurally it differs from some of the other pipelines. nevertheless the
@@ -91,7 +96,8 @@ used by the pipeline in its current form but were useful in the processing of th
       (or frankly some better version of it) should be applied to chip data before actual use in association; but no such
       method is implemented here. if there's interest, this might be the place to do it, someday during future development
       
-:: _`bgen_pipeline`:
+.. _`bgen_pipeline`:
+
 Imputed Data Reformatting
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -104,11 +110,15 @@ Thus, based on the tools requested during the initial "Atlas" testing phase, the
 analysis format for all tools. Imputed data files for each platform/ancestry combination are generated once per dataset,
 and then used as fixed input for all association testing.
 
-:: _minimac4: https://genome.sph.umich.edu/wiki/Minimac4
-:: _`Michigan Imputation Server`: https://imputationserver.sph.umich.edu/index.html
-:: _bgen: https://www.well.ox.ac.uk/~gav/bgen_format/
-:: _saige: https://github.com/weizhouUMICH/SAIGE
-:: _bolt-lmm: https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html
+.. _minimac4: https://genome.sph.umich.edu/wiki/Minimac4
+
+.. _`Michigan Imputation Server`: https://imputationserver.sph.umich.edu/index.html
+
+.. _bgen: https://www.well.ox.ac.uk/~gav/bgen_format/
+
+.. _saige: https://github.com/weizhouUMICH/SAIGE
+
+.. _bolt-lmm: https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html
 
 * Usage: `make bgen`
 * Dependencies:
@@ -127,14 +137,15 @@ and then used as fixed input for all association testing.
      a future version depending on upstream behavior
 
      
-:: _`1000 Genomes pipeline`:
+.. _`1000 Genomes pipeline`:
+
 1000 Genomes Reference Data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Certain pipelines (see below) use derived information from the `1000 Genomes Project`_. This is (always?) split
 by supercontinent.
 
-:: _`1000 Genomes Project`: https://www.internationalgenome.org
+.. _`1000 Genomes Project`: https://www.internationalgenome.org
 
 * Usage: `make 1KG_files`
 * Dependencies:
@@ -149,7 +160,8 @@ by supercontinent.
      on their filesystem; however, this pipeline is not designed to support that as-is. it should be pretty easy to modify
      if you really want
 
-:: _`ldsc pipeline`:
+.. _`ldsc pipeline`:
+
 LD Score/BOLT Reference Files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -157,7 +169,7 @@ ldsc_ and bolt-lmm_ use data files derived from 1000 Genomes reference supercont
 reference data are provided in these packages (at least at time of initial download), that information only
 covered European subjects, and more generalized data were/are needed.
 
-:: _ldsc: https://github.com/bulik/ldsc
+.. _ldsc: https://github.com/bulik/ldsc
 
 *  Usage: `make ldsc`
 
