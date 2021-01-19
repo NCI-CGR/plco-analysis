@@ -1,0 +1,19 @@
+name: plco-analysis
+dependencies:
+  - bash
+  - pyyaml
+  - make>=4.2
+# may need to change this depending on installation target
+  - gxx_linux-64
+  - boost
+# figure out what to do about GRAF
+  - plink
+  - plink2
+  - eigensoft=6.0.1
+  - ldsc
+  - bolt-lmm
+  - r-saige
+# figure out what to do about metal
+  - r-ggplot2
+  - r-rcolorbrewer
+  - r-cairo

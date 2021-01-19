@@ -393,6 +393,7 @@ cach
 cachedir
 cachevar
 caf
+cairo
 callsites
 cameron
 canonicalize
@@ -1270,6 +1271,7 @@ gettimeofday
 GfKc
 ggdb
 gGpj
+ggplot
 ggrep
 GgWrSaJwydHStIhHq
 ghazi
@@ -1365,6 +1367,7 @@ gwc
 gWSw
 gWW
 GXPOffXI
+gxx
 GXX
 gz
 gZ
@@ -3489,6 +3492,7 @@ py
 PY
 pYFZ
 PYlRF
+pyyaml
 PyYAML
 PZf
 PzvpzKTHL
@@ -3611,6 +3615,7 @@ RBKMGjnq
 rc
 RCC
 RCed
+rcolorbrewer
 RCS
 rcsopen
 rD
