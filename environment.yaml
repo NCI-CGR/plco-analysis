@@ -12,12 +12,12 @@ dependencies:
   - ldsc
   - bolt-lmm
   - r-saige
-# figure out what to do about metal
   - r-ggplot2
   - r-rcolorbrewer
   - r-cairo
 # custom recipes from CGR's conda channel
-  - graf
-  - qsub_job_monitor
   - combine_categorical_runs
+  - graf
   - initialize_output_directories
+  - metal
+  - qsub_job_monitor
