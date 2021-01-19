@@ -13,10 +13,10 @@ Relatedness
 ~~~~~~~~~~~
 
 Relatedness estimation is primarily required as an intermediate in the ancestry estimation process using graf_. The files are stored
-and can be used for other QC reasons of course; see `relatedness/PLCO_{chip_name}.relatedness.txt` for relevant output files in standard
+and can be used for other QC reasons of course; see **relatedness/PLCO_{chip_name}.relatedness.txt** for relevant output files in standard
 graf format.
 
-*  Usage: `make relatedness`
+*  Usage: **make relatedness**
 *  Dependencies:
 
    *  chip freeze
@@ -37,14 +37,14 @@ Ancestry Estimation
 ~~~~~~~~~~~~~~~~~~~
 
 Ancestry estimation is required for chip processing and various sanity checks. As with relatedness, this is computed with graf_. The files
-are stored and can be used for various QC purposes; see `ancestry/PLCO_{chip_name}.graf_estimates.txt`.
+are stored and can be used for various QC purposes; see **ancestry/PLCO_{chip_name}.graf_estimates.txt**.
 
 Note that the final ancestry calls listed above are modified according to the consensus instructions of the "Atlas" analysis group.
 Subjects from the default "African" graf_ ancestry are merged into the "African American" label to more consistently represent
 the sampling distribution of the PLCO project. Subjects from the default "Other Asian or Pacific Islander" graf_ ancestry are merged
 into the "East Asian" label according to the instructions of collaborators.
 
-*  Usage: `make ancestry`
+*  Usage: **make ancestry**
 *  Dependencies:
 
    *  `relatedness pipeline`_
@@ -76,7 +76,7 @@ used by the pipeline in its current form but were useful in the processing of th
 
 .. _`IBS/IBD estimates`: https://www.cog-genomics.org/plink/1.9/ibd
 
-*  Usage: `make cleaned-chips-by-ancestry`
+*  Usage: **make cleaned-chips-by-ancestry**
 *  Dependencies:
 
    *  `ancestry pipeline`_
@@ -120,7 +120,7 @@ and then used as fixed input for all association testing.
 
 .. _bolt-lmm: https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html
 
-* Usage: `make bgen`
+* Usage: **make bgen**
 * Dependencies:
 
   *  imputed data freeze
@@ -132,8 +132,8 @@ and then used as fixed input for all association testing.
      bgen_ input, then there's no reason to run this pipeline and waste a ton of hard drive space
   *  the bgen_ format in use here is v1.2, based on bolt-lmm_ documentation and other software support suggesting that
      that's the most efficient version accepted by all current tools. this may need to be changed in the future
-  *  the bgen_ reformatting process is conducted using plink_. the resultant `*.sample` files are slightly malformatted,
-     and so an additional step fixes the included `NA` values by setting them to `0`. this could well be changed in
+  *  the bgen_ reformatting process is conducted using plink_. the resultant ***.sample** files are slightly malformatted,
+     and so an additional step fixes the included **NA** values by setting them to **0**. this could well be changed in
      a future version depending on upstream behavior
 
      
@@ -147,7 +147,7 @@ by supercontinent.
 
 .. _`1000 Genomes Project`: https://www.internationalgenome.org
 
-* Usage: `make 1KG_files`
+* Usage: **make 1KG_files**
 * Dependencies:
 
   * a functional internet connection
@@ -155,7 +155,7 @@ by supercontinent.
 * Assumptions:
 
   *  the 1000 Genomes files downloaded are frozen at a particular latest release according to the configuration information
-     in `Makefile.config`. that can obviously be changed if you want
+     in **Makefile.config**. that can obviously be changed if you want
   *  most target installations should actually have some sort of copy of the 1000 Genomes data present already somewhere
      on their filesystem; however, this pipeline is not designed to support that as-is. it should be pretty easy to modify
      if you really want
@@ -171,7 +171,7 @@ covered European subjects, and more generalized data were/are needed.
 
 .. _ldsc: https://github.com/bulik/ldsc
 
-*  Usage: `make ldsc`
+*  Usage: **make ldsc**
 
 *  Dependencies:
 
@@ -185,6 +185,6 @@ covered European subjects, and more generalized data were/are needed.
       some sort of weird versioning issue. regardless, this pipeline just hacks the result into submission. that results
       in some discrepancies from the stock reference files, but there's no indication of exactly which subjects/variants
       were used for those files, so that's not unexpected. basically: ymmv
-   *  default built-in files include an African American (`AFRAMR`) meta-group for appropriate subjects. note however
+   *  default built-in files include an African American (**AFRAMR**) meta-group for appropriate subjects. note however
       that "African American" as a human genetics group label is a very heterogeneous group, so there's no guarantee
       that this reference group will be appropriate for a given set of African American study subjects
