@@ -38,8 +38,9 @@
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>This content should provide an overview of the one-time steps you’ll need to perform when running this pipeline for the first time
 on a given chip or imputation build. You do not need to run this multiple times for the same build! This should save you lots of time.</p>
+</div>
 <div class="section" id="relatedness">
-<span id="relatedness-pipeline"></span><h3>Relatedness<a class="headerlink" href="#relatedness" title="Permalink to this headline">¶</a></h3>
+<span id="relatedness-pipeline"></span><h2>Relatedness<a class="headerlink" href="#relatedness" title="Permalink to this headline">¶</a></h2>
 <p>Relatedness estimation is primarily required as an intermediate in the ancestry estimation process using <a class="reference external" href="https://github.com/ncbi/graf">graf</a>. The files are stored
 and can be used for other QC reasons of course; see <strong>relatedness/PLCO_{chip_name}.relatedness.txt</strong> for relevant output files in standard
 graf format.</p>
@@ -57,9 +58,24 @@ graf format.</p>
 </ul>
 </li>
 </ul>
+<div class="topic">
+<p class="topic-title">Debugging</p>
+<p>Very little can go wrong in this early step of the pipeline. Most likely any issues would be related to fundamental
+misunderstandings about the formatting of the input chip data.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><a class="reference external" href="https://github.com/ncbi/graf">graf</a> is mildly frustrating to use: it has some non-compliant behaviors. Notably, its exit codes are not standard,
+so it doesn’t exit <cite>0</cite> on success. Always check the output log from <a class="reference external" href="https://github.com/ncbi/graf">graf</a> before proceeding! And note that the overall
+<cite>make</cite> run will have some “exit code ignored” warnings due to this behavior.</p>
+<p>Additionally, <a class="reference external" href="https://github.com/ncbi/graf">graf</a> complains when the output files it tries to create already exist. So, if you’re running <a class="reference external" href="https://github.com/ncbi/graf">graf</a> in an
+existing directory, you will likely need to purge intermediates (or just kill the “relatedness/” directory and check it out again)
+before rerunning. However, this is an early step that doesn’t expect to be rerun frequently. It can definitely be patched to
+work better; or you can use the version in the upstream QC pipeline that’s much better.</p>
+</div>
 </div>
 <div class="section" id="ancestry-estimation">
-<span id="ancestry-pipeline"></span><h3>Ancestry Estimation<a class="headerlink" href="#ancestry-estimation" title="Permalink to this headline">¶</a></h3>
+<span id="ancestry-pipeline"></span><h2>Ancestry Estimation<a class="headerlink" href="#ancestry-estimation" title="Permalink to this headline">¶</a></h2>
 <p>Ancestry estimation is required for chip processing and various sanity checks. As with relatedness, this is computed with <a class="reference external" href="https://github.com/ncbi/graf">graf</a>. The files
 are stored and can be used for various QC purposes; see <strong>ancestry/PLCO_{chip_name}.graf_estimates.txt</strong>.</p>
 <p>Note that the final ancestry calls listed above are modified according to the consensus instructions of the “Atlas” analysis group.
@@ -80,9 +96,21 @@ into the “East Asian” label according to the instructions of collaborators.<
 </ul>
 </li>
 </ul>
+<div class="topic">
+<p class="topic-title">Debugging</p>
+<p>As with the <a class="reference internal" href="#relatedness-pipeline">relatedness pipeline</a>, there isn’t much that can go particularly wrong here. If you find anything, do feel free
+to add it to this note block for posterity.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>See the <a class="reference internal" href="#relatedness-pipeline">relatedness pipeline</a> for warnings about <a class="reference external" href="https://github.com/ncbi/graf">graf</a> idiosyncracies. There’s an additional issue with
+<a class="reference external" href="https://github.com/ncbi/graf">graf</a> at this step, as it uses a mildly malformed Perl script. The <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> installed version of <a class="reference external" href="https://github.com/ncbi/graf">graf</a> from the <a class="reference external" href="https://github.com/NCI-CGR/conda-cgr">CGR conda channel</a>
+has an installation hack that repairs one of the issues; but I think it’s likely there are more corner case issues that may
+yet pop up.</p>
+</div>
 </div>
 <div class="section" id="genotype-cleaning-by-ancestry">
-<span id="cleaned-chip-by-ancestry-pipeline"></span><h3>Genotype Cleaning by Ancestry<a class="headerlink" href="#genotype-cleaning-by-ancestry" title="Permalink to this headline">¶</a></h3>
+<span id="cleaned-chip-by-ancestry-pipeline"></span><h2>Genotype Cleaning by Ancestry<a class="headerlink" href="#genotype-cleaning-by-ancestry" title="Permalink to this headline">¶</a></h2>
 <p>The PLCO chip freeze provides five files: one for each platform (GSA, Oncoarray, OmniX, Omni25, Omni5), with each <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry group
 combined into a single <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> bed/bim/fam dataset. These files need to be processed and cleaned with the following aims:</p>
 <ul class="simple">
@@ -119,9 +147,27 @@ method is implemented here. if there’s interest, this might be the place to do
 </ul>
 </li>
 </ul>
+<div class="topic">
+<p class="topic-title">Debugging</p>
+<p>This pipeline extensively uses <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> for filtering and QC operations. <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a>’s memory allocation is limited to 16G
+in <strong>Makefile.config</strong>. That’s a completely <em>ad hoc</em> bit of nonsense that may need to be changed depending on your
+individual project’s parameters.</p>
+<p>The pipeline is designed to allow different combinations of platform/ancestry to not exist. That seems to work well,
+but some issues may pop up if <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> finds something it doesn’t like in a small dataset.</p>
+<p>The IBS/IBD calculation with <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> <strong>–genome</strong> is somewhat quirkly set up. For datasets above a fixed (configurable)
+threshold of number of subjects, the IBS/IBD calculation is split into chunks with <strong>–parallel</strong> and then glued back
+together in a separate rule. These various thresholds were selected to make PLCO/GSA/Europeans run reasonably efficiently.
+For much larger chips, you may need to fiddle with the thresholds and number of quasiparallelized jobs to make things
+go ok.</p>
+<p>PCA with <a href="#id1"><span class="problematic" id="id2">smartpca_</span></a> makes use of the frankly underdocumented fastmode to make things go in a reasonable amount of time.
+This is not ideal in a variety of circumstances, most notably if you want to do PCA outlier removal. PCA in this context
+is really a blunt instrument, and not suitable for chip QC, which should have been handled earlier. So just… keep that
+in mind. For posterity, I’ll record that the eigenvalues from <a href="#id3"><span class="problematic" id="id4">smartpca_</span></a> fastmode are included in the header of the raw
+<a href="#id5"><span class="problematic" id="id6">smartpca_</span></a> output.</p>
+</div>
 </div>
 <div class="section" id="imputed-data-reformatting">
-<span id="bgen-pipeline"></span><h3>Imputed Data Reformatting<a class="headerlink" href="#imputed-data-reformatting" title="Permalink to this headline">¶</a></h3>
+<span id="bgen-pipeline"></span><h2>Imputed Data Reformatting<a class="headerlink" href="#imputed-data-reformatting" title="Permalink to this headline">¶</a></h2>
 <p>PLCO uses imputed data files from <a class="reference external" href="https://genome.sph.umich.edu/wiki/Minimac4">minimac4</a> from the <a class="reference external" href="https://imputationserver.sph.umich.edu/index.html">Michigan Imputation Server</a>. These files come in a standard VCF +
 annotation format; the pipeline further assumes that post-imputation (Rsq-based) QC has been applied to the files, and you’re
 working with something like an imputed data freeze.</p>
@@ -149,9 +195,16 @@ a future version depending on upstream behavior</p></li>
 </ul>
 </li>
 </ul>
+<div class="topic">
+<p class="topic-title">Debugging</p>
+<p><a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> support in conversion tools is pretty limited. I’ve ended up using <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> for VCF-&gt;BGEN conversion in two steps,
+even bearing in mind the apparent bug in output <strong>*.sample</strong> format files created with it. But I could very much see
+the possibility of needing a different adapter program in the future depending on one’s needs and any format discrepancies
+I’ve not found, and it would have the benefit of potentially removing an extra rule/intermediate file from this pipeline.</p>
+</div>
 </div>
 <div class="section" id="genomes-reference-data">
-<span id="genomes-pipeline"></span><h3>1000 Genomes Reference Data<a class="headerlink" href="#genomes-reference-data" title="Permalink to this headline">¶</a></h3>
+<span id="genomes-pipeline"></span><h2>1000 Genomes Reference Data<a class="headerlink" href="#genomes-reference-data" title="Permalink to this headline">¶</a></h2>
 <p>Certain pipelines (see below) use derived information from the <a class="reference external" href="https://www.internationalgenome.org">1000 Genomes Project</a>. This is (always?) split
 by supercontinent.</p>
 <ul class="simple">
@@ -171,9 +224,14 @@ if you really want</p></li>
 </ul>
 </li>
 </ul>
+<div class="topic">
+<p class="topic-title">Debugging</p>
+<p>This step in the process was the source of one of the weirdest bugs I’ve found during this development process.
+I don’t think it should ever come up again, but do run the <cite>1KG_files-check</cite></p>
+</div>
 </div>
 <div class="section" id="ld-score-bolt-reference-files">
-<span id="ldsc-pipeline"></span><h3>LD Score/BOLT Reference Files<a class="headerlink" href="#ld-score-bolt-reference-files" title="Permalink to this headline">¶</a></h3>
+<span id="ldsc-pipeline"></span><h2>LD Score/BOLT Reference Files<a class="headerlink" href="#ld-score-bolt-reference-files" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a> and <a class="reference external" href="https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html">bolt-lmm</a> use data files derived from 1000 Genomes reference supercontinental data. Though some standard
 reference data are provided in these packages (at least at time of initial download), that information only
 covered European subjects, and more generalized data were/are needed.</p>
@@ -200,7 +258,6 @@ that this reference group will be appropriate for a given set of African America
 </ul>
 </div>
 </div>
-</div>
 
 
           </div>
@@ -224,6 +281,12 @@ that this reference group will be appropriate for a given set of African America
 <li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Preprocessing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#relatedness">Relatedness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ancestry-estimation">Ancestry Estimation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#genotype-cleaning-by-ancestry">Genotype Cleaning by Ancestry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#imputed-data-reformatting">Imputed Data Reformatting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#genomes-reference-data">1000 Genomes Reference Data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ld-score-bolt-reference-files">LD Score/BOLT Reference Files</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="Primary%20Analysis.html">Primary Analysis</a></li>
