@@ -17,13 +17,7 @@ ancestry.prefix <- cargs[5]
 ## column name of subject IDs in phenotype file ("plco_id")
 phenotype.id.colname <- cargs[6]
 ## chips in study, comma-delimited
-supported.chips <- paste("c('",
-  paste(unlist(strsplit(cargs[7], ",")),
-    collapse = "','"
-  ),
-  "')",
-  sep = ""
-)
+supported.chips <- unlist(strsplit(cargs[7], ","))
 ## optional file of variants with known associations, for plotting
 known.signals.file <- NA
 
