@@ -21,3 +21,5 @@ dependencies:
   - initialize_output_directories
   - metal
   - qsub_job_monitor
+  - r-construct.model.matrix
+  - r-gwasqcplots
