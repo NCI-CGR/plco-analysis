@@ -42,7 +42,7 @@ MANHATTAN_PLOT_SCRIPT := $(SHARED_SOURCE)/manhattan_loci_colored_launcher.R
 LAMBDA_N_PLOT := $(RESULTS_DIR)/lambda-n.jpg$(TRACKING_SUCCESS_SUFFIX)
 LAMBDA_N_PLOT_SCRIPT := $(SHARED_SOURCE)/lambda-n_plot_launcher.R
 all: $(META_TARGETS) $(HETEROGENEITY_TARGETS) $(NOT_META_TARGETS) # $(LAMBDA_N_PLOT)
-
+COMMA:=,
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.manhattan.jpg$(TRACKING_SUCCESS_SUFFIX)
@@ -52,7 +52,7 @@ all: $(META_TARGETS) $(HETEROGENEITY_TARGETS) $(NOT_META_TARGETS) # $(LAMBDA_N_P
 ## Notes: final dependency is optional file of rsid->gene correspondence for known signal plotting. It will be ignored if not present
 $(META_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$@) $$(shell ls -l $$(KNOWN_SIGNALS_INPUT_DIR) | awk '$$$$9 == "$$(subst _female,,$$(subst _male,,$$(call extract_phenotype,$$@))).txt" {print "$$(KNOWN_SIGNALS_INPUT_DIR)/"$$$$9}')
 	if [[ "$(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) | awk '{print $$1}')" -gt "1" ]] ; then \
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@) $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(word 3,$^) $(SHARED_SOURCE)) ; \
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@) $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(CLEANED_CHIP_OUTPUT_DIR) $(ANCESTRY_OUTPUT_DIR) $(PHENOTYPE_ID_COLNAME) $(subst  ,$(COMMA),$(sort $(foreach platform,$(PLATFORMS),$(firstword $(subst _, ,$(platform)))))) $(word 3,$^)) ; \
 	else \
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
@@ -71,7 +71,7 @@ $(subst .manhattan.jpg,.plot_ready,$(META_TARGETS)): $$(subst .plot_ready$(TRACK
 ## Notes: final dependency is optional file of rsid->gene correspondence for known signal plotting. It will be ignored if not present
 $(HETEROGENEITY_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$@) $$(shell ls -l $$(KNOWN_SIGNALS_INPUT_DIR) | awk '$$$$9 == "$$(subst _female,,$$(subst _male,,$$(call extract_phenotype,$$@))).txt" {print "$$(KNOWN_SIGNALS_INPUT_DIR)/"$$$$9}')
 	if [[ "$(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) | awk '{print $$1}')" -gt "1" ]] ; then \
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/heterogeneity $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(word 3,$^) $(SHARED_SOURCE)) ; \
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/heterogeneity $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(CLEANED_CHIP_OUTPUT_DIR) $(ANCESTRY_OUTPUT_DIR) $(PHENOTYPE_ID_COLNAME) $(subst  ,$(COMMA),$(sort $(foreach platform,$(PLATFORMS),$(firstword $(subst _, ,$(platform)))))) $(word 3,$^)) ; \
 	else \
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
@@ -90,7 +90,7 @@ $(subst .heterogeneity.manhattan.jpg,.heterogeneity.plot_ready,$(HETEROGENEITY_T
 ## Notes: final dependency is optional file of rsid->gene correspondence for known signal plotting. It will be ignored if not present
 $(NOT_META_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$@) $$(shell ls -l $$(KNOWN_SIGNALS_INPUT_DIR) | awk '$$$$9 == "$$(subst _female,,$$(subst _male,,$$(call extract_phenotype,$$@))).txt" {print "$$(KNOWN_SIGNALS_INPUT_DIR)/"$$$$9}')
 	if [[ "$(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) | awk '{print $$1}')" -gt "1" ]] ; then \
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/$(call extract_chip,$@) $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(word 3,$^) $(SHARED_SOURCE)) ; \
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/$(call extract_chip,$@) $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(CLEANED_CHIP_OUTPUT_DIR) $(ANCESTRY_OUTPUT_DIR) $(PHENOTYPE_ID_COLNAME) $(subst  ,$(COMMA),$(sort $(foreach platform,$(PLATFORMS),$(firstword $(subst _, ,$(platform)))))) $(word 3,$^)) ; \
 	else \
 	rm $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
