@@ -2,7 +2,7 @@ Preprocessing
 =============
 
 Overview
---------
+~~~~~~~~
 
 This content should provide an overview of the one-time steps you'll need to perform when running this pipeline for the first time
 on a given chip or imputation build. You do not need to run this multiple times for the same build! This should save you lots of time.
@@ -30,6 +30,21 @@ graf format.
 
 .. _plink: https://www.cog-genomics.org/plink/
 
+.. topic:: Debugging
+   
+   Very little can go wrong in this early step of the pipeline. Most likely any issues would be related to fundamental
+   misunderstandings about the formatting of the input chip data.
+   
+.. warning::
+
+   graf_ is mildly frustrating to use: it has some non-compliant behaviors. Notably, its exit codes are not standard,
+   so it doesn't exit `0` on success. Always check the output log from graf_ before proceeding! And note that the overall
+   `make` run will have some "exit code ignored" warnings due to this behavior.
+   
+   Additionally, graf_ complains when the output files it tries to create already exist. So, if you're running graf_ in an
+   existing directory, you will likely need to purge intermediates (or just kill the "relatedness/" directory and check it out again)
+   before rerunning. However, this is an early step that doesn't expect to be rerun frequently. It can definitely be patched to
+   work better; or you can use the version in the upstream QC pipeline that's much better.
 
 .. _`ancestry pipeline`:
 
@@ -53,6 +68,21 @@ into the "East Asian" label according to the instructions of collaborators.
 *  Assumptions:
 
    *  same as `relatedness pipeline`_
+
+.. topic:: Debugging
+   
+   As with the `relatedness pipeline`_, there isn't much that can go particularly wrong here. If you find anything, do feel free
+   to add it to this note block for posterity.
+
+.. warning:: See the `relatedness pipeline`_ for warnings about graf_ idiosyncracies. There's an additional issue with 
+   graf_ at this step, as it uses a mildly malformed Perl script. The conda_ installed version of graf_ from the `CGR conda channel`_
+   has an installation hack that repairs one of the issues; but I think it's likely there are more corner case issues that may
+   yet pop up.
+
+
+.. _conda: https://docs.conda.io/en/latest/
+
+.. _`CGR conda channel`: https://github.com/NCI-CGR/conda-cgr
 
 .. _`cleaned chip by ancestry pipeline`:
 
@@ -96,6 +126,30 @@ used by the pipeline in its current form but were useful in the processing of th
       (or frankly some better version of it) should be applied to chip data before actual use in association; but no such
       method is implemented here. if there's interest, this might be the place to do it, someday during future development
       
+
+.. topic:: Debugging
+   
+   This pipeline extensively uses plink_ for filtering and QC operations. plink_'s memory allocation is limited to 16G
+   in **Makefile.config**. That's a completely *ad hoc* bit of nonsense that may need to be changed depending on your
+   individual project's parameters.
+   
+   The pipeline is designed to allow different combinations of platform/ancestry to not exist. That seems to work well,
+   but some issues may pop up if plink_ finds something it doesn't like in a small dataset.
+   
+   The IBS/IBD calculation with plink_ **--genome** is somewhat quirkly set up. For datasets above a fixed (configurable)
+   threshold of number of subjects, the IBS/IBD calculation is split into chunks with **--parallel** and then glued back
+   together in a separate rule. These various thresholds were selected to make PLCO/GSA/Europeans run reasonably efficiently.
+   For much larger chips, you may need to fiddle with the thresholds and number of quasiparallelized jobs to make things
+   go ok.
+   
+   PCA with smartpca_ makes use of the frankly underdocumented fastmode to make things go in a reasonable amount of time.
+   This is not ideal in a variety of circumstances, most notably if you want to do PCA outlier removal. PCA in this context
+   is really a blunt instrument, and not suitable for chip QC, which should have been handled earlier. So just... keep that
+   in mind. For posterity, I'll record that the eigenvalues from smartpca_ fastmode are included in the header of the raw
+   smartpca_ output.
+   
+.. _smartpca:: https://alkesgroup.broadinstitute.org/EIGENSOFT/
+
 .. _`bgen_pipeline`:
 
 Imputed Data Reformatting
@@ -136,7 +190,14 @@ and then used as fixed input for all association testing.
      and so an additional step fixes the included **NA** values by setting them to **0**. this could well be changed in
      a future version depending on upstream behavior
 
-     
+.. topic:: Debugging
+   
+   bgen_ support in conversion tools is pretty limited. I've ended up using plink_ for VCF->BGEN conversion in two steps,
+   even bearing in mind the apparent bug in output ***.sample** format files created with it. But I could very much see
+   the possibility of needing a different adapter program in the future depending on one's needs and any format discrepancies
+   I've not found, and it would have the benefit of potentially removing an extra rule/intermediate file from this pipeline.
+
+
 .. _`1000 Genomes pipeline`:
 
 1000 Genomes Reference Data
@@ -159,6 +220,11 @@ by supercontinent.
   *  most target installations should actually have some sort of copy of the 1000 Genomes data present already somewhere
      on their filesystem; however, this pipeline is not designed to support that as-is. it should be pretty easy to modify
      if you really want
+
+.. topic:: Debugging
+   
+   This step in the process was the source of one of the weirdest bugs I've found during this development process.
+   I don't think it should ever come up again, but do run the `1KG_files-check`
 
 .. _`ldsc pipeline`:
 
