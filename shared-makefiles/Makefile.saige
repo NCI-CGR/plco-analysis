@@ -11,7 +11,7 @@ ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## empirical approximate minimum subject count (+1), specific to SAIGE
 MINIMUM_VALID_SUBJECT_COUNT := $(SAIGE_MINIMUM_VALID_SUBJECT_COUNT)
 
-ANALYSIS_RESULTS_SAIGE := $(foreach config,$(ANALYSIS_CONFIGS),$(shell $(INITIALIZE_OUTPUT_DIRECTORIES) -e $(EXTENSION_CONFIG) -p $(config) -D $(PHENOTYPE_FILENAME) -I plco_id -b $(IMPUTED_DIR) -r $(RESULTS_DIR) -s saige -N $(MINIMUM_VALID_SUBJECT_COUNT) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),-B,)))
+ANALYSIS_RESULTS_SAIGE := $(foreach config,$(ANALYSIS_CONFIGS),$(shell $(INITIALIZE_OUTPUT_DIRECTORIES) -e $(EXTENSION_CONFIG) -p $(config) -D $(PHENOTYPE_FILENAME) -I $(PHENOTYPE_ID_COLNAME) -b $(IMPUTED_DIR) -r $(RESULTS_DIR) -s saige -N $(MINIMUM_VALID_SUBJECT_COUNT) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),-B,)))
 
 .SECONDEXPANSION:
 .SECONDARY:

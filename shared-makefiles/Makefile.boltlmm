@@ -12,7 +12,7 @@ ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## empirical approximate minimum subject count, specific to BOLTLMM
 MINIMUM_VALID_SUBJECT_COUNT := $(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)
 ## construct analysis targets for all config entries that request BOLT
-ANALYSIS_RESULTS_BOLTLMM := $(foreach config,$(ANALYSIS_CONFIGS),$(shell $(INITIALIZE_OUTPUT_DIRECTORIES) -e $(EXTENSION_CONFIG) -p $(config) -D $(PHENOTYPE_FILENAME) -I plco_id -b $(IMPUTED_DIR) -r $(RESULTS_DIR) -s boltlmm -N $(MINIMUM_VALID_SUBJECT_COUNT) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),-B,)))
+ANALYSIS_RESULTS_BOLTLMM := $(foreach config,$(ANALYSIS_CONFIGS),$(shell $(INITIALIZE_OUTPUT_DIRECTORIES) -e $(EXTENSION_CONFIG) -p $(config) -D $(PHENOTYPE_FILENAME) -I $(PHENOTYPE_ID_COLNAME) -b $(IMPUTED_DIR) -r $(RESULTS_DIR) -s boltlmm -N $(MINIMUM_VALID_SUBJECT_COUNT) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),-B,)))
 
 .SECONDEXPANSION:
 .SECONDARY:
