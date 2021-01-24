@@ -16,6 +16,8 @@ dependencies:
   - r-rcolorbrewer
   - r-cairo
 # custom recipes from CGR's conda channel
+  - annotate_frequency
+  - annotate_rsids_from_linker
   - combine_categorical_runs
   - graf
   - initialize_output_directories
