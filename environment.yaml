@@ -15,9 +15,11 @@ dependencies:
   - r-ggplot2
   - r-rcolorbrewer
   - r-cairo
+  - ucsc-liftover
 # custom recipes from CGR's conda channel
   - annotate_frequency
   - annotate_rsids_from_linker
+  - bolt-lmm-genetic-map-hg38
   - combine_categorical_runs
   - graf
   - initialize_output_directories
@@ -25,3 +27,4 @@ dependencies:
   - qsub_job_monitor
   - r-construct.model.matrix
   - r-gwasqcplots
+  - ucsc-hg19tohg38
