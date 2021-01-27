@@ -33,6 +33,231 @@
             
   <div class="section" id="advanced-development-notes">
 <h1>Advanced Development Notes<a class="headerlink" href="#advanced-development-notes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview-of-make">
+<h2>Overview of Make<a class="headerlink" href="#overview-of-make" title="Permalink to this headline">¶</a></h2>
+<p>Existing pipelines within this project are in the language <code class="docutils literal notranslate"><span class="pre">make</span></code>; my condolences!
+<code class="docutils literal notranslate"><span class="pre">make</span></code> lacks many of the features of modern workflow languages, so some of the usage
+may be unusual or quirky, or lacking entirely in features you’d expect from <code class="docutils literal notranslate"><span class="pre">snakemake</span></code>
+or other similar languages.</p>
+<div class="section" id="rule-structures">
+<h3>Rule Structures<a class="headerlink" href="#rule-structures" title="Permalink to this headline">¶</a></h3>
+<p>If you’re not familiar with <code class="docutils literal notranslate"><span class="pre">make</span></code> at all, you should definitely skim the <a class="reference external" href="https://www.gnu.org/software/make/manual/html_node/index.html">make manual</a>
+first. I’ll just cover some extremely brief thoughts on <code class="docutils literal notranslate"><span class="pre">make</span></code> usage in these pipelines.</p>
+<ul class="simple">
+<li><p>rules rely heavily on text replacement and substitution for building input files from outputs;
+see <cite>make function documentation</cite> for an overview</p></li>
+<li><p><a class="reference external" href="https://www.gnu.org/software/make/manual/html_node/Pattern-Rules.html">pattern rules</a> are great where possible, but sometimes are incompatible or just don’t fit
+into my brain. feel free to swap them in where I’ve missed opportunities to do so</p></li>
+<li><p>most pipelines begin with some form of enumeration of the possible outputs, and restriction
+of those outputs to ones with valid corresponding inputs. a lot of this relies on <code class="docutils literal notranslate"><span class="pre">find</span></code>
+to detect things</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span></code> has no direct compatibility with <code class="docutils literal notranslate"><span class="pre">yaml</span></code>, which is a real pain. that’s been on
+the to-do list for ages. thus the global configuration parameters in <code class="docutils literal notranslate"><span class="pre">Makefile.config</span></code> remain
+in raw <code class="docutils literal notranslate"><span class="pre">make</span></code> instead of in a nice <code class="docutils literal notranslate"><span class="pre">yaml</span></code> file. please do patch in support as you feel like it</p></li>
+<li><p>the most complex DAG construction happens with the analysis modules in <code class="docutils literal notranslate"><span class="pre">shared-makefiles/</span></code>; for that,
+I built <a class="reference external" href="https://github.com/NCI-CGR/initialize_output_directories">a custom preprocessor</a> that actually deals with <code class="docutils literal notranslate"><span class="pre">yaml</span></code> natively and emits targets in a format
+<code class="docutils literal notranslate"><span class="pre">make</span></code> can handle. see <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefile.boltlmm</span></code> as an example.
+my apologies that it’s not more generalized</p></li>
+</ul>
+</div>
+<div class="section" id="job-tracking-logging">
+<h3>Job Tracking/Logging<a class="headerlink" href="#job-tracking-logging" title="Permalink to this headline">¶</a></h3>
+<p>All rules in the <code class="docutils literal notranslate"><span class="pre">make</span></code> pipelines are wrapped in utility functions that emit tracking files
+(by default appended with <code class="docutils literal notranslate"><span class="pre">.success</span></code>, configurable with $(TRACKING_SUCCESS_SUFFIX)). Log data
+are emitted to output files prefixed uniquely based on the rule. So everything is there, but it
+can be a bit of a mess to find given how many files are emitted.</p>
+</div>
+<div class="section" id="integration-with-clusters">
+<h3>Integration with Clusters<a class="headerlink" href="#integration-with-clusters" title="Permalink to this headline">¶</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">make</span></code> has no integrated support for cluster job submission. These pipelines have their calls wrapped
+in two simple utility functions which either dispatch jobs via a <code class="docutils literal notranslate"><span class="pre">qsub</span></code> interface (for cgems), or run
+the job in the main process but log the results with tracking files. This is a total mess. Other languages
+obviously offer actual support, so further development should make use of that. For extension of the current
+pipelines, support for <code class="docutils literal notranslate"><span class="pre">slurm</span></code> in particular needs to get patched into an appropriate interface/monitor program.</p>
+</div>
+<div class="section" id="conda-environments">
+<h3>Conda Environments<a class="headerlink" href="#conda-environments" title="Permalink to this headline">¶</a></h3>
+<p>Again, no intrinsic <code class="docutils literal notranslate"><span class="pre">make</span></code> support, and <code class="docutils literal notranslate"><span class="pre">make</span></code> runs things in subshells that make launching separate
+environments rather complicated. It should be possible to wrap individual rules in activated <code class="docutils literal notranslate"><span class="pre">conda</span></code>
+environments. However, given the comparative simplicity of the workspace as a whole, the top-level <code class="docutils literal notranslate"><span class="pre">conda</span></code>
+environment should be sufficient for all modules, at least as currently written. Just make sure the top-level
+environment is active before launching any step of the analysis.</p>
+</div>
+<div class="section" id="thread-safety-directory-locking">
+<h3>Thread Safety/Directory Locking<a class="headerlink" href="#thread-safety-directory-locking" title="Permalink to this headline">¶</a></h3>
+<p>Once again, <code class="docutils literal notranslate"><span class="pre">make</span></code> has no direct support for this, and I’ve never gotten around to actually implementing it.
+This is probably the biggest silent weakness of the pipeline as written. Please keep this in mind when writing
+and running pipelines. You can have bolt/saige/other analysis tools running at the same time; but don’t dispatch
+multiple bolt jobs at the same time! It will collide with nasty consequences.</p>
+</div>
+</div>
+<div class="section" id="result-directory-and-filename-conventions">
+<h2>Result Directory and Filename Conventions<a class="headerlink" href="#result-directory-and-filename-conventions" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="adding-analysis-modules">
+<h2>Adding Analysis Modules<a class="headerlink" href="#adding-analysis-modules" title="Permalink to this headline">¶</a></h2>
+<p>In theory, it is very straightforward to add additional analysis
+modules to the project by writing individual pipelines targeted
+at specific tools (e.g. SNPTEST, PLINK), placing them in <code class="docutils literal notranslate"><span class="pre">shared-makefiles</span></code>,
+and adding a global rule in <code class="docutils literal notranslate"><span class="pre">Makefile</span></code>. In practice, presumably no
+future developers will want to write any such module in <code class="docutils literal notranslate"><span class="pre">make</span></code>, so
+there need to be some thoughts to integrating modules from other languages.</p>
+<p>I’m going to try to present the interface specification for these analysis
+modules; with that, you should be able to write a module in any language,
+and it should slot in pretty seamlessly.</p>
+<div class="section" id="inputs">
+<h3>Inputs<a class="headerlink" href="#inputs" title="Permalink to this headline">¶</a></h3>
+<p>The following pertinent files will be available to the analysis pipeline
+on run start. Note that all files are assumed to be prefixed with the installation
+directory of the pipeline. Variables <code class="docutils literal notranslate"><span class="pre">$(VARIABLE_NAME)</span></code> are defined in <code class="docutils literal notranslate"><span class="pre">Makefile.config</span></code>.</p>
+<ul class="simple">
+<li><p>Chip data:</p>
+<ul>
+<li><p>each input platform and ancestry combination will have the following files,
+so long as that combination has sufficient subjects for analysis:</p>
+<ul>
+<li><p>$(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step1.maf.geno.hwe.{bed,bim,fam}: plink format genotypes with mild cleaning applied</p></li>
+<li><p>$(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step2.pruning.{in,out}: plink format output from –indep for variant {inclusion, exclusion}</p></li>
+<li><p>$(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step3.pruning.{in,out}: plink format output from –indep-pairwise for variant {inclusion, exclusion}</p></li>
+<li><p>$(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step4.het.remove: plink format subject removal file for heterozygosity outliers</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Imputed data:</p>
+<ul>
+<li><p>each input platform and ancestry combination will have the following files,
+so long as that combination has at least 100 subjects:</p>
+<ul>
+<li><p>$(BGEN_OUTPUT_DIR)/{platform}[/batch{#}]/{ancestry}/chr{#}-filtered.bgen</p></li>
+<li><p>$(BGEN_OUTPUT_DIR)/{platform}[/batch{#}]/{ancestry}/chr{#}-filtered.bgen.bgi</p></li>
+<li><p>$(BGEN_OUTPUT_DIR)/{platform}[/batch{#}]/{ancestry}/chr{#}-filtered-noNAs.sample</p></li>
+</ul>
+</li>
+<li><p>Inputs are fixed at bgen version 1.2 dosages due to compatibility with bolt-lmm, saige, fastGWA</p></li>
+<li><p>Modified sample file is due to format discrepancy in raw output from plink2</p></li>
+</ul>
+</li>
+<li><p>Phenotype data:</p>
+<ul>
+<li><p>plain-text, tab-delimited phenotype file</p></li>
+<li><p>header row</p></li>
+<li><p>single column with unique subject ID (name is configurable as $(PHENOTYPE_ID_COLNAME))</p></li>
+<li><p>conventionally, missing values are stored as <code class="docutils literal notranslate"><span class="pre">NA</span></code></p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="outputs">
+<h3>Outputs<a class="headerlink" href="#outputs" title="Permalink to this headline">¶</a></h3>
+<ul>
+<li><p>Results directory structure:</p>
+<ul class="simple">
+<li><p>all results should be emitted under $(RESULT_OUTPUT_DIR) as follows:</p>
+<ul>
+<li><p>$(RESULT_OUTPUT_DIR)/$(analysis_prefix)/{ancestry}/{software}</p></li>
+<li><p>above, $(analysis_prefix) is the variable taken from <code class="docutils literal notranslate"><span class="pre">config/*.yaml</span></code></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Output filenames:</p>
+<ul class="simple">
+<li><p>all intermediate and output files should be prefixed in the results directory as follows:</p>
+<ul>
+<li><p>$(phenotype).$(platform)[_batch{#}].{software}</p></li>
+<li><p>$(phenotype) is the variable taken from <code class="docutils literal notranslate"><span class="pre">config/*.yaml</span></code></p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Required output files and formats:</p>
+<ul>
+<li><p>the following files are those used downstream by existing pipeline components:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>$(phenotype).$(platform)[_batch{#}].{software}.tsv.gz</p>
+<ul>
+<li><p>results file per platform/batch</p></li>
+<li><p>format is tab-delimited, columns as follows (with header as listed):</p>
+<ul>
+<li><p>CHR: chromosome of variant</p></li>
+<li><p>POS: physical position of variant, in GRCh38</p></li>
+<li><p>SNP: variant ID (see note below)</p></li>
+<li><p>Tested_Allele: coded allele (corresponding to effect direction of BETA)</p></li>
+<li><p>Other_Allele: non-coded allele</p></li>
+<li><p>Freq_Tested_Allele_in_TOPMed: allele frequency (see note below)</p></li>
+<li><p>BETA: regression coefficient (binary traits: logOR) for variant</p></li>
+<li><p>SE: standard error of test</p></li>
+<li><p>P: association p-value</p></li>
+<li><p>N: actual sample size tested for variant</p></li>
+<li><p>Ncases: binary results only: actual number of cases tested for variant</p></li>
+<li><p>Ncontrols: binary results only: actual number of controls tested for variant</p></li>
+</ul>
+</li>
+<li><p>SNP defaults to “chr:pos:ref:alt” codes from TOPMed. This needs to be replaced
+with rsIDs when requested with the <code class="docutils literal notranslate"><span class="pre">config/*.yaml</span></code> option <code class="docutils literal notranslate"><span class="pre">id_mode:</span> <span class="pre">rsid</span></code>.</p></li>
+<li><p>Freq_Tested_Allele_in_TOPMed defaults to reference IDs, approximate frequencies
+from the imputation reference subjects, to avoid issues with identifiability of
+subject samples. These should instead be replaced with actual subject allele
+frequencies when requested with the <code class="docutils literal notranslate"><span class="pre">config/*.yaml</span></code> option <code class="docutils literal notranslate"><span class="pre">frequency_mode:</span> <span class="pre">subject</span></code>.</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p>$(phenotype).$(platform)[_batch{#}].{software}.rawids.tsv</p>
+<ul>
+<li><p>the format of this file is the same as the above, except SNP must contain unique IDs,
+in this case the “chr:pos:ref:alt” IDs from the TOPMed reference data</p></li>
+<li><p>this file is canonically actually an upstream intermediate that leads to the above output file</p></li>
+<li><p>note the lack of compression. this can be patched to behave differently</p></li>
+<li><p>as things are currently configured, this file is required by <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefile.metal</span></code>,
+the meta-analysis pipeline. this is because the rsID mapping requested by <code class="docutils literal notranslate"><span class="pre">id_mode:</span> <span class="pre">rsid</span></code> and
+used for the “Atlas” website creates duplicate sites in a very few cases, which causes
+issues for <code class="docutils literal notranslate"><span class="pre">metal</span></code> when trying to unambiguously link variants to one another across platforms</p></li>
+<li><p>this is an extremely messy behavior, and one I’d love to see patched out somehow in the future</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="adding-other-pipelines">
+<h2>Adding Other Pipelines<a class="headerlink" href="#adding-other-pipelines" title="Permalink to this headline">¶</a></h2>
+<p>In addition to the above, other pipelines will likely be needed if this project is to continue.
+For example, <code class="docutils literal notranslate"><span class="pre">bgen</span></code> v1.2 format has worked well for the PLCO “Atlas” project, but will likely
+need to be replaced or augmented in the future.</p>
+<p>Most of the project’s pipelines live in a dedicated subdirectory of the appropriate name. They are
+called from a dedicated rule in the top-level <code class="docutils literal notranslate"><span class="pre">Makefile</span></code>, and dispatch themselves based on variables
+they import from <code class="docutils literal notranslate"><span class="pre">Makefile.config</span></code>. This process can be repeated for other necessary backend pipelines.</p>
+<p>Note that, in particular for later pipelines operating on ancestry-split data, there needs to be
+the capacity to dynamically restrict the DAG to combinations of platform and ancestry that exist
+in the actual data, not just the full enumeration of platform and ancestry combinations. The <code class="docutils literal notranslate"><span class="pre">make</span></code>
+pipelines do this by assuming upstream pipelines run to completion and detecting whatever output files
+happen to be present from those pipelines, and working from there. Other languages have more elegant
+support for this kind of DAG restriction. Just make sure you do it: there is never any guarantee
+that any particular input combination will be present, and in fact for many ancestries given US sampling
+criteria, it’s almost guaranteed they will be absent.</p>
+<div class="section" id="extension-to-other-languages">
+<h3>Extension to Other Languages<a class="headerlink" href="#extension-to-other-languages" title="Permalink to this headline">¶</a></h3>
+<p>No one will want to write any further pipelines in <code class="docutils literal notranslate"><span class="pre">make</span></code>. However, it should be reasonably
+straightforward to create modules in other languages. Make sure the modules conform to the above
+interface specification, or possibly modify it while maintaining back compatibility.</p>
+<p>The only major issue comes up around job dispatch. You can write a <code class="docutils literal notranslate"><span class="pre">snakemake</span></code> call into
+the top-level <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> dispatcher; however, that will not straightforwardly handle process
+monitoring in the way recursive <code class="docutils literal notranslate"><span class="pre">make</span></code> usually does, and it loses out on a bunch of <code class="docutils literal notranslate"><span class="pre">snakemake</span></code>’s
+convenient features.</p>
+<p>The best solution then should be to create a language-specific dispatcher that handles module calls
+within the language of the module. So, write a top-level <code class="docutils literal notranslate"><span class="pre">Snakefile</span></code> that covers <code class="docutils literal notranslate"><span class="pre">snakemake</span></code> analysis
+modules. As ever, care must be taken to be sure upstream pipelines have run to completion before analysis.
+However, the way the <code class="docutils literal notranslate"><span class="pre">make</span></code> pipelines are structured, that’s the case regardless, so the added
+burden should be minimal.</p>
+</div>
+</div>
 </div>
 
 
@@ -61,7 +286,27 @@
 <li class="toctree-l1"><a class="reference internal" href="Postprocessing.html">Postprocessing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Globus%20Distribution.html">Globus Distribution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="User%20Vignette.html">User Vignette</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Advanced Development Notes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Advanced Development Notes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview-of-make">Overview of Make</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#rule-structures">Rule Structures</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#job-tracking-logging">Job Tracking/Logging</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#integration-with-clusters">Integration with Clusters</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#conda-environments">Conda Environments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#thread-safety-directory-locking">Thread Safety/Directory Locking</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#result-directory-and-filename-conventions">Result Directory and Filename Conventions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-analysis-modules">Adding Analysis Modules</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#outputs">Outputs</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-other-pipelines">Adding Other Pipelines</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#extension-to-other-languages">Extension to Other Languages</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
 <div class="relations">

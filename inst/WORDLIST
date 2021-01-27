@@ -18,6 +18,7 @@ ABDT
 abi
 ABI
 ABIN
+abl
 abov
 abug
 ACAWK
@@ -87,6 +88,7 @@ afsws
 Afv
 ahGq
 aHP
+AHyperlink
 aI
 AIMs
 AITW
@@ -121,6 +123,7 @@ alism
 aliti
 alize
 alkesgroup
+allel
 allextract
 allfound
 alli
@@ -182,6 +185,7 @@ apePfXM
 apgJtifcoCtT
 api
 apollo
+apolog
 appar
 appendChild
 appendTo
@@ -189,6 +193,7 @@ applehelp
 appli
 applic
 appropri
+approxim
 aQYbjm
 ar
 arabic
@@ -352,6 +357,7 @@ BDRT
 bE
 BeBox
 bec
+becaus
 Beckenbach
 bedfile
 bedfiles
@@ -359,6 +365,7 @@ befor
 beforeSend
 beforeunload
 BEGINLIBPATH
+behav
 behaviour
 belf
 Bellard
@@ -409,6 +416,7 @@ biliti
 bim
 bimfile
 BIMFILE
+binari
 binarized
 bindAll
 bindi
@@ -578,6 +586,7 @@ cameron
 cancelable
 canonicalize
 Canonicalize
+capac
 capName
 CARB
 cardia
@@ -585,6 +594,7 @@ cargs
 CARGS
 CaseCount
 categoricals
+caus
 CausW
 CAZPu
 cb
@@ -629,6 +639,8 @@ Cflags
 CFLAGS
 cfloat
 cfXyTo
+cgem
+cgems
 CGF
 cgi
 cgr
@@ -677,6 +689,7 @@ chr
 CHR
 chrM
 CHROM
+chromosom
 chrpos
 CHRPOS
 CHRS
@@ -744,6 +757,7 @@ cnWP
 Cny
 codeblock
 coDGkrUKZAxE
+coeffici
 coff
 COFF
 cofile
@@ -751,6 +765,8 @@ COGeIv
 cois
 colgroup
 collabor
+collid
+colnam
 COLNAME
 colo
 colSpan
@@ -764,6 +780,7 @@ commitizen
 commitlint
 CommonJS
 compaq
+compar
 comparator
 compareDocumentPosition
 compat
@@ -772,6 +789,8 @@ compileline
 compilerCache
 complet
 completeDeferred
+complic
+compon
 compressibility
 comput
 computedVal
@@ -780,6 +799,7 @@ concat
 cond
 conda
 conditionFn
+condol
 conf
 confcache
 confdefs
@@ -802,6 +822,7 @@ confXXXXXX
 conix
 CONNEC
 consensu
+consequ
 consid
 Consolas
 Consor
@@ -814,9 +835,11 @@ contentstable
 contentType
 contextBackup
 contextmenu
+continu
 contrib
 ControlCount
 conv
+conveni
 convers
 ConvexOS
 copi
@@ -881,6 +904,7 @@ crohns
 crossDomain
 cru
 CRU
+crules
 crx
 cscope
 CSCOPE
@@ -910,6 +934,7 @@ csxbiM
 ctags
 CTAGS
 CTAGSFLAGS
+CThe
 ctime
 ctix
 CTIX
@@ -983,6 +1008,7 @@ dAA
 Dachary
 DaJwryutH
 DAlhBI
+Dall
 dar
 darwin
 dashdash
@@ -1052,6 +1078,7 @@ decstation
 decstatn
 decsystem
 dedent
+dedic
 dEDm
 deepDataAndEvents
 defaultDisplayMap
@@ -1064,6 +1091,7 @@ defaultView
 deferQuery
 deferreds
 Deferreds
+defin
 defineProperty
 definit
 defn
@@ -1116,6 +1144,7 @@ devDependencies
 dF
 dFHNmqeFSEt
 DFNSTU
+Dformat
 dg
 Dg
 DG
@@ -1254,6 +1283,7 @@ DOMEval
 domManip
 DOMParser
 doneName
+dosag
 doScroll
 dotString
 dou
@@ -1306,6 +1336,7 @@ dumpbin
 DUMPBIN
 dup
 DUpdate
+duplic
 dupnames
 Dupont
 dups
@@ -1390,6 +1421,7 @@ egtLzFgteqB
 ehFN
 EhHBb
 ehLgd
+Ehttps
 EiekbtZwmh
 EIG
 eigensoft
@@ -1410,6 +1442,7 @@ EKxMFpS
 el
 El
 ele
+eleg
 elemData
 elementMatcher
 elementMatchers
@@ -1453,6 +1486,7 @@ entir
 entium
 entli
 enum
+enumer
 env
 ENV
 environ
@@ -1522,13 +1556,16 @@ evec
 eventHandle
 eventPath
 eventPhase
+everyth
 EvlMPQ
 evt
 ewfXEznmQFfs
 EWRpQV
 eWXmV
 exactli
+exampl
 exceptionHook
+exclus
 exe
 EXE
 execut
@@ -1550,12 +1587,14 @@ extern
 externs
 extglob
 extrasub
+extrem
 eXy
 ey
 EyDoVL
 EykJT
 EYudVwEcMQNxd
 fA
+Fabove
 Fabrice
 fabs
 fadeIn
@@ -1598,6 +1637,7 @@ Fddc
 FdeRfxQ
 FDFDFD
 fe
+featur
 februari
 fec
 ferror
@@ -1635,10 +1675,12 @@ fiddl
 fido
 fieldset
 fieldsets
+fignumbers
 fil
 fileinterface
 FILEINTERFACE
 fileMap
+filenam
 filepart
 filesystem
 fileutils
@@ -1738,6 +1780,7 @@ freemint
 FreeMiNT
 freez
 freqs
+frequenc
 fRLXEZU
 fromCharCode
 frontend
@@ -1790,6 +1833,7 @@ fY
 fYcLnbZUc
 fypX
 fYWxSqAiK
+fZ
 fZa
 FZp
 ga
@@ -1986,6 +2030,7 @@ gsed
 GSYMS
 gtags
 GTAGS
+Gthe
 gtk
 gu
 guarante
@@ -2077,6 +2122,7 @@ HDS
 hea
 heade
 headerlink
+heavili
 hel
 Helfers
 hellscape
@@ -2099,6 +2145,7 @@ hgh
 hh
 hHCQEv
 HHeUP
+hHh
 hhhiuh
 hHK
 HHn
@@ -2123,6 +2170,7 @@ hj
 hjhgj
 hJHSPV
 hjK
+hJubah
 hkLPepehmnKk
 hKV
 hlist
@@ -2168,6 +2216,7 @@ hppa
 hppaosf
 hppro
 Hpq
+hpubah
 hpux
 HPUX
 hq
@@ -2266,6 +2315,7 @@ iDB
 idCounter
 iDcrh
 ident
+identifi
 idf
 IdfOsIsFz
 iDiEQrkyIbWp
@@ -2407,6 +2457,7 @@ includedir
 includefiles
 includehidden
 includeWidth
+incompat
 incomplet
 Incrementing
 indep
@@ -2483,7 +2534,9 @@ installinfo
 instanc
 instanceof
 instantiation
+integr
 intel
+interfac
 interferences
 intergraph
 interix
@@ -2492,6 +2545,7 @@ interlibrary
 intermedi
 internationalgenom
 internationalgenome
+intrins
 inttypes
 INTTYPES
 INUC
@@ -2735,6 +2789,7 @@ jFyFtrkx
 jG
 jgN
 jh
+jH
 Jh
 JH
 jhpAfUg
@@ -2758,10 +2813,13 @@ jL
 JL
 JLLCx
 jLQ
+jm
+jM
 JM
 jMdfQLQwJvJEKEHW
 jMdvvoKw
 JmeF
+jN
 JN
 jNRef
 JnSsTmV
@@ -2809,9 +2867,11 @@ jv
 jV
 Jvn
 jw
+jW
 Jw
 jwK
 jWxT
+jx
 jX
 JXa
 JxHc
@@ -2839,6 +2899,7 @@ KCVYo
 kd
 kDeXd
 kdguxelfx
+KDubeh
 kdxqhoa
 ke
 Ke
@@ -2922,9 +2983,11 @@ kk
 KkrRC
 Klr
 KlrDuGZ
+KLubh
 kludgy
 kLVoligQP
 kmI
+KModified
 kMuyYwha
 kneFk
 knetbsd
@@ -2978,6 +3041,7 @@ KoAc
 koaSU
 koL
 kopensolaris
+KOubh
 kp
 kpepnSQI
 KPGQ
@@ -3102,6 +3166,7 @@ KZZnXRKMTzZDRgQT
 Lahey
 lang
 LANGNAME
+languag
 lastChild
 lastElement
 lastIndexOf
@@ -3334,6 +3399,7 @@ lmw
 lmXKMvuszcMBduliQ
 ln
 lNAME
+LNcontrols
 lnews
 LNIB
 LNIC
@@ -3400,6 +3466,8 @@ lockfileVersion
 lodash
 logi
 logIR
+logor
+logOR
 loic
 Loic
 longtitles
@@ -3610,6 +3678,7 @@ malways
 mand
 mandi
 mandir
+mani
 manipulationTarget
 manpages
 mappedTypes
@@ -3676,6 +3745,7 @@ meq
 MERCHANTABILITY
 merg
 merlin
+messi
 metaanalysis
 metag
 metaKey
@@ -3709,6 +3779,7 @@ milan
 mildli
 mimeType
 mimetypes
+mIn
 mingw
 MinGW
 MINGW
@@ -3898,6 +3969,8 @@ nANALYZE
 nanomatch
 NaNs
 naso
+nasti
+nativ
 nativeBind
 nativeEvent
 nativeEvery
@@ -3907,6 +3980,7 @@ nativeIndexOf
 nativeIsArray
 nativeKeys
 nativeLastIndexOf
+natively
 nativeMap
 nativeReduce
 nativeReduceRight
@@ -3922,6 +3996,7 @@ nbsp
 NBSP
 nBxHeb
 nc
+ncase
 Ncases
 ncbi
 NCC
@@ -4073,6 +4148,7 @@ noinstLIBRARIES
 NOLOGO
 noMatch
 noModule
+nona
 noNA
 noNAs
 noncardia
@@ -4144,6 +4220,7 @@ NSX
 nt
 Nt
 ntCGGGaKsaVSjQ
+Nthe
 ntlqFxiRc
 nto
 nType
@@ -4151,6 +4228,7 @@ Nuba
 Nubah
 Nubeh
 Nubh
+NubhI
 nucleotides
 NUL
 nullary
@@ -4313,6 +4391,7 @@ OpenUNIX
 oper
 OpGi
 OpNPQPMGUToDtz
+opportun
 OPSYS
 optall
 optarg
@@ -4406,6 +4485,7 @@ pageY
 pageYOffset
 PAh
 pairnames
+pairwis
 palmer
 palmercd
 palmos
@@ -4476,6 +4556,7 @@ perl
 Permalink
 permalinks
 permision
+pertin
 peSuQ
 pfile
 pgcc
@@ -4648,6 +4729,7 @@ PQPL
 PQUK
 PQUT
 pR
+practic
 pre
 Pre
 PRE
@@ -4684,6 +4766,7 @@ preprocessors
 PreprocFile
 PREREQ
 preservedScriptAttributes
+presum
 pretti
 prev
 prevAll
@@ -4867,6 +4950,7 @@ qUHcFGVGj
 qui
 quickstart
 quie
+quirki
 quirkli
 quirkly
 qv
@@ -4904,6 +4988,7 @@ RANLIB
 rantiCache
 rawcaption
 rawentries
+rawid
 rawids
 rb
 RbcM
@@ -4993,6 +5078,7 @@ relativeURL
 relbar
 releas
 relev
+reli
 reliableMarginLeft
 reliableMarginLeftVal
 reliableTrDimensions
@@ -5021,6 +5107,7 @@ renalcell
 renderer
 reno
 repl
+replac
 replaceAll
 replaceChild
 replaceWith
@@ -5163,6 +5250,7 @@ RSID
 rsids
 rsIDs
 rsingleTag
+rSNP
 rsq
 Rsq
 RSQ
@@ -5213,6 +5301,7 @@ rzSD
 RZY
 sa
 safeActiveElement
+safeti
 sahklT
 saig
 saige
@@ -5263,6 +5352,7 @@ SDjUgDxQj
 sdm
 SDS
 se
+seamlessli
 seanf
 searchbox
 searchindexloader
@@ -5365,6 +5455,8 @@ SIGLOST
 sil
 sile
 silen
+simpl
+simplic
 simso
 singl
 singlehtml
@@ -5403,9 +5495,15 @@ sms
 sMsWaqOCW
 sn
 sN
+snakefil
+Snakefile
+snakemak
+snakemake
 Sndihtp
 sni
 snp
+snptest
+SNPTEST
 SnTErfb
 SNV
 sO
@@ -5415,6 +5513,7 @@ soJ
 solaris
 solidbsd
 SolidBSD
+solut
 somedai
 someth
 sometim
@@ -5528,6 +5627,7 @@ stopQueue
 stopwords
 str
 strAbort
+straightforwardli
 streamsize
 StrH
 stringify
@@ -5556,6 +5656,7 @@ su
 subanalyses
 subdir
 SUBDIR
+subdirectori
 subdirs
 subjectlevel
 subkey
@@ -5568,16 +5669,19 @@ subpipelin
 subpipelines
 subprocesses
 subproject
+subshel
 subshell
 subst
 SUBST
 subst'ed
 substed
+substitut
 substr
 subWindow
 suf
 suff
 suffi
+suffici
 SUFFIXn
 suIpIWD
 suitabl
@@ -5741,6 +5845,7 @@ tgz
 th
 thead
 thei
+themselv
 thenability
 thenable
 Thenable
@@ -5832,6 +5937,7 @@ TOOdI
 toolchain
 toolchains
 toplevel
+topm
 TOPMed
 TOPMED
 topsrcdirstrip
@@ -5951,6 +6057,7 @@ ubhW
 ubicom
 uBiEGu
 ubj
+ubjn
 uBL
 ubTonmneY
 ubuw
@@ -6083,6 +6190,7 @@ uMNZma
 umontreal
 umurYfYJCerbXEyFIWcAzvpipAgVkBqqT
 un
+unambigu
 uname
 UNAME
 unaugmented
@@ -6177,6 +6285,7 @@ UNUP
 UNUQ
 UNUR
 UNUS
+unusu
 UNUT
 UNUU
 UNUV
@@ -6362,6 +6471,7 @@ valueIsBorderBox
 valueIsFunction
 valueOrFunction
 valueParts
+variabl
 variadic
 varianceRatio
 varieti
@@ -6464,6 +6574,7 @@ vrpHNAnp
 vRqqttDTOmccg
 VrUByXN
 vsLzsYBu
+vSNP
 VsQYRvrXctxktVXZUkixw
 vsta
 vt
@@ -6492,6 +6603,7 @@ Vz
 VzF
 vУu
 wA
+wai
 waksiC
 wasi
 wasm
@@ -6517,6 +6629,7 @@ webkit
 Webkit
 WebKit
 webkitMatchesSelector
+websit
 wec
 weCN
 wEIILR
@@ -6532,6 +6645,7 @@ wG
 wget
 WGGEMEgKiT
 Wgpekn
+whatev
 whatwg
 whenDone
 whenev
@@ -6564,6 +6678,7 @@ WlbVge
 wNbZHIuMZpTcgjGuLU
 wOcfdRHaZ
 wOnpyBGRe
+workspac
 Wp
 wpafb
 wpdis
@@ -6738,6 +6853,7 @@ XZ
 XzpUF
 xڕSA
 yacc
+Yall
 yaml
 YAML
 YaVKAjfRLZ
