@@ -16,7 +16,7 @@ If you're not familiar with ``make`` at all, you should definitely skim the `mak
 first. I'll just cover some extremely brief thoughts on ``make`` usage in these pipelines.
 
 * rules rely heavily on text replacement and substitution for building input files from outputs;
-  see `make function documentation` for an overview
+  see `make function documentation`_ for an overview
 * `pattern rules`_ are great where possible, but sometimes are incompatible or just don't fit
   into my brain. feel free to swap them in where I've missed opportunities to do so
 * most pipelines begin with some form of enumeration of the possible outputs, and restriction
