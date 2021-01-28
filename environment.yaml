@@ -23,6 +23,7 @@ dependencies:
   - combine_categorical_runs
   - graf
   - initialize_output_directories
+  - merge_files_for_globus
   - metal
   - qsub_job_monitor
   - r-construct.model.matrix
