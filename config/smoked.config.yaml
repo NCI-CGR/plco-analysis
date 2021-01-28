@@ -33,5 +33,4 @@ ancestries:
   - East_Asian
 algorithm:
   - saige
-  - plink
 id_mode: rsid
