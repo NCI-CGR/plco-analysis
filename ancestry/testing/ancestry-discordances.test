@@ -1,6 +1,9 @@
 #!/bin/bash
 echo 1..5
-for chip in `echo "GSA Oncoarray OmniX Omni25 Omni5"` ;
+
+chips="$CHIPS"
+
+for chip in `echo "$chips"` ;
 do
     file_missing=0
     other_file_missing=0
@@ -8,15 +11,15 @@ do
     n_subjects=0
     n_crossover_subjects=0
 
-    target_file="../PLCO_$chip.graf_estimates.txt"
+    target_file="../$chip.graf_estimates.txt"
     if [[ -f "$target_file" ]] ; then
 	n_subjects=`awk 'NR > 1' $target_file | wc -l`
-	for other_chip in `echo "GSA Oncoarray OmniX Omni25 Omni5"`;
+	for other_chip in `echo "$chips"`;
 	do
 	    if [[ "$chip" == "$other_chip" ]] ; then
 		continue
 	    fi
-	    other_file="../PLCO_$other_chip.graf_estimates.txt"
+	    other_file="../$other_chip.graf_estimates.txt"
 	    if [[ -f "$other_file" ]] ; then
 		n_expected_overlap=`cat $target_file $other_file | awk -F"\t" '! /Self-reported/ {print $1}' | sort | uniq -d | wc -l`
 		((n_crossover_subjects = n_crossover_subjects + n_expected_overlap))

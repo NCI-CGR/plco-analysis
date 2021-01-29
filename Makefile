@@ -73,7 +73,7 @@ relatedness-check:
 	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR) check CHIPS="$(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip))))"
 
 ancestry-check:
-	$(MAKE) -C $(ANCESTRY_OUTPUT_DIR) check
+	$(MAKE) -C $(ANCESTRY_OUTPUT_DIR) check CHIPS="$(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip))))"
 
 cleaned-chips-by-ancestry-check:
 	$(MAKE) -C $(CLEANED_CHIP_OUTPUT_DIR) check
