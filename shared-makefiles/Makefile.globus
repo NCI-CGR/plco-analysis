@@ -13,8 +13,7 @@ OUTPUT_DIR := $(GLOBUS_OUTPUT_DIR)/31dec2020
 
 CONFIG_FILES := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## determine a unique set of phenotype/algorithm targets from the config directory
-#ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell res="`grep \"exclude_from_atlas:\" $(file) | wc -l`"; if [[ "$$res" -eq "0" ]] ; then echo "`awk '/phenotype:/ ; /- boltlmm/ || /- saige/ {$$1 = \"algorithm:\" ; print $$0}' $(file) | sort -r | awk '{$$1 = ""; printf(\"%s\t\",$$0)}' | awk '{for (i = 2 ; i <= NF ; ++i) print $$1\".\"toupper($$i)}'`" ; fi)))
-ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell $(SHARED_SOURCE)/format_globus_prefixes.py $(file))))
+ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell $(FORMAT_GLOBUS_PREFIXES) $(file))))
 
 
 ## add prefixes and suffixes appropriately
