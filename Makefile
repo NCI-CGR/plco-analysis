@@ -70,7 +70,7 @@ bgen-check:
 	$(MAKE) -C $(BGEN_OUTPUT_DIR) check FILTERED_DOSAGE_DATA=$(FILTERED_IMPUTED_INPUT_DIR)
 
 relatedness-check:
-	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR) check
+	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR) check CHIPS="$(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip))))"
 
 ancestry-check:
 	$(MAKE) -C $(ANCESTRY_OUTPUT_DIR) check
