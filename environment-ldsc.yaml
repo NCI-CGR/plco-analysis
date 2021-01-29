@@ -1,0 +1,4 @@
+name: plco-analysis-ldsc
+dependencies:
+  - ldsc-rebuild
+  - plink

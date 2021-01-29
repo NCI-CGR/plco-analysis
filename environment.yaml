@@ -9,7 +9,6 @@ dependencies:
   - plink
   - plink2
   - eigensoft=6.0.1
-  - ldsc
   - bolt-lmm
   - r-saige
   - r-ggplot2
