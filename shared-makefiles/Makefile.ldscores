@@ -130,7 +130,7 @@ $(subst .tsv.gz,.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_OTHER
 ##    modified rule is designed for categorical meta-analysis summary files, in which standard errors
 ##    for the consensus p-value are not available so R is used to reverse engineer them
 $(subst .tsv.gz,.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_CATEGORICAL_META_TARGETS)): $$(subst .ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),.tsv.gz,$$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SHARED_SOURCE)/parse_categorical_output.R $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(PARSE_CATEGORICAL_OUTPUT) $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {ldsc_data_GRCh38}/{CHR}.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX)
