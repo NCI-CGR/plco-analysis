@@ -1,10 +1,14 @@
 #!/bin/bash
 echo 1..35
 
-for chip in `echo "GSA Oncoarray OmniX Omni25 Omni5"`;
+chips="$CHIPS"
+ancestry_dir="$ANCESTRY_DIR"
+ancestry_names="$ANCESTRY_NAMES"
+
+for chip in `echo "$chips"`;
 do
-    ancestry_filename="../../ancestry/PLCO_$chip.graf_estimates.txt"
-    for ancestry in `echo "European East_Asian African_American Hispanic1 Hispanic2 South_Asian Other"`;
+    ancestry_filename="$ancestry_dir/$chip.graf_estimates.txt"
+    for ancestry in `echo "$ancestry_names"`;
     do
 	ancestry_file_missing=""
 	ancestry_directory_missing=""

@@ -76,7 +76,7 @@ ancestry-check:
 	$(MAKE) -C $(ANCESTRY_OUTPUT_DIR) check CHIPS="$(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip))))"
 
 cleaned-chips-by-ancestry-check:
-	$(MAKE) -C $(CLEANED_CHIP_OUTPUT_DIR) check
+	$(MAKE) -C $(CLEANED_CHIP_OUTPUT_DIR) check CHIPS="$(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip))))" ANCESTRY_DIR=$(ANCESTRY_OUTPUT_DIR) ANCESTRY_NAMES="$(CLEANED_ANCESTRY_NAMES)"
 
 boltlmm-check: config-check
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ CONFIG_DIR=$(CONFIG_INPUT_DIR) CHIP_DIR=$(CLEANED_CHIP_OUTPUT_DIR) IMPUTED_DIR=$(BGEN_OUTPUT_DIR) RESULTS_DIR=$(RESULT_OUTPUT_DIR) MINIMUM_SUBJECTS=$(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)

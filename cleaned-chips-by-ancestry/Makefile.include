@@ -16,7 +16,7 @@ FINAL_CHIP_DATA := $(CHIP_FREEZE_INPUT_DIR)
 ## emits subject IDs for all subjects on a given platform matching a specified ancestry.
 ## intersects this with a chip famfile in case the ancestry data are a superset of the chip (this was relevant earlier in the cleaning process, but shouldn't be so now)
 define ancestry_extract
-sed 's/ /_/g' $(ANCESTRY_OUTPUT_DIR)/PLCO_$(2).graf_estimates.txt | awk '/\t$(1)$$/ {print $$1}' | sort | uniq | cat - $(FINAL_CHIP_DATA)/PLCO_$(2).fam | awk '{print $$1}' | sed 's/_//g' | sort | uniq -d
+sed 's/ /_/g' $(ANCESTRY_OUTPUT_DIR)/$(2).graf_estimates.txt | awk '/\t$(1)$$/ {print $$1}' | sort | uniq | cat - $(FINAL_CHIP_DATA)/PLCO_$(2).fam | awk '{print $$1}' | sed 's/_//g' | sort | uniq -d
 endef
 
 ## get all the platforms that have at least the minimum required number of subjects for cleaning (defaults to 10)
@@ -86,9 +86,9 @@ GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
 
 ## patterns:
 ##    output: {CHIP}.ancestry.keep$(TRACKING_SUCCESS_SUFFIX)
-##    input:  {ANCESTRY_PIPELINE}/PLCO_{CHIP}.graf_estimates.txt
+##    input:  {ANCESTRY_PIPELINE}/{CHIP}.graf_estimates.txt
 ## Notes: assumes the ancestry pipeline has already been run; top level makefile controls this behavior
-%.ancestry.keep$(TRACKING_SUCCESS_SUFFIX): $(ANCESTRY_OUTPUT_DIR)/PLCO_$$(subst .ancestry.keep$(TRACKING_SUCCESS_SUFFIX),,$$@).graf_estimates.txt
+%.ancestry.keep$(TRACKING_SUCCESS_SUFFIX): $(ANCESTRY_OUTPUT_DIR)/$$(subst .ancestry.keep$(TRACKING_SUCCESS_SUFFIX),,$$@).graf_estimates.txt
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(call ancestry_extract,$(POPULATION_NAME),$(subst .ancestry.keep$(TRACKING_SUCCESS_SUFFIX),,$@)) | awk -F"\t" '{print $$1"\t"$$1}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
