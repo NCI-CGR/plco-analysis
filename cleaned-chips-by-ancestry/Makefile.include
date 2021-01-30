@@ -189,7 +189,7 @@ $(patsubst %,%.step5.ibs-split.genome.gz$(TRACKING_SUCCESS_SUFFIX),$(LARGE_STUDI
 ##    input:  {CHIP}.pca.poplist$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: generate smartpca parameter file. inputs are just to modify when it's rebuilt
 %.pca.par$(TRACKING_SUCCESS_SUFFIX): %.step6.bed$(TRACKING_SUCCESS_SUFFIX) %.step6.snp$(TRACKING_SUCCESS_SUFFIX) %.step6.ind$(TRACKING_SUCCESS_SUFFIX) %.pca.poplist$(TRACKING_SUCCESS_SUFFIX)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo -e "genotypename: $(subst $(TRACKING_SUCCESS_SUFFIX),,$<)\nsnpname: $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^))\nindivname: $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^))\nevecoutname: $(subst .pca.par,,$@).step7.evec\naltnormstyle: NO\nnumoutevec: $(SMARTPCA_N_PCS)\nnumoutlieriter: 5\nnumoutlierevec: 2\noutliersigmathresh: 6.0\nqtmode: 0\nfastmode: 1\npoplist: $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^))" > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),echo -e "genotypename: $(subst $(TRACKING_SUCCESS_SUFFIX),,$<)\nsnpname: $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^))\nindivname: $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^))\nevecoutname: $(subst .pca.par$(TRACKING_SUCCESS_SUFFIX),,$@).step7.evec\naltnormstyle: NO\nnumoutevec: $(SMARTPCA_N_PCS)\nnumoutlieriter: 5\nnumoutlierevec: 2\noutliersigmathresh: 6.0\nqtmode: 0\nfastmode: 1\npoplist: $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^))" > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.pca.poplist$(TRACKING_SUCCESS_SUFFIX)
