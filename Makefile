@@ -70,13 +70,13 @@ bgen-check:
 	$(MAKE) -C $(BGEN_OUTPUT_DIR) check FILTERED_DOSAGE_DATA=$(FILTERED_IMPUTED_INPUT_DIR)
 
 relatedness-check:
-	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR) check CHIPS="$(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip))))"
+	$(MAKE) -C $(RELATEDNESS_OUTPUT_DIR) check CHIPS="$(sort $(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip)))))"
 
 ancestry-check:
-	$(MAKE) -C $(ANCESTRY_OUTPUT_DIR) check CHIPS="$(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip))))"
+	$(MAKE) -C $(ANCESTRY_OUTPUT_DIR) check CHIPS="$(sort $(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip)))))"
 
 cleaned-chips-by-ancestry-check:
-	$(MAKE) -C $(CLEANED_CHIP_OUTPUT_DIR) check CHIPS="$(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip))))" ANCESTRY_DIR=$(ANCESTRY_OUTPUT_DIR) ANCESTRY_NAMES="$(CLEANED_ANCESTRY_NAMES)"
+	$(MAKE) -C $(CLEANED_CHIP_OUTPUT_DIR) check CHIPS="$(sort $(foreach chip,$(PLATFORMS),$(firstword $(subst _, ,$(chip)))))" ANCESTRY_DIR=$(ANCESTRY_OUTPUT_DIR) ANCESTRY_NAMES="$(CLEANED_ANCESTRY_NAMES)"
 
 boltlmm-check: config-check
 	$(MAKE) -C $(SHARED_MAKEFILES) -f Makefile.check $@ CONFIG_DIR=$(CONFIG_INPUT_DIR) CHIP_DIR=$(CLEANED_CHIP_OUTPUT_DIR) IMPUTED_DIR=$(BGEN_OUTPUT_DIR) RESULTS_DIR=$(RESULT_OUTPUT_DIR) MINIMUM_SUBJECTS=$(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)
