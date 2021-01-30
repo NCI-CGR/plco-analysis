@@ -2,3 +2,6 @@ name: plco-analysis-ldsc
 dependencies:
   - ldsc-rebuild
   - plink
+  - git
+  - git-lfs
+

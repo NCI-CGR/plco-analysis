@@ -3,6 +3,8 @@ dependencies:
   - bash
   - pyyaml
   - make>=4.2
+  - git
+  - git-lfs
 # may need to change this depending on installation target
   - gxx_linux-64
   - boost-cpp=1.70
