@@ -33,7 +33,6 @@ ancestries:
   - East_Asian
 algorithm:
   - saige
-  - plink
 sex-specific: male
 id_mode: rsid
 control_inclusion:

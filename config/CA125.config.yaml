@@ -33,6 +33,5 @@ ancestries:
   - South_Asian
 algorithm:
   - boltlmm
-  - plink
   - fastgwa
 id_mode: rsid

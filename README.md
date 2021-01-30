@@ -49,47 +49,49 @@ Optional depending on individual requirements:
 - [x] fastGWA support
 - [x] SAIGE support (binary traits)
 - [x] SAIGE support (categorical traits)
-- [ ] meta-analysis with metal
+- [x] meta-analysis with metal
   - [x] support for fastGWA
   - [x] support for BOLT-LMM
   - [x] support for SAIGE/binary
-  - [ ] support for SAIGE/categorical (#1 #27 #30)
-- [x] rsID support request (#28)
+  - [x] support for SAIGE/categorical
+- [x] rsID support request
 - [x] full resumability
   - [x] resumable for cluster-submitted jobs
-  - [x] resumable for non-cluster jobs (#9)
+  - [x] resumable for non-cluster jobs
 - [x] full logging
   - [x] logging for cluster-submitted jobs
   - [x] logging for non-cluster jobs (#9)
 - [x] SGE/qsub support
 - [x] configuration via YAML
 - [x] more efficient yaml access in preprocessor (#25)
-- [ ] testing via yaml (#13)
-- [ ] heuristic testing to support above (#4 #5 #6 #18 #19 #21)
-- [ ] hunt down last untracked auxiliary files (#24)
-- [ ] documentation: barebones installation instructions, conda for saige (#2)
-- [ ] documentation: doxygen support (#29)
-- [ ] this README (#3)
+- [x] testing via yaml (#13)
+- [x] heuristic testing to support above
+- [x] hunt down last untracked auxiliary files
+- [ ] complete (straightforward and documented) platform independence with conda
+- [ ] documentation: R-style vignette for generalized usage
+- [x] this README
 
 ##### v2.0 (approximately corresponding with the end of PLCO Atlas)
-- [ ] polmm/ordinal phenotype support (#14)
-- [ ] top-level parameter exposure for analysis tools (#22)
-- [ ] slurm support (#7)
-- [ ] scalable testing with per-test dependency specification (#17)
-- [ ] force post-primary analysis tools to ignore analysis results absent from config (#10)
+- [ ] polmm/ordinal phenotype support
+- [ ] top-level parameter exposure for analysis tools
+- [ ] slurm support
+- [ ] scalable testing with per-test dependency specification
+- [ ] force post-primary analysis tools to ignore analysis results absent from config
 - [ ] heuristic testing to support above
 - [ ] documentation: full installation for multiple platforms, clusters; possibly docker
-- [ ] this README (#3)
+- [ ] documentation: doxygen support
+- [ ] this README
 
 ##### v3.0 (the Confluence build)
-- [ ] complete (straightforward and documented) platform independence (#16)
-- [ ] config-level parameter exposure for analysis tools (#23)
-- [ ] integration of external meta-analysis files (#11)
-- [ ] distributed meta-analysis best practice QC measures (#12)
-- [ ] LSF support (#8)
-- [ ] documentation: R-style vignette for generalized usage (#15)
+- [ ] config-level parameter exposure for analysis tools
+- [ ] integration of external meta-analysis files
+- [ ] distributed meta-analysis best practice QC measures 
+- [ ] LSF support
 - [ ] heuristic testing to support above
-- [ ] this README (#3)
+- [ ] this README
 
 ### Version History
-No locked versions exist yet!
+
+- 13 January 2021: urgent patches. v1.0.0 is merely for recordkeeping for T1 run
+
+- 12 January 2021: initial migration to CGR GitHub! v1.0.0, for tranche 1

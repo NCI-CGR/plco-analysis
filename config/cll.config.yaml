@@ -33,7 +33,6 @@ ancestries:
   - East_Asian
 algorithm:
   - saige
-  - plink
 id_mode: rsid
 control_inclusion:
   clean_control: 1

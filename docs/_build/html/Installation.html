@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Installation &#8212; plco-analysis v1.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Preprocessing" href="Preprocessing.html" />
+    <link rel="prev" title="Welcome to plco-analysis’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>This document will cover the installation process for this pipeline.
+Note that this in particular is a work in progress that will be finalized
+by 05 February 2021, but until then should be considered incomplete
+and not necessarily suitable for use.</p>
+<p>The pipeline is configured for installation with <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a>. Other installation
+methods are possible but not supported.</p>
+</div>
+<div class="section" id="short-version-for-experts">
+<h2>Short Version (for experts)<a class="headerlink" href="#short-version-for-experts" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Install or activate <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a></p></li>
+<li><p>If needed, install git</p></li>
+<li><p>Clone the <a class="reference external" href="https://github.com/NCI-CGR/conda-cgr">analysis pipeline repository</a></p></li>
+<li><p>Navigate into the repository directory</p></li>
+<li><p>Create the <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> environment specified by <strong>environment.yaml</strong></p></li>
+<li><p>Activate the environment (make sure to do this whenever launching runs)</p></li>
+<li><p>Update <strong>Makefile.config</strong> to point to your copies of the following:</p>
+<ul>
+<li><p>PLCO chip freeze</p></li>
+<li><p>PLCO imputed data freeze</p></li>
+<li><p>PLCO phenotype data</p></li>
+</ul>
+</li>
+<li><p>You are now ready to start running the pipeline, good luck!</p></li>
+</ul>
+</div>
+<div class="section" id="long-version-for-interested-parties">
+<h2>Long Version (for interested parties)<a class="headerlink" href="#long-version-for-interested-parties" title="Permalink to this headline">¶</a></h2>
+<p>TODO</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">plco-analysis</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#short-version-for-experts">Short Version (for experts)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#long-version-for-interested-parties">Long Version (for interested parties)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Preprocessing.html">Preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Primary%20Analysis.html">Primary Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Meta-Analysis.html">Meta-Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Postprocessing.html">Postprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Globus%20Distribution.html">Globus Distribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="User%20Vignette.html">User Vignette</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Advanced%20Development%20Notes.html">Advanced Development Notes</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to plco-analysis’s documentation!</a></li>
+      <li>Next: <a href="Preprocessing.html" title="next chapter">Preprocessing</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Cameron Palmer.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/Installation.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

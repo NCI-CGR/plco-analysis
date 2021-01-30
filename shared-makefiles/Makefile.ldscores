@@ -17,9 +17,8 @@ SAIGE_OTHER_META_TARGETS := $(shell echo $(SAIGE_META_TARGETS) $(SAIGE_CATEGORIC
 
 ALL_OUTPUT := $(subst .tsv,.ldsc.log$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_TARGETS) $(BOLT_TARGETS)) $(subst .tsv.gz,.ldsc.log$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_CATEGORICAL_META_TARGETS) $(SAIGE_OTHER_META_TARGETS) $(BOLT_META_TARGETS))
 
-## eventually add to global config
-MUNGE_SUMSTATS := ~/Development/ldsc/munge_sumstats.py
-LD_CHR := /CGF/GWAS/Scans/PLCO/builds/1/analysis-requests/ldsc/eur_w_ld_chr/
+## assumes ldsc pipeline has run to completion
+LD_CHR := $(LDSC_OUTPUT_DIR)/eur_w_ld_chr/
 LD_CHR_GRCh38 := $(subst w_ld_chr/,w_ld_chr_GRCh38/,$(LD_CHR))
 LD_TARGETS := $(patsubst %,$(LD_CHR_GRCh38)%.l2.M_5_50,$(CHRS))
 
@@ -103,7 +102,7 @@ $(subst .tsv,.ldsc.report.precursor$(TRACKING_SUCCESS_SUFFIX),$(shell echo $(SAI
 ##    input:  results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: run their ridiculous "munge_sumstats" script to get the analysis results in a format ldsc accepts
 %.ldsc.sumstats.gz$(TRACKING_SUCCESS_SUFFIX): %.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MUNGE_SUMSTATS) --signed-sumstats STAT$(COMMA)0 --out $(subst .sumstats.gz$(TRACKING_SUCCESS_SUFFIX),,$@) --a1-inc --frq Freq_Tested_Allele_in_TOPMed --N-col N --a1 Tested_Allele --a2 Other_Allele --snp SNP --sumstats $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) --p P)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MUNGE_SUMSTATS_PY) --signed-sumstats STAT$(COMMA)0 --out $(subst .sumstats.gz$(TRACKING_SUCCESS_SUFFIX),,$@) --a1-inc --frq Freq_Tested_Allele_in_TOPMed --N-col N --a1 Tested_Allele --a2 Other_Allele --snp SNP --sumstats $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) --p P)
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/European/{METHOD}/{PHENOTYPE}.{CHIP}.{METHOD}.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX)
@@ -130,7 +129,7 @@ $(subst .tsv.gz,.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_OTHER
 ##    modified rule is designed for categorical meta-analysis summary files, in which standard errors
 ##    for the consensus p-value are not available so R is used to reverse engineer them
 $(subst .tsv.gz,.ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_CATEGORICAL_META_TARGETS)): $$(subst .ldsc.ldsc-processed.tsv$(TRACKING_SUCCESS_SUFFIX),.tsv.gz,$$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(SHARED_SOURCE)/parse_categorical_output.R $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $(PARSE_CATEGORICAL_OUTPUT) $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {ldsc_data_GRCh38}/{CHR}.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX)
