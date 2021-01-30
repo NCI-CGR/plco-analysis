@@ -67,19 +67,21 @@ endef
 	fi
 
 
+
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.rawids.tsv$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  [frequency annotation software]
-##            [frequency annotation data]
+##            [frequency annotation metadata]
+##            [frequency annotation values for relevant supercontinent]
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.nofreq.tsv$(TRACKING_SUCCESS_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm$(FREQUENCY_MODE_TRACKER_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.model_matrix$(TRACKING_SUCCESS_SUFFIX)
 ##            results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: add frequency data to a results file
-%.boltlmm.rawids.tsv$(TRACKING_SUCCESS_SUFFIX): $(ANNOTATE_FREQUENCY) $(TOPMED_FREQUENCY_FILE) %.boltlmm.nofreq.tsv$(TRACKING_SUCCESS_SUFFIX) %.boltlmm$(FREQUENCY_MODE_TRACKER_SUFFIX) %.boltlmm.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
-	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(word 4,$^)))
+%.boltlmm.rawids.tsv$(TRACKING_SUCCESS_SUFFIX): $(ANNOTATE_FREQUENCY) $(TOPMED_FREQUENCY_METADATA) $$(TOPMED_FREQUENCY_FILE_PREFIX)$$(call resolve_ancestry,$$@)$$(TOPMED_FREQUENCY_FILE_SUFFIX) %.boltlmm.nofreq.tsv$(TRACKING_SUCCESS_SUFFIX) %.boltlmm$(FREQUENCY_MODE_TRACKER_SUFFIX) %.boltlmm.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
+	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(word 5,$^)))
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(call resolve_ancestry,$@) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))) ; \
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 4,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< -i $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 4,$^)) -m $(word 2,$^) -f $(word 3,$^) -s $(call resolve_ancestry,$@) -o $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))) ; \
 	else \
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
