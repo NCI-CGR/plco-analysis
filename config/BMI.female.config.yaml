@@ -33,7 +33,6 @@ ancestries:
   - South_Asian
 algorithm:
   - boltlmm
-  - plink
   - fastgwa
 sex-specific: female
 id_mode: rsid

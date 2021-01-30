@@ -3,16 +3,27 @@
 
 include $(PROJECT_BASE_DIR)/Makefile.config
 
-.PHONY: all
+.PHONY: all reference_ld_scores
 .DELETE_ON_ERROR:
 .SECONDARY:
 .SECONDEXPANSION:
 1KG_POPS := AFR EUR SAS EAS AMR
 ALL_TARGETS := $(patsubst %,LDSCORE.1000G_%.l2.ldscore-reformatted.gz$(TRACKING_SUCCESS_SUFFIX),$(1KG_POPS) ALL AFRAMR)
-all: $(filter-out %_ALL.l2.ldscore-reformatted.gz$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS))
+all: $(filter-out %_ALL.l2.ldscore-reformatted.gz$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)) reference_ld_scores
 LDSC := $(LDSC_PY)
 HG38_CM_MAP := $(GRCH38_RECOMBINATION_MAP)
 MAF_THRESHOLD := $(LDSC_MAF_THRESHOLD)
+
+
+## Custom and extremely rushed rules for downloading precomputed LD scores for 1KG reference subjects
+## see https://github.com/bulik/ldsc
+reference_ld_scores: eur_w_ld_chr/1.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX)
+
+eur_w_ld_chr/1.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX): $$(firstword $$(subst /, ,$$@)).tar.bz2$(TRACKING_SUCCESS_SUFFIX)
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),tar xjvf $(subst $(TRACKING_SUCCESS_SUFFIX),,$<))
+
+eur_w_ld_chr.tar.bz2$(TRACKING_SUCCESS_SUFFIX):
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),wget https://data.broadinstitute.org/alkesgroup/LDSCORE/$(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: LDSCORE.1000G_{POP}.l2.ldscore-reformatted.gz$(TRACKING_SUCCESS_SUFFIX)

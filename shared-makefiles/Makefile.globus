@@ -6,7 +6,6 @@ include $(PROJECT_BASE_DIR)/Makefile.config
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 OUTPUT_DIR := $(GLOBUS_OUTPUT_DIR)/31dec2020
-MERGE_SOFTWARE := $(SHARED_SOURCE)/merge_files_for_globus.out
 .DELETE_ON_ERROR:
 .PHONY: all
 .SECONDARY:
@@ -14,8 +13,7 @@ MERGE_SOFTWARE := $(SHARED_SOURCE)/merge_files_for_globus.out
 
 CONFIG_FILES := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## determine a unique set of phenotype/algorithm targets from the config directory
-#ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell res="`grep \"exclude_from_atlas:\" $(file) | wc -l`"; if [[ "$$res" -eq "0" ]] ; then echo "`awk '/phenotype:/ ; /- boltlmm/ || /- saige/ {$$1 = \"algorithm:\" ; print $$0}' $(file) | sort -r | awk '{$$1 = ""; printf(\"%s\t\",$$0)}' | awk '{for (i = 2 ; i <= NF ; ++i) print $$1\".\"toupper($$i)}'`" ; fi)))
-ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell $(SHARED_SOURCE)/format_globus_prefixes.py $(file))))
+ALL_TARGETS := $(sort $(foreach file,$(CONFIG_FILES),$(shell $(FORMAT_GLOBUS_PREFIXES) $(file))))
 
 
 ## add prefixes and suffixes appropriately
@@ -41,9 +39,9 @@ $(OUTPUT_DIR)/%.tsv.gz.checksum$(TRACKING_SUCCESS_SUFFIX): $$(subst .checksum,,$
 ##        for reasons, leave it to the merge software to figure out what is what
 $(OUTPUT_DIR)/%.tsv.gz$(TRACKING_SUCCESS_SUFFIX): $$(shell find $$(RESULTS_DIR) -maxdepth 4 -path "*/$$(firstword $$(subst ., ,$$(notdir $$@)))*/*/$$(lastword $$(subst ., ,$$(subst .tsv.gz$(TRACKING_SUCCESS_SUFFIX),,$$(notdir $$@))))/*.$$(lastword $$(subst ., ,$$(subst .tsv.gz$(TRACKING_SUCCESS_SUFFIX),,$$(notdir $$@)))).tsv.gz" -print) | $$(dir $$@)
 	if [[ -d "$(RESULTS_DIR)/$(firstword $(subst ., ,$(notdir $@)))_female" ]] ; then \
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MERGE_SOFTWARE) $^ $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) yes) ; \
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MERGE_FILES_FOR_GLOBUS) $^ $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) yes) ; \
 	else \
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MERGE_SOFTWARE) $^ $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) no) ; \
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MERGE_FILES_FOR_GLOBUS) $^ $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) no) ; \
 	fi
 
 $(sort $(dir $(ALL_TARGETS))):

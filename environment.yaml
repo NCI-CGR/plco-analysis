@@ -1,0 +1,32 @@
+name: plco-analysis
+dependencies:
+  - bash
+  - pyyaml
+  - make>=4.2
+  - git
+  - git-lfs
+# may need to change this depending on installation target
+  - gxx_linux-64
+  - boost-cpp=1.70
+  - plink
+  - plink2
+  - eigensoft=6.0.1
+  - bolt-lmm
+  - r-saige=0.43.0
+  - r-ggplot2
+  - r-rcolorbrewer
+  - r-cairo
+  - ucsc-liftover
+# custom recipes from CGR's conda channel
+  - annotate_frequency
+  - annotate_rsids_from_linker
+  - bolt-lmm-genetic-map-hg38
+  - combine_categorical_runs
+  - graf
+  - initialize_output_directories
+  - merge_files_for_globus
+  - metal
+  - qsub_job_monitor
+  - r-construct.model.matrix
+  - r-gwasqcplots
+  - ucsc-hg19tohg38
