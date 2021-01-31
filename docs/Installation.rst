@@ -54,6 +54,13 @@ list under "2. Set up channels"
 
 .. _`these conda installation instructions`: https://bioconda.github.io/
 
+.. warning::
+   Default miniconda installation will recommend that you place your miniconda installation in ``~/miniconda3``.
+   This is your home directory. Many systems, including ``cgems/ccad`` and ``biowulf``, have severe memory limits
+   on home directories, which you will very promply fill if you place your miniconda installation there. Instead,
+   when it prompts you for that installation patch, choose a directory in a space where you have a higher memory
+   limit.
+
 Check your ``~/.condarc``; add the channels ``r`` and ``https://raw.githubusercontent.com/NCI-CGR/conda-cgr/default/conda-cgr``
 to the top of your list of channels if they are not already present.
 

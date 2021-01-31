@@ -74,6 +74,14 @@ one for most applications and with a copy of python3, and one for the limited se
 <p>If you have not used <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> before, you will need to install it for your user account. You can follow
 <a class="reference external" href="https://bioconda.github.io/">these conda installation instructions</a> for more detailed information. Be sure to add the channels they
 list under “2. Set up channels”</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Default miniconda installation will recommend that you place your miniconda installation in <code class="docutils literal notranslate"><span class="pre">~/miniconda3</span></code>.
+This is your home directory. Many systems, including <code class="docutils literal notranslate"><span class="pre">cgems/ccad</span></code> and <code class="docutils literal notranslate"><span class="pre">biowulf</span></code>, have severe memory limits
+on home directories, which you will very promply fill if you place your miniconda installation there. Instead,
+when it prompts you for that installation patch, choose a directory in a space where you have a higher memory
+limit.</p>
+</div>
 <p>Check your <code class="docutils literal notranslate"><span class="pre">~/.condarc</span></code>; add the channels <code class="docutils literal notranslate"><span class="pre">r</span></code> and <code class="docutils literal notranslate"><span class="pre">https://raw.githubusercontent.com/NCI-CGR/conda-cgr/default/conda-cgr</span></code>
 to the top of your list of channels if they are not already present.</p>
 <div class="admonition warning">
