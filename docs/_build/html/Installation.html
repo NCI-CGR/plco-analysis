@@ -172,14 +172,14 @@ more aggressive than you may need. You can instead try running <code class="docu
 <li><p>I’ll note here that specific errors regarding <code class="docutils literal notranslate"><span class="pre">boost-cpp=1.70</span></code> are more troublesome. The packages <code class="docutils literal notranslate"><span class="pre">bolt-lmm</span></code>, <code class="docutils literal notranslate"><span class="pre">r-saige</span></code>, and some
 not-yet-tracked-down dependencies of <code class="docutils literal notranslate"><span class="pre">r-saige</span></code> were built specifically against <code class="docutils literal notranslate"><span class="pre">boost-cpp=1.70</span></code> and block newer versions. I’ve thus
 built the <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code> internal packages <a class="reference external" href="https://github.com/NCI-CGR/annotate_frequency">annotate_frequency</a>, <a class="reference external" href="https://github.com/NCI-CGR/combine_categorical_runs">combine_categorical_runs</a>, <a class="reference external" href="https://github.com/NCI-CGR/initialize_output_directories">initialize_output_directories</a>,
-<a class="reference external" href="https://github.com/NCI-CGR/merge_files_for_glbus">merge_files_for_globus</a>, and <a class="reference external" href="https://github.com/NCI-CGR/qsub_job_monitor">qsub_job_monitor</a> against <cite>boost-cpp=1.70</cite> as well. If this breaks in the future, or if/when <cite>boost-cpp=1.70</cite>
-leaves <cite>conda</cite>, there’s going to be trouble. My apologies to Future Person who has to deal with this nonsense.</p></li>
+<a class="reference external" href="https://github.com/NCI-CGR/merge_files_for_glbus">merge_files_for_globus</a>, and <a class="reference external" href="https://github.com/NCI-CGR/qsub_job_monitor">qsub_job_monitor</a> against <code class="docutils literal notranslate"><span class="pre">boost-cpp=1.70</span></code> as well. If this breaks in the future, or if/when <code class="docutils literal notranslate"><span class="pre">boost-cpp=1.70</span></code>
+leaves <code class="docutils literal notranslate"><span class="pre">conda</span></code>, there’s going to be trouble. My apologies to Future Person who has to deal with this nonsense.</p></li>
 </ul>
 </div>
 </div>
 <div class="section" id="environment-usage">
 <h3>Environment Usage<a class="headerlink" href="#environment-usage" title="Permalink to this headline">¶</a></h3>
-<p>I’ve said it above and I’ll say it again here so that when this inevitably causes, you’ll hopefully see it somewhere:</p>
+<p>I’ve said it above and I’ll say it again here so that when this inevitably causes problems, you’ll hopefully see it somewhere:</p>
 <ul>
 <li><p>activate <code class="docutils literal notranslate"><span class="pre">plco-analysis-ldsc</span></code> when you are running the <strong>ldsc</strong> pipeline in <code class="docutils literal notranslate"><span class="pre">ldsc/Makefile</span></code> with <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ldsc</span></code>; or when
 you are running the <strong>ldscore regression</strong> pipeline in <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefiles.ldscores</span></code> with <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ldscores</span></code>:</p>

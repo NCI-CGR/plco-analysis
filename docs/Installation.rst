@@ -162,8 +162,8 @@ Create the two `conda`_ environments used by the pipeline using the environment 
    * I'll note here that specific errors regarding ``boost-cpp=1.70`` are more troublesome. The packages ``bolt-lmm``, ``r-saige``, and some
      not-yet-tracked-down dependencies of ``r-saige`` were built specifically against ``boost-cpp=1.70`` and block newer versions. I've thus
      built the ``plco-analysis`` internal packages `annotate_frequency`_, `combine_categorical_runs`_, `initialize_output_directories`_,
-     `merge_files_for_globus`_, and `qsub_job_monitor`_ against `boost-cpp=1.70` as well. If this breaks in the future, or if/when `boost-cpp=1.70`
-     leaves `conda`, there's going to be trouble. My apologies to Future Person who has to deal with this nonsense.
+     `merge_files_for_globus`_, and `qsub_job_monitor`_ against ``boost-cpp=1.70`` as well. If this breaks in the future, or if/when ``boost-cpp=1.70``
+     leaves ``conda``, there's going to be trouble. My apologies to Future Person who has to deal with this nonsense.
 
 .. _`annotate_frequency`: https://github.com/NCI-CGR/annotate_frequency
 .. _`combine_categorical_runs`: https://github.com/NCI-CGR/combine_categorical_runs
@@ -175,7 +175,7 @@ Create the two `conda`_ environments used by the pipeline using the environment 
 Environment Usage
 ~~~~~~~~~~~~~~~~~
 
-I've said it above and I'll say it again here so that when this inevitably causes, you'll hopefully see it somewhere:
+I've said it above and I'll say it again here so that when this inevitably causes problems, you'll hopefully see it somewhere:
 
 * activate ``plco-analysis-ldsc`` when you are running the **ldsc** pipeline in ``ldsc/Makefile`` with ``make ldsc``; or when
   you are running the **ldscore regression** pipeline in ``shared-makefiles/Makefiles.ldscores`` with ``make ldscores``:
