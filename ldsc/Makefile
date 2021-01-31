@@ -19,7 +19,7 @@ MAF_THRESHOLD := $(LDSC_MAF_THRESHOLD)
 ## see https://github.com/bulik/ldsc
 reference_ld_scores: eur_w_ld_chr/1.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX)
 
-eur_w_ld_chr/1.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX): $$(firstword $$(subst /, ,$$@)).tar.bz2$(TRACKING_SUCCESS_SUFFIX)
+eur_w_ld_chr/1.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX): $$(firstword $$(subst /, ,$$@)).tar.bz2$(TRACKING_SUCCESS_SUFFIX) | eur_w_ld_chr
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),tar xjvf $(subst $(TRACKING_SUCCESS_SUFFIX),,$<))
 
 eur_w_ld_chr.tar.bz2$(TRACKING_SUCCESS_SUFFIX):
@@ -127,6 +127,10 @@ $(patsubst %,1KG_%.merge_list$(TRACKING_SUCCESS_SUFFIX),$(1KG_POPS)): $$(patsubs
 ## Notes: extract relevant chromosome and fix format of recombination data for use with LDSC
 genetic_map_chr%.txt$(TRACKING_SUCCESS_SUFFIX): $(HG38_CM_MAP)
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk 'NR == 1 {print "pposition rrate gposition"} ; NR > 1 && $$1 == "$(subst genetic_map_chr,,$(subst .txt$(TRACKING_SUCCESS_SUFFIX),,$@))" {print $$2" "$$3" "$$4}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+
+
+eur_w_ld_chr:
+	mkdir -p $@
 
 ## test set to run after completion
 check: testing/Makefile$(TRACKING_SUCCESS_SUFFIX)

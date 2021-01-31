@@ -1,7 +1,10 @@
 name: plco-analysis-ldsc
 dependencies:
   - ldsc-rebuild
+  - bolt-lmm-genetic-map-hg38
   - plink
+  - qsub_job_monitor
+  - boost-cpp=1.70
   - git
   - git-lfs
 

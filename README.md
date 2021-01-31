@@ -13,35 +13,7 @@ that can be modularly added, either with Make pipelines or tools in other langua
 
 ### Installation Instructions
 
-TODO: conda environment requirements.txt, primarily for SAIGE
-
-Running tally of dependencies:
-
-Required for pipeline functionality
-- bash >= 4.1.2
-- PyYAML >= 3.12
-- Make >= 4.2
-- gcc/g++ let's say >= 7 but like, what are you doing with your life
-- boost >= 1.71
-- GRAF: >= 2.3.1
-- plink: 1.9 and 2
-- eigensoft/smartpca: = 6.1.4
-
-Optional depending on individual requirements:
-- fastGWA:
-  - fastGWA: >= gcta_1.93.1beta
-- BOLT-LMM:
-  - ldsc: >= 02.01.20
-  - BOLT-LMM: >= v2.3.4
-- SAIGE:
-  - conda: ??
-  - SAIGE: >= 0.36.3.1
-  - R: >= 3.6.1
-- meta-analysis
-  - metal: July 2010
-- LD score regression:
-  - ldsc: >= 02.01.20
-
+See installation instructions [here](https://plco-analysis.readthedocs.io/en/latest/Installation.html)
 
 ### Development Schedule
 ##### v1.0 (approximately corresponding to PLCO Atlas tranche 1 release)
@@ -60,14 +32,14 @@ Optional depending on individual requirements:
   - [x] resumable for non-cluster jobs
 - [x] full logging
   - [x] logging for cluster-submitted jobs
-  - [x] logging for non-cluster jobs (#9)
+  - [x] logging for non-cluster jobs
 - [x] SGE/qsub support
 - [x] configuration via YAML
-- [x] more efficient yaml access in preprocessor (#25)
-- [x] testing via yaml (#13)
+- [x] more efficient yaml access in preprocessor
+- [x] testing via yaml
 - [x] heuristic testing to support above
 - [x] hunt down last untracked auxiliary files
-- [ ] complete (straightforward and documented) platform independence with conda
+- [x] complete (straightforward and documented) platform independence with conda
 - [ ] documentation: R-style vignette for generalized usage
 - [x] this README
 
@@ -91,6 +63,8 @@ Optional depending on individual requirements:
 - [ ] this README
 
 ### Version History
+
+- 30 January 2021: remove manual dependency tracking in favor of conda and real installation instructions
 
 - 13 January 2021: urgent patches. v1.0.0 is merely for recordkeeping for T1 run
 

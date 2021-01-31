@@ -159,11 +159,11 @@ threshold of number of subjects, the IBS/IBD calculation is split into chunks wi
 together in a separate rule. These various thresholds were selected to make PLCO/GSA/Europeans run reasonably efficiently.
 For much larger chips, you may need to fiddle with the thresholds and number of quasiparallelized jobs to make things
 go ok.</p>
-<p>PCA with <a href="#id1"><span class="problematic" id="id2">smartpca_</span></a> makes use of the frankly underdocumented fastmode to make things go in a reasonable amount of time.
+<p>PCA with <a class="reference external" href="https://alkesgroup.broadinstitute.org/EIGENSOFT/">smartpca</a> makes use of the frankly underdocumented fastmode to make things go in a reasonable amount of time.
 This is not ideal in a variety of circumstances, most notably if you want to do PCA outlier removal. PCA in this context
 is really a blunt instrument, and not suitable for chip QC, which should have been handled earlier. So just… keep that
-in mind. For posterity, I’ll record that the eigenvalues from <a href="#id3"><span class="problematic" id="id4">smartpca_</span></a> fastmode are included in the header of the raw
-<a href="#id5"><span class="problematic" id="id6">smartpca_</span></a> output.</p>
+in mind. For posterity, I’ll record that the eigenvalues from <a class="reference external" href="https://alkesgroup.broadinstitute.org/EIGENSOFT/">smartpca</a> fastmode are included in the header of the raw
+<a class="reference external" href="https://alkesgroup.broadinstitute.org/EIGENSOFT/">smartpca</a> output.</p>
 </div>
 </div>
 <div class="section" id="imputed-data-reformatting">

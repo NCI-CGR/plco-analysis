@@ -148,7 +148,7 @@ used by the pipeline in its current form but were useful in the processing of th
    in mind. For posterity, I'll record that the eigenvalues from smartpca_ fastmode are included in the header of the raw
    smartpca_ output.
    
-.. _smartpca:: https://alkesgroup.broadinstitute.org/EIGENSOFT/
+.. _`smartpca`: https://alkesgroup.broadinstitute.org/EIGENSOFT/
 
 .. _`bgen_pipeline`:
 
