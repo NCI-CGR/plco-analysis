@@ -91,9 +91,6 @@ and running pipelines. You can have bolt/saige/other analysis tools running at t
 multiple bolt jobs at the same time! It will collide with nasty consequences.</p>
 </div>
 </div>
-<div class="section" id="result-directory-and-filename-conventions">
-<h2>Result Directory and Filename Conventions<a class="headerlink" href="#result-directory-and-filename-conventions" title="Permalink to this headline">¶</a></h2>
-</div>
 <div class="section" id="adding-analysis-modules">
 <h2>Adding Analysis Modules<a class="headerlink" href="#adding-analysis-modules" title="Permalink to this headline">¶</a></h2>
 <p>In theory, it is very straightforward to add additional analysis
@@ -258,6 +255,95 @@ However, the way the <code class="docutils literal notranslate"><span class="pre
 burden should be minimal.</p>
 </div>
 </div>
+<div class="section" id="debugging">
+<h2>Debugging<a class="headerlink" href="#debugging" title="Permalink to this headline">¶</a></h2>
+<p>There are notes about this in the sections covering individual pipelines. However, I’ll list here
+the biggest issues I’ve run into on a regular basis.</p>
+<div class="section" id="wrong-environment-loaded">
+<h3>Wrong Environment Loaded<a class="headerlink" href="#wrong-environment-loaded" title="Permalink to this headline">¶</a></h3>
+<p>Obviously, the simplest way to check this is just glance at the active <code class="docutils literal notranslate"><span class="pre">conda</span></code> environment
+before dispatching jobs. But it’s easy to forget.</p>
+<p>The most obvious issues that come up are as follows (and bear in mind most of the dev process
+has been under different environments than these, so I’m still learning what the obvious issues
+are):</p>
+<ul class="simple">
+<li><p>If you’re running <code class="docutils literal notranslate"><span class="pre">ldsc</span></code> or <code class="docutils literal notranslate"><span class="pre">ldscores</span></code> and incorrectly have <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code> active:
+will report <code class="docutils literal notranslate"><span class="pre">ldsc.py</span></code> or <code class="docutils literal notranslate"><span class="pre">munge_sumstats.py</span></code> not available</p></li>
+<li><p>If you’re running something other than <code class="docutils literal notranslate"><span class="pre">ldsc</span></code> or <code class="docutils literal notranslate"><span class="pre">ldscores</span></code> and have <code class="docutils literal notranslate"><span class="pre">plco-analysis-ldsc</span></code> active:
+depends on which pipeline you’re running. The most likely issue will be the inability to find
+some piece of software or reference data that’s cooked into the python3 conda environment. A short list of the
+likeliest candidates:</p>
+<ul>
+<li><p>liftOver</p></li>
+<li><p>plink2</p></li>
+<li><p>bgenix</p></li>
+<li><p>GRCh38 genetic map</p></li>
+<li><p>any of the internal C++ programs ending in <code class="docutils literal notranslate"><span class="pre">.out</span></code> except for <code class="docutils literal notranslate"><span class="pre">qsub_job_monitor.out</span></code></p></li>
+<li><p>graf, or its reference 1000 Genomes file <code class="docutils literal notranslate"><span class="pre">G1000FpGeno.bim</span></code></p></li>
+<li><p>bolt or metal</p></li>
+</ul>
+</li>
+</ul>
+<p>Note that these behaviors are based on the basic installation landscape of cgems/ccad, so ymmv.</p>
+</div>
+<div class="section" id="problems-with-the-cluster">
+<h3>Problems with the Cluster<a class="headerlink" href="#problems-with-the-cluster" title="Permalink to this headline">¶</a></h3>
+<p>Speaking specifically of cgems/ccad and biowulf: if you run these pipelines enough times,
+you <em>will</em> encounter issues with the cluster. The most common issues are as follows:</p>
+<ul class="simple">
+<li><p>Cluster non-responsiveness: failure to respond or dispatch</p></li>
+<li><p>Desync between cluster memory writes and visible/accessible files</p></li>
+<li><p>Stuck/dead nodes: job reports running but is in fact frozen and zombied</p></li>
+</ul>
+<p>Non-responsiveness isn’t always catastrophic. Small scale events don’t necessarily break
+the pipeline: the qsub monitoring software has been designed to wait a number of intervals
+between probing results, so if the event resolves itself shortly, the pipeline will continue
+to function; and if it keeps going, the pipeline will not try to submit endlessly but instead
+quit.</p>
+<p>Desync is annoying but again, the qsub monitoring software has a series of retries to attempt
+to allow for some amount of desync. The waiting times for this behavior are configurable, so
+if you have issues, you can make the monitor (controlled in a macro in <code class="docutils literal notranslate"><span class="pre">Makefile.config</span></code>)
+wait longer or retry more times to adapt. As it’s configured, I’ve not had any issues with cgems
+in months.</p>
+<p>Zombie jobs are obnoxious because it’s difficult to be certain when it’s happening. I am aware
+that some pipelines at CGR deal with this by permitting a maximum amount of time between output
+file updates before reporting an issue. This has not been such an issue that I’ve needed such a
+failsafe, beyond merely checking <code class="docutils literal notranslate"><span class="pre">qstat</span></code> or <code class="docutils literal notranslate"><span class="pre">sjobs</span></code> periodically to see if all remaining jobs
+are assigned to a suspiciously small number of nodes.</p>
+</div>
+<div class="section" id="genetic-heritability-near-zero">
+<h3>Genetic Heritability Near Zero<a class="headerlink" href="#genetic-heritability-near-zero" title="Permalink to this headline">¶</a></h3>
+<p>This is the biggest issue for all analysis tools. Each of the implementations in <code class="docutils literal notranslate"><span class="pre">shared-makefiles</span></code>
+(bolt, fastGWA, saige) have some sort of issue if the phenotype model in question shows a near-zero
+genetic heritability variance component, or an inflation near 1 equivalently.</p>
+<p>This will manifest as failures in saige round 1; or in boltlmm during each imputed chromosome run
+with a log message about trying standard linear models. There is not a good deal of sense around
+these messages, in that sometimes low genetic heritability estimates seem to lead to run-ending
+errors, and sometimes they don’t. It should be noted that this issue is very strongly correlated
+with low sample size: small chip/ancestry combination, smaller heritability estimate. This also leads
+to very (evidently) <em>unstable</em> heritability estimates. I will emphasize here that these programs were
+<em>absolutely not</em> intended for use on sample sizes this low, so none of this behavior is unexpected,
+nor does any of it constitute a bug, but rather a failure of study and analysis design.</p>
+<p>How to find these issues:</p>
+<ul class="simple">
+<li><p>Run bolt or saige: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">boltlmm</span></code> or <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">saige</span></code></p></li>
+<li><p>Wait</p></li>
+<li><p>Find errors in submission log indicating primary analysis rule failures</p></li>
+<li><p>Check relevant information in <code class="docutils literal notranslate"><span class="pre">RESULTS_OUTPUT_DIR</span></code>:</p>
+<ul>
+<li><p>for saige: <code class="docutils literal notranslate"><span class="pre">RESULTS_OUTPUT_DIR/{analysis_prefix}/{ancestry}/SAIGE/{phenotype}.{platform}.saige.round1.varianceRatio.txt</span></code></p></li>
+<li><p>for boltlmm: <code class="docutils literal notranslate"><span class="pre">RESULTS_OUTPUT_DIR/{analysis_prefix}/{ancestry}/BOLTLMM/{phenotype}.{platform}.chr1.boltlmm.log</span></code></p></li>
+</ul>
+</li>
+</ul>
+<p>Solutions to these issues are limited. The most direct solution is <strong>remove the offending platform/ancestry combination from the configuration file</strong>.
+No one likes this solution. But the alternatives are not very generalizable. One solution would be to have the investigator (if such
+a person exists) remodel the trait in some fashion, possibly in a way that better captures a polygenic trait. The other possibility,
+and this will be a bigger issue as people attempt to use these pipelines on other projects, is desyncing between phenotypes
+and genotypes, possibly due to large-scale ID swaps. This could cause low apparent heritability that was in fact indicative
+of dataset corruption.</p>
+</div>
+</div>
 </div>
 
 
@@ -295,7 +381,6 @@ burden should be minimal.</p>
 <li class="toctree-l3"><a class="reference internal" href="#thread-safety-directory-locking">Thread Safety/Directory Locking</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#result-directory-and-filename-conventions">Result Directory and Filename Conventions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#adding-analysis-modules">Adding Analysis Modules</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#inputs">Inputs</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#outputs">Outputs</a></li>
@@ -303,6 +388,12 @@ burden should be minimal.</p>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#adding-other-pipelines">Adding Other Pipelines</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#extension-to-other-languages">Extension to Other Languages</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#debugging">Debugging</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#wrong-environment-loaded">Wrong Environment Loaded</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#problems-with-the-cluster">Problems with the Cluster</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#genetic-heritability-near-zero">Genetic Heritability Near Zero</a></li>
 </ul>
 </li>
 </ul>
