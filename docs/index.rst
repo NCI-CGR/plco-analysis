@@ -17,7 +17,7 @@ Welcome to plco-analysis's documentation!
    Postprocessing
    Globus Distribution
    User Vignette
-   Advanced Development Notes
+   Advanced Dev Notes
 
 
 Indices and tables
