@@ -42,6 +42,11 @@ to still be able to run the pipelines out of the box.</p>
 by default named <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>. If you attempt these commands elsewhere, you will get
 an immediate error complaining that <code class="docutils literal notranslate"><span class="pre">/Makefile.config</span></code> is unavailable.</p>
 </div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Unless otherwise noted, all commands below should be run with the default <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>
+<code class="docutils literal notranslate"><span class="pre">conda</span></code> environment active.</p>
+</div>
 <div class="section" id="a-complete-run-end-to-end">
 <h2>A Complete Run, End to End<a class="headerlink" href="#a-complete-run-end-to-end" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -50,16 +55,16 @@ an immediate error complaining that <code class="docutils literal notranslate"><
 for more instructions</p></li>
 <li><p>Run one-time preprocessing steps. These can be run in three chunks concurrently:</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">cleaned-chips-by-ancestry</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">bgen</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">cleaned-chips-by-ancestry</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">bgen</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ldsc</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis-ldsc</span></code>)</p></li>
 </ul>
 </li>
 <li><p>Configure your analysis model(s); see <a class="reference internal" href="Trait%20Configuration.html#configuration-guide"><span class="std std-ref">Trait Configuration</span></a> for more instructions.</p></li>
 <li><p>Launch your primary analysis tool of choice:</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">boltlmm</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">saige</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">boltlmm</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">saige</span></code></p>
 <ul>
 <li><p>note <code class="docutils literal notranslate"><span class="pre">saige</span></code> is really slow!</p></li>
 </ul>
@@ -68,13 +73,13 @@ for more instructions</p></li>
 </li>
 <li><p>Launch meta-analysis</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">meta</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">meta</span></code></p></li>
 </ul>
 </li>
 <li><p>Concurrently run LD score regression, QC plotting</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ldscores</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis-ldsc</span></code>)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">plotting</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">plotting</span></code></p></li>
 </ul>
 </li>
 <li><p><strong>Check the results of ``make ldscores`` and ``make plotting`` before proceeding</strong></p>
@@ -86,10 +91,10 @@ for more instructions</p></li>
 <li><p>creates QQ and Manhattan plots for every <strong>meta-analysis heterogeneity distribution</strong></p></li>
 </ul>
 </li>
-<li><p>Results are <code class="docutils literal notranslate"><span class="pre">.tsv.gz</span></code> output files under $(RESULTS_OUTPUT_DIR)</p></li>
+<li><p>Results are <code class="docutils literal notranslate"><span class="pre">.tsv.gz</span></code> output files under <code class="docutils literal notranslate"><span class="pre">$(RESULTS_OUTPUT_DIR)</span></code></p></li>
 <li><p>Optional: prepare results for globus distribution</p>
 <ul>
-<li><p>edit the target directory for your run in <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefile.globus</span></code>, variable OUTPUT_DIR</p>
+<li><p>edit the target directory for your run in <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefile.globus</span></code>, variable <code class="docutils literal notranslate"><span class="pre">$(OUTPUT_DIR)</span></code></p>
 <ul>
 <li><p>if you prefer, you can instead override this on the command line</p></li>
 </ul>

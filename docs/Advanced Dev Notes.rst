@@ -98,19 +98,19 @@ directory of the pipeline. Variables ``$(VARIABLE_NAME)`` are defined in ``Makef
   * each input platform and ancestry combination will have the following files,
     so long as that combination has sufficient subjects for analysis:
 	
-    * $(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step1.maf.geno.hwe.{bed,bim,fam}: plink format genotypes with mild cleaning applied
-    * $(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step2.pruning.{in,out}: plink format output from --indep for variant {inclusion, exclusion}
-    * $(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step3.pruning.{in,out}: plink format output from --indep-pairwise for variant {inclusion, exclusion}
-    * $(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step4.het.remove: plink format subject removal file for heterozygosity outliers
+    * ``$(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step1.maf.geno.hwe.{bed,bim,fam}``: plink format genotypes with mild cleaning applied
+    * ``$(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step2.pruning.{in,out}``: plink format output from --indep for variant {inclusion, exclusion}
+    * ``$(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step3.pruning.{in,out}``: plink format output from --indep-pairwise for variant {inclusion, exclusion}
+    * ``$(CLEANED_CHIP_OUTPUT_DIR)/{ancestry}/{platform}.step4.het.remove``: plink format subject removal file for heterozygosity outliers
 
 * Imputed data:
 
   * each input platform and ancestry combination will have the following files,
     so long as that combination has at least 100 subjects:
 	
-    * $(BGEN_OUTPUT_DIR)/{platform}[/batch{#}]/{ancestry}/chr{#}-filtered.bgen
-    * $(BGEN_OUTPUT_DIR)/{platform}[/batch{#}]/{ancestry}/chr{#}-filtered.bgen.bgi
-    * $(BGEN_OUTPUT_DIR)/{platform}[/batch{#}]/{ancestry}/chr{#}-filtered-noNAs.sample
+    * ``$(BGEN_OUTPUT_DIR)/{platform}[/batch{#}]/{ancestry}/chr{#}-filtered.bgen``
+    * ``$(BGEN_OUTPUT_DIR)/{platform}[/batch{#}]/{ancestry}/chr{#}-filtered.bgen.bgi``
+    * ``$(BGEN_OUTPUT_DIR)/{platform}[/batch{#}]/{ancestry}/chr{#}-filtered-noNAs.sample``
 
   * Inputs are fixed at bgen version 1.2 dosages due to compatibility with bolt-lmm, saige, fastGWA
   * Modified sample file is due to format discrepancy in raw output from plink2
@@ -129,46 +129,46 @@ Outputs
 
   * all results should be emitted under $(RESULT_OUTPUT_DIR) as follows:
   
-    * $(RESULT_OUTPUT_DIR)/$(analysis_prefix)/{ancestry}/{software}
-    * above, $(analysis_prefix) is the variable taken from ``config/*.yaml``
+    * ``$(RESULT_OUTPUT_DIR)/$(analysis_prefix)/{ancestry}/{software}``
+    * above, ``$(analysis_prefix)`` is the variable taken from ``config/*.yaml``
 	
 * Output filenames:
   
   * all intermediate and output files should be prefixed in the results directory as follows:
   
-    * $(phenotype).$(platform)[_batch{#}].{software}
-    * $(phenotype) is the variable taken from ``config/*.yaml``
+    * ``$(phenotype).$(platform)[_batch{#}].{software}``
+    * ``$(phenotype)`` is the variable taken from ``config/*.yaml``
 
 * Required output files and formats:
 
   * the following files are those used downstream by existing pipeline components:
 
-	* $(phenotype).$(platform)[_batch{#}].{software}.tsv.gz
+	* ``$(phenotype).$(platform)[_batch{#}].{software}.tsv.gz``
 	
 	  * results file per platform/batch
 	  * format is tab-delimited, columns as follows (with header as listed):
 	  
-	    * CHR: chromosome of variant
-	    * POS: physical position of variant, in GRCh38
-	    * SNP: variant ID (see note below)
-	    * Tested_Allele: coded allele (corresponding to effect direction of BETA)
-	    * Other_Allele: non-coded allele
-	    * Freq_Tested_Allele_in_TOPMed: allele frequency (see note below)
-	    * BETA: regression coefficient (binary traits: logOR) for variant
-	    * SE: standard error of test
-	    * P: association p-value
-	    * N: actual sample size tested for variant
-	    * Ncases: binary results only: actual number of cases tested for variant
-	    * Ncontrols: binary results only: actual number of controls tested for variant
+	    * ``CHR``: chromosome of variant
+	    * ``POS``: physical position of variant, in GRCh38
+	    * ``SNP``: variant ID (see note below)
+	    * ``Tested_Allele``: coded allele (corresponding to effect direction of BETA)
+	    * ``Other_Allele``: non-coded allele
+	    * ``Freq_Tested_Allele_in_TOPMed``: allele frequency (see note below)
+	    * ``BETA``: regression coefficient (binary traits: logOR) for variant
+	    * ``SE``: standard error of test
+	    * ``P``: association p-value
+	    * ``N``: actual sample size tested for variant
+	    * ``Ncases``: binary results only: actual number of cases tested for variant
+	    * ``Ncontrols``: binary results only: actual number of controls tested for variant
 	
-	  * SNP defaults to "chr:pos:ref:alt" codes from TOPMed. This needs to be replaced
+	  * ``SNP`` defaults to "chr:pos:ref:alt" codes from TOPMed. This needs to be replaced
 	    with rsIDs when requested with the ``config/*.yaml`` option ``id_mode: rsid``.
-	  * Freq_Tested_Allele_in_TOPMed defaults to reference IDs, approximate frequencies
+	  * ``Freq_Tested_Allele_in_TOPMed`` defaults to reference IDs, approximate frequencies
 	    from the imputation reference subjects, to avoid issues with identifiability of
 	    subject samples. These should instead be replaced with actual subject allele
 	    frequencies when requested with the ``config/*.yaml`` option ``frequency_mode: subject``.
 
-    * $(phenotype).$(platform)[_batch{#}].{software}.rawids.tsv
+    * ``$(phenotype).$(platform)[_batch{#}].{software}.rawids.tsv``
 
       * the format of this file is the same as the above, except SNP must contain unique IDs,
 	in this case the "chr:pos:ref:alt" IDs from the TOPMed reference data
@@ -303,10 +303,10 @@ How to find these issues:
 * Run bolt or saige: ``make boltlmm`` or ``make saige``
 * Wait
 * Find errors in submission log indicating primary analysis rule failures
-* Check relevant information in ``RESULTS_OUTPUT_DIR``:
+* Check relevant information in ``$(RESULTS_OUTPUT_DIR)``:
 
-  * for saige: ``RESULTS_OUTPUT_DIR/{analysis_prefix}/{ancestry}/SAIGE/{phenotype}.{platform}.saige.round1.varianceRatio.txt``
-  * for boltlmm: ``RESULTS_OUTPUT_DIR/{analysis_prefix}/{ancestry}/BOLTLMM/{phenotype}.{platform}.chr1.boltlmm.log``
+  * for saige: ``$(RESULTS_OUTPUT_DIR)/$(analysis_prefix)/$(ancestry)/SAIGE/$(phenotype).$(platform).saige.round1.varianceRatio.txt``
+  * for boltlmm: ``$(RESULTS_OUTPUT_DIR)/$(analysis_prefix)/$(ancestry)/BOLTLMM/$(phenotype).$(platform).chr1.boltlmm.log``
 
 Solutions to these issues are limited. The most direct solution is **remove the offending platform/ancestry combination from the configuration file**.
 No one likes this solution. But the alternatives are not very generalizable. One solution would be to have the investigator (if such
