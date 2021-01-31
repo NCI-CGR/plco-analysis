@@ -62,7 +62,7 @@ $(subst .bgen$(TRACKING_SUCCESS_SUFFIX),.pgen$(TRACKING_SUCCESS_SUFFIX),$(filter
 ##    input:  {ANCESTRY}/chr{CHR}-filtered.bgen$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: use bgenix to index the bgen file for use with downstream applications. -clobber required for pipeline reruns.
 %.bgi$(TRACKING_SUCCESS_SUFFIX): %$(TRACKING_SUCCESS_SUFFIX)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(BGENIX) -g $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -index -clobber)
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(BGENIX) -g $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -index -clobber)
 
 ## patterns:
 ##    output: {ANCESTRY}/

@@ -30,7 +30,7 @@ eur_w_ld_chr.tar.bz2$(TRACKING_SUCCESS_SUFFIX):
 ##    input:  LDSCORE.1000G_{POP}.l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: modify header for apparent compatibility with BOLT
 $(ALL_TARGETS): $$(subst -reformatted.gz,.gz,$$@)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's/L2/LDSCORE/' | gzip -c > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's/L2/LDSCORE/' | gzip -c > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: LDSCORE.1000G_{POP}.l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX)
@@ -95,7 +95,7 @@ $(patsubst %,1KG_%.merge_list$(TRACKING_SUCCESS_SUFFIX),$(1KG_POPS)): $$(patsubs
 ##    input:  1KG_{POP}.chr{CHR}_updated-ids.bim$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: flag multiallelic sites for removal before downstream merging
 1KG_%_updated-ids.exclude$(TRACKING_SUCCESS_SUFFIX): 1KG_%_updated-ids.bim$(TRACKING_SUCCESS_SUFFIX)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print $$1":"$$4}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sort | uniq -d | grep -wf - $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk '{print $$2}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print $$1":"$$4}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sort | uniq -d | grep -wf - $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk '{print $$2}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: 1KG_{POP}.chr{CHR}_updated-ids.bim$(TRACKING_SUCCESS_SUFFIX)

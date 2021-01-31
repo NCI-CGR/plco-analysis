@@ -49,14 +49,14 @@ GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
 ##    input:  {CHIP}.fpg$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this is really the primary output of this pipeline
 %.relatedness.txt$(TRACKING_SUCCESS_SUFFIX): %.fpg$(TRACKING_SUCCESS_SUFFIX)
-	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	-$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
 ##    output: {CHIP}.fpg$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CHIP}_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
 %.fpg$(TRACKING_SUCCESS_SUFFIX): %_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
-	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
+	-$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## test set to run after completion

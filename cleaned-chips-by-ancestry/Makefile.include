@@ -39,7 +39,7 @@ all_chips: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(patsubst %,%.step5.ibs-norma
 ##    input:  {CHIP}.fpg$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this duplicates content from the relatedness pipeline
 %.graf_relatedness.txt$(TRACKING_SUCCESS_SUFFIX): %.fpg$(TRACKING_SUCCESS_SUFFIX)
-	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	-$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
@@ -47,7 +47,7 @@ all_chips: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(patsubst %,%.step5.ibs-norma
 ##    input:  {CHIP}.rsids.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this duplicates content from the relatedness pipeline
 %.fpg$(TRACKING_SUCCESS_SUFFIX): %.rsids.bed$(TRACKING_SUCCESS_SUFFIX)
-	-$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
+	-$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
@@ -57,7 +57,7 @@ all_chips: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(patsubst %,%.step5.ibs-norma
 ##    input:  GRAF.update_names$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this duplicates content from the relatedness pipeline
 %.rsids.bed$(TRACKING_SUCCESS_SUFFIX): %.nohet.autosomes.bed$(TRACKING_SUCCESS_SUFFIX) GRAF.extract$(TRACKING_SUCCESS_SUFFIX) GRAF.update_names$(TRACKING_SUCCESS_SUFFIX)
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --update-name $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --update-name $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: GRAF.extract$(TRACKING_SUCCESS_SUFFIX)
