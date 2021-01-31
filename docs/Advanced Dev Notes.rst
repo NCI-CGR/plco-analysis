@@ -42,7 +42,7 @@ Job Tracking/Logging
 ~~~~~~~~~~~~~~~~~~~~
 
 All rules in the ``make`` pipelines are wrapped in utility functions that emit tracking files
-(by default appended with ``.success``, configurable with $(TRACKING_SUCCESS_SUFFIX)). Log data
+(by default appended with ``.success``, configurable with ``$(TRACKING_SUCCESS_SUFFIX)``). Log data
 are emitted to output files prefixed uniquely based on the rule. So everything is there, but it
 can be a bit of a mess to find given how many files are emitted.
 
@@ -119,7 +119,7 @@ directory of the pipeline. Variables ``$(VARIABLE_NAME)`` are defined in ``Makef
 
   * plain-text, tab-delimited phenotype file
   * header row
-  * single column with unique subject ID (name is configurable as $(PHENOTYPE_ID_COLNAME))
+  * single column with unique subject ID (name is configurable as ``$(PHENOTYPE_ID_COLNAME)``)
   * conventionally, missing values are stored as ``NA``
 
 Outputs
@@ -163,8 +163,8 @@ Outputs
 	
 	  * ``SNP`` defaults to "chr:pos:ref:alt" codes from TOPMed. This needs to be replaced
 	    with rsIDs when requested with the ``config/*.yaml`` option ``id_mode: rsid``.
-	  * ``Freq_Tested_Allele_in_TOPMed`` defaults to reference IDs, approximate frequencies
-	    from the imputation reference subjects, to avoid issues with identifiability of
+	  * ``Freq_Tested_Allele_in_TOPMed`` defaults to reference (approximate frequencies
+	    from the imputation reference subjects) to avoid issues with identifiability of
 	    subject samples. These should instead be replaced with actual subject allele
 	    frequencies when requested with the ``config/*.yaml`` option ``frequency_mode: subject``.
 

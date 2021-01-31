@@ -63,7 +63,7 @@ my apologies that it’s not more generalized</p></li>
 <div class="section" id="job-tracking-logging">
 <h3>Job Tracking/Logging<a class="headerlink" href="#job-tracking-logging" title="Permalink to this headline">¶</a></h3>
 <p>All rules in the <code class="docutils literal notranslate"><span class="pre">make</span></code> pipelines are wrapped in utility functions that emit tracking files
-(by default appended with <code class="docutils literal notranslate"><span class="pre">.success</span></code>, configurable with $(TRACKING_SUCCESS_SUFFIX)). Log data
+(by default appended with <code class="docutils literal notranslate"><span class="pre">.success</span></code>, configurable with <code class="docutils literal notranslate"><span class="pre">$(TRACKING_SUCCESS_SUFFIX)</span></code>). Log data
 are emitted to output files prefixed uniquely based on the rule. So everything is there, but it
 can be a bit of a mess to find given how many files are emitted.</p>
 </div>
@@ -139,7 +139,7 @@ so long as that combination has at least 100 subjects:</p>
 <ul>
 <li><p>plain-text, tab-delimited phenotype file</p></li>
 <li><p>header row</p></li>
-<li><p>single column with unique subject ID (name is configurable as $(PHENOTYPE_ID_COLNAME))</p></li>
+<li><p>single column with unique subject ID (name is configurable as <code class="docutils literal notranslate"><span class="pre">$(PHENOTYPE_ID_COLNAME)</span></code>)</p></li>
 <li><p>conventionally, missing values are stored as <code class="docutils literal notranslate"><span class="pre">NA</span></code></p></li>
 </ul>
 </li>
@@ -194,8 +194,8 @@ so long as that combination has at least 100 subjects:</p>
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">SNP</span></code> defaults to “chr:pos:ref:alt” codes from TOPMed. This needs to be replaced
 with rsIDs when requested with the <code class="docutils literal notranslate"><span class="pre">config/*.yaml</span></code> option <code class="docutils literal notranslate"><span class="pre">id_mode:</span> <span class="pre">rsid</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">Freq_Tested_Allele_in_TOPMed</span></code> defaults to reference IDs, approximate frequencies
-from the imputation reference subjects, to avoid issues with identifiability of
+<li><p><code class="docutils literal notranslate"><span class="pre">Freq_Tested_Allele_in_TOPMed</span></code> defaults to reference (approximate frequencies
+from the imputation reference subjects) to avoid issues with identifiability of
 subject samples. These should instead be replaced with actual subject allele
 frequencies when requested with the <code class="docutils literal notranslate"><span class="pre">config/*.yaml</span></code> option <code class="docutils literal notranslate"><span class="pre">frequency_mode:</span> <span class="pre">subject</span></code>.</p></li>
 </ul>
