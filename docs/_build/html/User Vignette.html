@@ -14,7 +14,7 @@
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Advanced Development Notes" href="Advanced%20Development%20Notes.html" />
+    <link rel="next" title="Advanced Development Notes" href="Advanced%20Dev%20Notes.html" />
     <link rel="prev" title="Globus Distribution" href="Globus%20Distribution.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -34,6 +34,71 @@
             
   <div class="section" id="user-vignette">
 <h1>User Vignette<a class="headerlink" href="#user-vignette" title="Permalink to this headline">¶</a></h1>
+<p>I’m going to try to elaborate some use cases, so you don’t have to make sense of all these things at once
+to still be able to run the pipelines out of the box.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>All <code class="docutils literal notranslate"><span class="pre">make</span></code> commands below are to be run at top-level in the pipeline installation directory,
+by default named <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>. If you attempt these commands elsewhere, you will get
+an immediate error complaining that <code class="docutils literal notranslate"><span class="pre">/Makefile.config</span></code> is unavailable.</p>
+</div>
+<div class="section" id="a-complete-run-end-to-end">
+<h2>A Complete Run, End to End<a class="headerlink" href="#a-complete-run-end-to-end" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>Install the pipeline and configure your <code class="docutils literal notranslate"><span class="pre">Makefile.config</span></code>; see
+<a class="reference internal" href="Installation.html#installation-guide"><span class="std std-ref">Installation</span></a> and the inline comments in <code class="docutils literal notranslate"><span class="pre">Makefile.config</span></code>
+for more instructions</p></li>
+<li><p>Run one-time preprocessing steps. These can be run in three chunks concurrently:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">cleaned-chips-by-ancestry</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">bgen</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ldsc</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis-ldsc</span></code>)</p></li>
+</ul>
+</li>
+<li><p>Configure your analysis model(s); see <a class="reference internal" href="Trait%20Configuration.html#configuration-guide"><span class="std std-ref">Trait Configuration</span></a> for more instructions.</p></li>
+<li><p>Launch your primary analysis tool of choice:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">boltlmm</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">saige</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p>
+<ul>
+<li><p>note <code class="docutils literal notranslate"><span class="pre">saige</span></code> is really slow!</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>Launch meta-analysis</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">meta</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p></li>
+</ul>
+</li>
+<li><p>Concurrently run LD score regression, QC plotting</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ldscores</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis-ldsc</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">plotting</span></code> (use conda environment <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>)</p></li>
+</ul>
+</li>
+<li><p><strong>Check the results of ``make ldscores`` and ``make plotting`` before proceeding</strong></p>
+<ul>
+<li><p>LD score regression results should be in <code class="docutils literal notranslate"><span class="pre">$(RESULTS_OUTPUT_DIR)/ldscore_summary.tsv</span></code></p></li>
+<li><p>QC plots are all <code class="docutils literal notranslate"><span class="pre">.jpg</span></code> files under $(RESULTS_OUTPUT_DIR)</p></li>
+<li><p>creates QQ and Manhattan plots for every platform/ancestry combination</p></li>
+<li><p>creates QQ and Manhattan plots for every within-ancestry meta-analysis</p></li>
+<li><p>creates QQ and Manhattan plots for every <strong>meta-analysis heterogeneity distribution</strong></p></li>
+</ul>
+</li>
+<li><p>Results are <code class="docutils literal notranslate"><span class="pre">.tsv.gz</span></code> output files under $(RESULTS_OUTPUT_DIR)</p></li>
+<li><p>Optional: prepare results for globus distribution</p>
+<ul>
+<li><p>edit the target directory for your run in <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefile.globus</span></code>, variable OUTPUT_DIR</p>
+<ul>
+<li><p>if you prefer, you can instead override this on the command line</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">globus</span> <span class="pre">[OUTPUT_DIR=path/to/globus/RELEASE_DIR]</span></code></p></li>
+</ul>
+</li>
+</ul>
+</div>
 </div>
 
 
@@ -57,12 +122,16 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Preprocessing.html">Preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Trait%20Configuration.html">Trait Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Primary%20Analysis.html">Primary Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Meta-Analysis.html">Meta-Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Postprocessing.html">Postprocessing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Globus%20Distribution.html">Globus Distribution</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">User Vignette</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Advanced%20Development%20Notes.html">Advanced Development Notes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">User Vignette</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#a-complete-run-end-to-end">A Complete Run, End to End</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Advanced%20Dev%20Notes.html">Advanced Development Notes</a></li>
 </ul>
 
 <div class="relations">
@@ -70,7 +139,7 @@
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="Globus%20Distribution.html" title="previous chapter">Globus Distribution</a></li>
-      <li>Next: <a href="Advanced%20Development%20Notes.html" title="next chapter">Advanced Development Notes</a></li>
+      <li>Next: <a href="Advanced%20Dev%20Notes.html" title="next chapter">Advanced Development Notes</a></li>
   </ul></li>
 </ul>
 </div>

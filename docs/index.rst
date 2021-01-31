@@ -12,6 +12,7 @@ Welcome to plco-analysis's documentation!
 
    Installation
    Preprocessing
+   Trait Configuration
    Primary Analysis
    Meta-Analysis
    Postprocessing
