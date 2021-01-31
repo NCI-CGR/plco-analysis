@@ -32,11 +32,11 @@ See installation instructions [here](https://plco-analysis.readthedocs.io/en/lat
   - [x] resumable for non-cluster jobs
 - [x] full logging
   - [x] logging for cluster-submitted jobs
-  - [x] logging for non-cluster jobs (#9)
+  - [x] logging for non-cluster jobs
 - [x] SGE/qsub support
 - [x] configuration via YAML
-- [x] more efficient yaml access in preprocessor (#25)
-- [x] testing via yaml (#13)
+- [x] more efficient yaml access in preprocessor
+- [x] testing via yaml
 - [x] heuristic testing to support above
 - [x] hunt down last untracked auxiliary files
 - [x] complete (straightforward and documented) platform independence with conda
