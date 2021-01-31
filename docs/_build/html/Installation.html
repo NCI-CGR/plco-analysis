@@ -47,11 +47,12 @@ methods are possible but not supported.</p>
 <h2>Short Version (for experts)<a class="headerlink" href="#short-version-for-experts" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><p>Install or activate <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a></p></li>
-<li><p>If needed, install git</p></li>
-<li><p>Clone the <a class="reference external" href="https://github.com/NCI-CGR/conda-cgr">analysis pipeline repository</a></p></li>
+<li><p>If needed, install git and git-lfs, and activate git-lfs</p></li>
+<li><p>Clone the <a class="reference external" href="https://github.com/NCI-CGR/plco-analysis">analysis pipeline repository</a></p></li>
 <li><p>Navigate into the repository directory</p></li>
-<li><p>Create the <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> environment specified by <strong>environment.yaml</strong></p></li>
-<li><p>Activate the environment (make sure to do this whenever launching runs)</p></li>
+<li><p>Add the <a class="reference external" href="https://raw.githubusercontent.com/NCI-CGR/conda-cgr/default/conda-cgr">CGR conda channel</a> to your <strong>.condarc</strong></p></li>
+<li><p>Create the <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> environments specified by <strong>environment.yaml</strong> and <strong>environment-ldsc.yaml</strong></p></li>
+<li><p>Activate the environments (ldsc for <code class="docutils literal notranslate"><span class="pre">ldsc</span></code> and <code class="docutils literal notranslate"><span class="pre">ldscores</span></code> pipeline; the other for everything else)</p></li>
 <li><p>Update <strong>Makefile.config</strong> to point to your copies of the following:</p>
 <ul>
 <li><p>PLCO chip freeze</p></li>
@@ -64,7 +65,155 @@ methods are possible but not supported.</p>
 </div>
 <div class="section" id="long-version-for-interested-parties">
 <h2>Long Version (for interested parties)<a class="headerlink" href="#long-version-for-interested-parties" title="Permalink to this headline">¶</a></h2>
-<p>TODO</p>
+<div class="section" id="environment-management-with-conda">
+<h3>Environment Management with <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a><a class="headerlink" href="#environment-management-with-conda" title="Permalink to this headline">¶</a></h3>
+<p><a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> is a package management system used for installing software packages across different systems.
+This is how the run environments for this pipeline are maintained. There are two environments in use:
+one for most applications and with a copy of python3, and one for the limited set of tools (currently only
+<a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a>) that require end-of-life python2.</p>
+<p>If you have not used <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> before, you will need to install it for your user account. You can follow
+<a class="reference external" href="https://bioconda.github.io/">these conda installation instructions</a> for more detailed information. Be sure to add the channels they
+list under “2. Set up channels”</p>
+<p>Check your <code class="docutils literal notranslate"><span class="pre">~/.condarc</span></code>; add the channels <code class="docutils literal notranslate"><span class="pre">r</span></code> and <code class="docutils literal notranslate"><span class="pre">https://raw.githubusercontent.com/NCI-CGR/conda-cgr/default/conda-cgr</span></code>
+to the top of your list of channels if they are not already present.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>At the end of this step, your <code class="docutils literal notranslate"><span class="pre">~/.condarc</span></code> should contain, in its <strong>channels</strong> block, the following entries in order:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">https://raw.githubusercontent.com/NCI-CGR/conda-cgr/default/conda-cgr</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">r</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bioconda</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">conda-forge</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">defaults</span></code></p></li>
+</ul>
+<p>If it does not do so, the environment resolution below will almost certainly fail.</p>
+</div>
+</div>
+<div class="section" id="getting-a-copy-of-the-pipeline">
+<h3>Getting a Copy of the Pipeline<a class="headerlink" href="#getting-a-copy-of-the-pipeline" title="Permalink to this headline">¶</a></h3>
+<p>Before getting the pipeline, we need command line tools to appropriately download it, and we’ll use conda for that.
+Install required software packages into your base environment (or a development environment if you prefer):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install mamba git git-lfs
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you already have <code class="docutils literal notranslate"><span class="pre">git</span></code> and <code class="docutils literal notranslate"><span class="pre">git-lfs</span></code> available on your system, installing them here is unnecessary. <code class="docutils literal notranslate"><span class="pre">mamba</span></code>,
+however, is pretty essential on most systems.</p>
+</div>
+<p>Then activate your base environment (or proceed with your development environment if that’s the path you’re taking):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda activate base
+</pre></div>
+</div>
+<p>If you have never used <code class="docutils literal notranslate"><span class="pre">git-lfs</span></code> before, activate it one time only:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git lfs install
+</pre></div>
+</div>
+<p>Now, navigate somewhere on your system where you want to install a copy of the pipeline. Then clone a copy of the pipeline repository
+(due to large reference files, this clone operation may take up to 30 seconds on some systems):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/NCI-CGR/plco-analysis
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you do not have <code class="docutils literal notranslate"><span class="pre">git-lfs</span></code> installed correctly, this clone operation will fail with messages regarding <code class="docutils literal notranslate"><span class="pre">lfs</span></code> not operating
+correctly.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>At the time of first writing of this pipeline, the large reference backend files for this pipeline are stored on GitHub, due
+to a lack of publicly-exposed alternatives. If sufficiently many people download these files in a short span of time, GitHub
+prevents further use of <code class="docutils literal notranslate"><span class="pre">lfs</span></code> managed files for the calendar month, since CGR is evidently using a free GitHub account.
+Among other possible solutions, the bandwidth limit is evidently refreshed monthly, so if you hit the cap, you can just wait.
+But also, please don’t try to clone multiple copies of this pipeline; once you have a copy, you can make other copies on a local
+system with <strong>cp -R</strong>.</p>
+</div>
+<p>Now, navigate into the pipeline directory:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> plco-analysis
+</pre></div>
+</div>
+</div>
+<div class="section" id="build-conda-environments">
+<h3>Build conda Environments<a class="headerlink" href="#build-conda-environments" title="Permalink to this headline">¶</a></h3>
+<p>Create the two <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> environments used by the pipeline using the environment specification files included in the pipeline repository:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mamba env create -f environment.yaml
+mamba env create -f environment-ldsc.yaml
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The environment specified by <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code> will be named <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code> by default. This is a python3 environment and
+has many dependencies; depending on your system and the state of your environment cache (if you don’t know what that is, don’t worry
+about it), this can take tens of minutes to complete.</p>
+<p>The environment specified by <code class="docutils literal notranslate"><span class="pre">environment-ldsc.yaml</span></code> will be named <code class="docutils literal notranslate"><span class="pre">plco-analysis-ldsc</span></code> by default. This is a python2 environment,
+and is very small, governing exclusively the operation of the LD score regression software <a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a>. As python2 has reached end of life,
+this environment should never be expanded unless absolutely necessary, and ideally should be removed when <a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a> achieves python3
+compatibility (lol).</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> environments can be finicky. The <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code> pipeline in particular is somewhat delicate. It works (as of 30 January 2021).
+However, the way <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> is structured, it may well break at a future date. I will record here some thoughts on debugging the environment
+if you end up getting errors from <code class="docutils literal notranslate"><span class="pre">mamba</span> <span class="pre">env</span> <span class="pre">create</span></code>.</p>
+<ul class="simple">
+<li><p>See the above discussion of <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> channels. They all need to be present. It’s possible having extra channels not listed may create issues,
+so if you happen to have more, try temporarily removing them and see if that fixes it. Also note that the <em>order</em> of channels matters in
+resolving conflicting versions of the same package between channels.</p></li>
+<li><p>If you get errors about an environment already existing, it’s possible you have an environment named <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code> or <code class="docutils literal notranslate"><span class="pre">plco-analysis-ldsc</span></code>
+already present in your miniconda installation. That’s bad lol. You can check your existing environments with <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">info</span> <span class="pre">--envs</span></code> (or
+simply list the contents of the directory <code class="docutils literal notranslate"><span class="pre">/path/to/miniconda3/envs</span></code>). If indeed there is an existing environment, perhaps you’ve already
+done this process before? Otherwise, you can override the name of the environment you’re creating now by instead using
+<code class="docutils literal notranslate"><span class="pre">mamba</span> <span class="pre">env</span> <span class="pre">create</span> <span class="pre">-f</span> <span class="pre">environment.yaml</span> <span class="pre">-n</span> <span class="pre">different_name</span></code> or by changing the entry in <code class="docutils literal notranslate"><span class="pre">environment.yaml</span></code>.</p></li>
+<li><p>If you’re getting truly bizarre errors (conflicting paths in packages, missing package files, etc.), it’s possible your cache has become
+corrupted. Don’t even ask me how this happens. It can (I have seen it) create inscrutable errors that simply vanish when you clean up the cache.
+A traditional method for doing this is just deleting and reinstalling <a class="reference external" href="https://docs.conda.io/en/latest/">conda</a> entirely; that’s certainly a time-honored approach. But it’s
+more aggressive than you may need. You can instead try running <code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">clean</span> <span class="pre">--all</span></code>, or simply recursively deleting the contents of
+<code class="docutils literal notranslate"><span class="pre">/path/to/miniconda3/pkgs</span></code>.</p></li>
+<li><p>I’ll note here that specific errors regarding <code class="docutils literal notranslate"><span class="pre">boost-cpp=1.70</span></code> are more troublesome. The packages <code class="docutils literal notranslate"><span class="pre">bolt-lmm</span></code>, <code class="docutils literal notranslate"><span class="pre">r-saige</span></code>, and some
+not-yet-tracked-down dependencies of <code class="docutils literal notranslate"><span class="pre">r-saige</span></code> were built specifically against <code class="docutils literal notranslate"><span class="pre">boost-cpp=1.70</span></code> and block newer versions. I’ve thus
+built the <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code> internal packages <a class="reference external" href="https://github.com/NCI-CGR/annotate_frequency">annotate_frequency</a>, <a class="reference external" href="https://github.com/NCI-CGR/combine_categorical_runs">combine_categorical_runs</a>, <a class="reference external" href="https://github.com/NCI-CGR/initialize_output_directories">initialize_output_directories</a>,
+<a class="reference external" href="https://github.com/NCI-CGR/merge_files_for_glbus">merge_files_for_globus</a>, and <a class="reference external" href="https://github.com/NCI-CGR/qsub_job_monitor">qsub_job_monitor</a> against <cite>boost-cpp=1.70</cite> as well. If this breaks in the future, or if/when <cite>boost-cpp=1.70</cite>
+leaves <cite>conda</cite>, there’s going to be trouble. My apologies to Future Person who has to deal with this nonsense.</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="environment-usage">
+<h3>Environment Usage<a class="headerlink" href="#environment-usage" title="Permalink to this headline">¶</a></h3>
+<p>I’ve said it above and I’ll say it again here so that when this inevitably causes, you’ll hopefully see it somewhere:</p>
+<ul>
+<li><p>activate <code class="docutils literal notranslate"><span class="pre">plco-analysis-ldsc</span></code> when you are running the <strong>ldsc</strong> pipeline in <code class="docutils literal notranslate"><span class="pre">ldsc/Makefile</span></code> with <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ldsc</span></code>; or when
+you are running the <strong>ldscore regression</strong> pipeline in <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefiles.ldscores</span></code> with <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ldscores</span></code>:</p>
+<p><code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">plco-analysis-ldsc</span></code></p>
+</li>
+<li><p>activate <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code> for <strong>all other pipelines</strong>:</p>
+<p><code class="docutils literal notranslate"><span class="pre">conda</span> <span class="pre">activate</span> <span class="pre">plco-analysis</span></code></p>
+</li>
+</ul>
+</div>
+<div class="section" id="updating-project-configuration">
+<h3>Updating Project Configuration<a class="headerlink" href="#updating-project-configuration" title="Permalink to this headline">¶</a></h3>
+<p>At the time of this writing, project-wide configuration (primarily location of genotypes and phenotypes)
+is controlled by variables in the file <code class="docutils literal notranslate"><span class="pre">plco-analysis/Makefile.config</span></code>. The extent to which you need
+to update variables in this file depends on where you’re trying to install your copy of the pipeline,
+and what directory permissions you have. Some defaults for <code class="docutils literal notranslate"><span class="pre">cgems/ccad</span></code> are present by default. Note that
+the variables have defaults and commented explanations in-file, so you should read those for more details or examples.</p>
+<p>You will likely need to change the following:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">PROJECT_BASE_DIR</span></code>: installation path of your pipeline, including the directory <code class="docutils literal notranslate"><span class="pre">plco-analysis</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CHIP_FREEZE_INPUT_DIR</span></code>: path to your PLCO chip freeze files. By default it expects <code class="docutils literal notranslate"><span class="pre">PLCO_GSA.{bed,bim,fam}</span></code>,
+and equivalent files for OmniX, Omni25, Omni5, and Oncoarray.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EXTERNAL_FILE_INPUT_DIR</span></code>: this is a site for future development pulling in external metadata files; for the moment,
+it is merely the presumed location of the cross-platform subject deduplication file, by default named
+<code class="docutils literal notranslate"><span class="pre">PLCO_final_subject_list_Ancestry_UniqGenotypePlatform_04132020.txt</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">FILTERED_IMPUTED_INPUT_DIR</span></code>: path to your PLCO imputation freeze files. This folder should contain post-Rsq-QC,
+non-redundant subjects files in <a class="reference external" href="https://genome.sph.umich.edu/wiki/Minimac4">minimac4</a> format. For DUPS requests, the relevant folder is typically named
+something like <code class="docutils literal notranslate"><span class="pre">Non_redundant_PLCO/Imputed/Post_Imputation_QCed/latest</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PHENOTYPE_FILENAME</span></code>: path to and name of phenotype file for the study. The format is described briefly
+in <code class="docutils literal notranslate"><span class="pre">Makefile.config</span></code>: plain-text, tab-delimited, single header row. Note that the <code class="docutils literal notranslate"><span class="pre">Atlas</span></code> analysis configuration
+files expect augmented covariate columns describing certain possible batch effects as binary indicator variables.
+This functionality can be disabled by removing the relevant rows from the configuration files <code class="docutils literal notranslate"><span class="pre">plco-analysis/config/*config.yaml</span></code></p></li>
+</ul>
+</div>
 </div>
 </div>
 
@@ -90,7 +239,14 @@ methods are possible but not supported.</p>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#short-version-for-experts">Short Version (for experts)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#long-version-for-interested-parties">Long Version (for interested parties)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#long-version-for-interested-parties">Long Version (for interested parties)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#environment-management-with-conda">Environment Management with conda</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#getting-a-copy-of-the-pipeline">Getting a Copy of the Pipeline</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#build-conda-environments">Build conda Environments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#environment-usage">Environment Usage</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#updating-project-configuration">Updating Project Configuration</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="Preprocessing.html">Preprocessing</a></li>
