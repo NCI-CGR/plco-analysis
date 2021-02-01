@@ -12,12 +12,13 @@ Welcome to plco-analysis's documentation!
 
    Installation
    Preprocessing
+   Trait Configuration
    Primary Analysis
    Meta-Analysis
    Postprocessing
    Globus Distribution
    User Vignette
-   Advanced Development Notes
+   Advanced Dev Notes
 
 
 Indices and tables

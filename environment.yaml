@@ -16,7 +16,6 @@ dependencies:
   - r-ggplot2
   - r-rcolorbrewer
   - r-cairo
-  - ucsc-liftover
 # custom recipes from CGR's conda channel
   - annotate_frequency
   - annotate_rsids_from_linker
@@ -24,6 +23,7 @@ dependencies:
   - combine_categorical_runs
   - graf
   - initialize_output_directories
+  - liftover-v369
   - merge_files_for_globus
   - metal
   - qsub_job_monitor
