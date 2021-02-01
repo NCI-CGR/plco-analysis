@@ -19,6 +19,7 @@ Welcome to plco-analysis's documentation!
    Globus Distribution
    User Vignette
    Advanced Dev Notes
+   Methods Summary
 
 
 Indices and tables

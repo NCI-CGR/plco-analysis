@@ -83,6 +83,7 @@ AeX
 af
 Af
 Affero
+afr
 aframr
 AFRAMR
 african
@@ -90,6 +91,7 @@ AFS
 afsws
 Afv
 aggress
+agre
 ahGq
 aHP
 Ahttps
@@ -159,11 +161,13 @@ AmigaOS
 amigaunix
 amix
 AmJkDg
+amr
 AMR
 AMS
 AMTAR
 aN
 analysi
+analyz
 anaysis
 ance
 ancestri
@@ -228,6 +232,7 @@ arnVG
 arnXMxT
 aros
 AROS
+arrai
 arrayish
 arraylike
 Arraylike
@@ -406,7 +411,10 @@ Bft
 bg
 bgen
 BGEN
+bgenfil
 bgenFile
+bgenfileindex
+bgenFileIndex
 bgenix
 BGENIX
 bgf
@@ -486,12 +494,14 @@ bodywrapper
 boltlmm
 BOLTLMM
 bom
+bonferroni
 Bonferroni
 bool
 boolHook
 boostlib
 bootblocks
 borderLeftWidth
+borderlin
 borderTopWidth
 bos
 bosx
@@ -548,6 +558,7 @@ builddir
 BUILDDIR
 buildFragment
 buildParams
+builtins
 bulik
 bup
 buZwE
@@ -612,12 +623,15 @@ cargs
 CARGS
 CaseCount
 catastroph
+categor
+categori
 categoricals
 caus
 CausW
 CAZPu
 cb
 cBhpre
+cbiit
 CBIIT
 cbm
 CbqS
@@ -714,6 +728,7 @@ CHOWNPROG
 chr
 CHR
 chrM
+chrom
 CHROM
 chromosom
 chrpos
@@ -885,6 +900,9 @@ cOtBh
 cours
 cout
 covar
+covarcollist
+covarColList
+covarfil
 covarFile
 covari
 COVIA
@@ -1118,6 +1136,7 @@ dEDm
 dedupl
 deduplication
 deepDataAndEvents
+defaultdict
 defaultDisplayMap
 defaultExtra
 defaultextract
@@ -1180,6 +1199,7 @@ desync
 desyncing
 detailmenu
 detectDuplicates
+determin
 dev
 devDependencies
 dF
@@ -1764,6 +1784,8 @@ firstChild
 firstDataType
 firstElementChild
 firstword
+fitnullglmm
+fitNULLGLMM
 fixFirefoxAnchorBug
 fixInput
 FIxJ
@@ -1937,6 +1959,7 @@ generalisability
 generaliz
 generalizable
 genet
+geneticmapfil
 geneticMapFile
 genFx
 genindex
@@ -1985,6 +2008,7 @@ getText
 gettimeofday
 getWidthOrHeight
 GfKc
+GFor
 ggdb
 gGpj
 ggplot
@@ -2037,6 +2061,8 @@ GmDMLUdg
 gmicro
 GMJirLhWIzg
 gmkdir
+gmmatmodelfil
+GMMATmodelFile
 gmon
 Gn
 gneg
@@ -2060,6 +2086,8 @@ goYVZtVZF
 gp
 GPATH
 gPDPCXKlzwrybjFjkL
+gpgeno
+GpGeno
 GPLv
 GpOFuw
 gpos
@@ -2113,6 +2141,7 @@ guarante
 guaranteedUnique
 guid
 GUID
+guidelin
 guilabel
 gunzip
 gv
@@ -2154,8 +2183,10 @@ haeby
 hagpagky
 hah
 hAh
+hahce
 hahyUGrN
 hal
+HAll
 handl
 handleObj
 handleObjIn
@@ -2225,6 +2256,7 @@ hFN
 hfubah
 hg
 hG
+hgdownload
 hgh
 hguh
 hh
@@ -2247,6 +2279,7 @@ hIhFN
 hIN
 hINN
 hitachi
+hiuh
 hIuj
 hiux
 hiuxmpp
@@ -2256,6 +2289,7 @@ hjhgj
 hJHSPV
 hjK
 hJubah
+hkh
 hKh
 hkLPepehmnKk
 hKV
@@ -2343,6 +2377,7 @@ hu
 Hu
 HUAtM
 HUbX
+hUh
 huIKCMRWDUqZlEi
 huubh
 hUuh
@@ -2360,7 +2395,9 @@ hW
 hwcap
 hwe
 hWg
+hwh
 HwLI
+hwubh
 HWykR
 hX
 Hx
@@ -2376,6 +2413,7 @@ hyjB
 hyperthreading
 hyster
 hz
+hZh
 hzhwj
 Ì
 ia
@@ -2546,6 +2584,7 @@ imput
 imputationserv
 imputationserver
 imputeddataset
+IMS
 inabl
 iname
 inArray
@@ -2673,7 +2712,9 @@ INUW
 INUX
 INUY
 INUZ
+invers
 investig
+involv
 io
 iocTibY
 ioewSgQl
@@ -2781,6 +2822,8 @@ isNumber
 isNumeric
 isobject
 isObject
+isoutputafincasectrl
+IsOutputAFinCaseCtrl
 isPlainObject
 isPropagationStopped
 isrc
@@ -2788,6 +2831,8 @@ isReady
 isRegExp
 isSimulated
 isSorted
+issparsekin
+IsSparseKin
 isString
 issu
 isSuccess
@@ -3024,6 +3069,7 @@ kd
 kDeXd
 kdguxelfx
 KDubeh
+Kdubh
 kdxqhoa
 ke
 Ke
@@ -3100,6 +3146,7 @@ Ki
 KI
 KiB
 KIDNEYII
+KIubh
 KJCl
 KjTWctppgIAgfSO
 KjZhYgiIo
@@ -3275,6 +3322,7 @@ Kuck
 kUZlKboh
 KV
 KvLKqWVik
+KVubh
 kWBBcqh
 KwfIQ
 KwI
@@ -3287,8 +3335,10 @@ KZ
 kzanIJpGr
 KZj
 kZRdTh
+Kzubh
 KZZnXRKMTzZDRgQT
 Lahey
+LAll
 landscap
 lang
 LANGNAME
@@ -3330,7 +3380,9 @@ ldscore
 LDSCORE
 ldscores
 LDSCORES
+ldscoresfil
 LDscoresFile
+ldscoresmatchbp
 LDscoresMatchBp
 LDVUgXJ
 le
@@ -3485,6 +3537,7 @@ linelength
 linemod
 lineno
 LINENO
+linkag
 linkdescr
 linkdir
 LINKDIR
@@ -3596,6 +3649,7 @@ lockfileVersion
 lodash
 logi
 logIR
+logist
 logor
 logOR
 loic
@@ -3926,6 +3980,10 @@ minimatch
 minimist
 minix
 Minix
+minmac
+minMAC
+minmaf
+minMAF
 MiNT
 minuso
 minut
@@ -4023,6 +4081,7 @@ msg
 msie
 MSIE
 msMatchesSelector
+MSN
 msp
 msvc
 MSVC
@@ -4359,6 +4418,8 @@ nt
 Nt
 ntCGGGaKsaVSjQ
 Nthe
+nthread
+nThreads
 ntlqFxiRc
 nto
 nType
@@ -4601,6 +4662,8 @@ outerWidth
 outfile
 OUTFILE
 outputfile
+outputprefix
+outputPrefix
 outputresource
 Ov
 ovariesr
@@ -4718,9 +4781,12 @@ pgf
 pgfortran
 PGI
 pGu
+Pgws
 PhantomJS
 pheno
+phenocol
 phenoCol
+phenofil
 phenoFile
 phenotyp
 phenotyped
@@ -4794,12 +4860,15 @@ plink
 PLINK
 plinkbed
 PLINKBED
+plinkfil
+plinkFile
 plinkformat
 PLIT
 PLIW
 PLLQ
 Plo
 PLOeP
+plotpopul
 PlotPopulations
 PLPL
 plt
@@ -4895,6 +4964,7 @@ predep
 PREDEP
 predeps
 preDispatch
+prefac
 preferredDoc
 prefi
 prefilter
@@ -4935,6 +5005,7 @@ prevUntil
 prfx
 primari
 primarili
+princip
 printf
 PRJ
 probabl
@@ -5031,6 +5102,7 @@ qc
 QCed
 qcKEFduo
 qcovar
+qcovarcol
 qCovarCol
 QDCPfzXfyFrOaCSSoRfqE
 QdDQ
@@ -5106,6 +5178,7 @@ QtJFEzoChPRwwngMNXRDQ
 qTlklJOf
 qtqej
 qu
+qualit
 quasiparallel
 quasiparallelized
 querySelectorAll
@@ -5118,6 +5191,7 @@ quie
 quirki
 quirkli
 quirkly
+QUt
 qv
 qversion
 qvIsJ
@@ -5207,7 +5281,9 @@ realpath
 rech
 reche
 rechec
+recod
 recode
+recombin
 reconfiguring
 recordkeeping
 rect
@@ -5242,6 +5318,7 @@ reinstal
 reinvoked
 rejectWith
 relat
+relatednesscutoff
 relatednessCutoff
 relatedTarget
 relativeURL
@@ -5397,6 +5474,7 @@ rp
 rparentsprev
 rpath
 rPFZ
+rPhenotype
 rpl
 RPptvAD
 rprotocol
@@ -5481,8 +5559,13 @@ sai
 saig
 saige
 SAIGE
+saigeoutputfil
+SAIGEOutputFile
 sampl
+samplefil
 sampleFile
+sampleidcolinphenofil
+sampleIDColinphenoFile
 samplelevel
 SAMPLESIZE
 saniti
@@ -5633,6 +5716,7 @@ SIGLOST
 sil
 sile
 silen
+similarli
 simpl
 simpli
 simplic
@@ -5689,6 +5773,7 @@ SNPTEST
 SnTErfb
 SNV
 sO
+soe
 soFar
 softwar
 soJ
@@ -5719,11 +5804,15 @@ sourcelink
 SOURCELINK
 sOY
 sp
+spagmmattest
+SPAGMMATtest
 sparc
 sparclet
 sparclite
 sparcv
 sparseSigma
+sparsesigmafil
+sparseSigmaFile
 SPc
 spe
 specialEasing
@@ -5777,7 +5866,10 @@ startPulse
 startTime
 stateString
 stateVal
+statist
+statsfil
 statsFile
+statsfilebgensnp
 statsFileBgenSnps
 statusCode
 statusText
@@ -5810,6 +5902,7 @@ stopwords
 str
 strAbort
 straightforwardli
+stratifi
 streamsize
 StrH
 stringify
@@ -6168,6 +6261,8 @@ traceback
 Traceback
 tradit
 trailopt
+traittyp
+traitType
 tran
 transf
 transfo
@@ -6684,6 +6779,8 @@ variadic
 varianc
 varianceratio
 varianceRatio
+varianceratiofil
+varianceRatioFile
 varieti
 variou
 VARNAME
@@ -6695,6 +6792,8 @@ vc
 Vc
 vcf
 VCF
+vcffield
+vcfField
 VCVC
 vcyRHk
 ve
@@ -6716,6 +6815,7 @@ versio
 versionmodified
 versons
 verstring
+versu
 versuffix
 vFdAtFQcC
 vfgDqs
@@ -6725,6 +6825,7 @@ vg
 vG
 Vg
 vGaX
+VGenotype
 VgiurfwAvmwpAd
 VGjrMsG
 vgZqsCGJapvy
@@ -6836,6 +6937,7 @@ WdE
 WdEOyeUsiu
 WdRZtG
 WDsap
+weakli
 WeakMap
 webkit
 Webkit
@@ -6845,6 +6947,7 @@ websit
 wec
 weCN
 wEIILR
+weinberg
 weizhouumich
 weizhouUMICH
 welcom
@@ -6982,6 +7085,7 @@ xFpjB
 Xg
 xgate
 xgnu
+Xh
 XH
 XHdYUJEe
 xHH
@@ -7030,6 +7134,7 @@ xps
 xpx
 xpz
 xQ
+Xq
 xQLQ
 xr
 xray
@@ -7070,6 +7175,7 @@ XZ
 XzpUF
 xڕSA
 xڕT͎
+ŷ
 yacc
 Yall
 yaml
@@ -7234,10 +7340,12 @@ zzwv
 ƿ
 ϯ
 ӎ
+Н
 ѫ
 ח
 יP
 ٳ
 ب
+ڌ
 탌
 ꃑ
