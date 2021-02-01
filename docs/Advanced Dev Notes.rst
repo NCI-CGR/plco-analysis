@@ -1,5 +1,5 @@
-Advanced Development Notes
-==========================
+Advanced Dev Notes
+==================
 
 Overview of Make
 ----------------
