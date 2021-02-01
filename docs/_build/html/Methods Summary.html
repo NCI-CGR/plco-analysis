@@ -1,0 +1,294 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Methods Summary &#8212; plco-analysis v1.0.0 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Advanced Dev Notes" href="Advanced%20Dev%20Notes.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="methods-summary">
+<h1>Methods Summary<a class="headerlink" href="#methods-summary" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="preface">
+<h2>Preface<a class="headerlink" href="#preface" title="Permalink to this headline">¶</a></h2>
+<p>This document assumes you are using as input the PLCO chip freeze,
+imputed data freeze, and IMS phenotype data (v10). A description of
+the methods leading to these files is beyond scope and can be found
+elsewhere.</p>
+</div>
+<div class="section" id="preprocessing">
+<h2>Preprocessing<a class="headerlink" href="#preprocessing" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="relatedness-estimation">
+<h3>Relatedness Estimation<a class="headerlink" href="#relatedness-estimation" title="Permalink to this headline">¶</a></h3>
+<p>Genotype data from the five PLCO platforms were updated to match
+the variant IDs present in the <a class="reference external" href="https://github.com/ncbi/graf">graf</a> reference dataset <code class="docutils literal notranslate"><span class="pre">G1000GpGeno</span></code>.
+Each chip dataset in turn was converted to <a class="reference external" href="https://github.com/ncbi/graf">graf</a> fpg format and used
+to estimate within-platform subject relatedness with <cite>graf -geno</cite>.</p>
+</div>
+<div class="section" id="ancestry-estimation">
+<h3>Ancestry Estimation<a class="headerlink" href="#ancestry-estimation" title="Permalink to this headline">¶</a></h3>
+<p>Genotype data from relatedness estimation were used to estimate
+subject ancestry with <cite>graf -pop</cite> and <a class="reference external" href="https://github.com/ncbi/graf">graf</a> <cite>PlotPopulations.pl</cite>.
+As ancestry estimation was conducted separately for each platform,
+several subjects with borderline ancestry calls had discordant ancestry
+calls between platforms. In these instances, the ancestry call was resolved
+by setting the call from the Oncoarray (which happened to always be involved
+in these discordances) to the calls determined from denser arrays.</p>
+</div>
+<div class="section" id="chip-cleaning-by-ancestry-group">
+<h3>Chip Cleaning by Ancestry Group<a class="headerlink" href="#chip-cleaning-by-ancestry-group" title="Permalink to this headline">¶</a></h3>
+<p>Genotype data from each of the five PLCO platforms were split by ancestry
+using the computed <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry calls. Variants were filtered within
+platform/ancestry subset, removing variants with minor allele frequency
+less than 1%, variant-level missingness greater than 2%, or Hard-Weinberg
+Equilibrium exact p-value less than 0.001 using <a class="reference external" href="https://www.cog-genomics.org/plink/">plink 1.9</a>. The remaining
+variants were then weakly pruned for linkage equilibrium using successive
+passes of <a class="reference external" href="https://www.cog-genomics.org/plink/">plink 1.9</a> commands <code class="docutils literal notranslate"><span class="pre">--indep</span> <span class="pre">50</span> <span class="pre">5</span> <span class="pre">2</span></code> and <code class="docutils literal notranslate"><span class="pre">--indep-pairwise</span> <span class="pre">50</span> <span class="pre">5</span> <span class="pre">0.2</span></code>.
+Heterozygosity outliers were computed and removed at <code class="docutils literal notranslate"><span class="pre">|F|</span> <span class="pre">&gt;</span> <span class="pre">0.2</span></code>.
+Principal components within platform/ancestry subset were estimated using <a class="reference external" href="http://data.broadinstitute.org/alkesgroup/EIGENSOFT/">smartpca</a> fastmode.</p>
+</div>
+<div class="section" id="ld-score-regression-reference-files">
+<h3>LD Score Regression Reference Files<a class="headerlink" href="#ld-score-regression-reference-files" title="Permalink to this headline">¶</a></h3>
+<p>1000 Genomes reference files in GRCh38 tagged <code class="docutils literal notranslate"><span class="pre">20181203</span></code> were downloaded from
+the <a class="reference external" href="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000_genomes_project/release">1000 Genomes ftp site</a>. Genotypes were split out by 1000 Genomes supercontinent
+(AFR: African; AMR: admixed American; EAS: East Asian; EUR: European; SAS: South Asian),
+converted to plink format with <a class="reference external" href="https://www.cog-genomics.org/plink/">plink 1.9</a>, updated with genetic map estimates from the
+hg38 recombination map provided with <a class="reference external" href="https://alkesgroup.broadinstitute.org/BOLT-LMM">BOLT-LMM</a>. LD Score estimates for these reference
+groups were estimated by <a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a> with the following options:
+<code class="docutils literal notranslate"><span class="pre">ldsc.py</span> <span class="pre">--maf</span> <span class="pre">0.005</span> <span class="pre">--l2</span> <span class="pre">--ld-wind-cm</span> <span class="pre">1</span></code>. For datasets for which these data are available,
+stock reference data were downloaded from <code class="docutils literal notranslate"><span class="pre">https://data.broadinstitute.org/alkesgroup/LDSCORE/</span></code>.</p>
+</div>
+<div class="section" id="bgen-v1-2-imputed-data-conversion">
+<h3>BGEN v1.2 Imputed Data Conversion<a class="headerlink" href="#bgen-v1-2-imputed-data-conversion" title="Permalink to this headline">¶</a></h3>
+<p>All primary analysis tools used during initial “Atlas” testing accepted <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen v1.2</a> format
+imputed data, so all imputed genotypes were converted to this format with <a class="reference external" href="https://www.cog-genomics.org/plink/2.0/">plink 2</a> in two
+passes. The data were first converted to <code class="docutils literal notranslate"><span class="pre">pgen</span></code> format with <code class="docutils literal notranslate"><span class="pre">plink2</span> <span class="pre">--vcf</span> <span class="pre">{file}</span> <span class="pre">dosage=HDS</span> <span class="pre">--id-delim</span> <span class="pre">_</span> <span class="pre">--make-pgen</span> <span class="pre">erase-phase</span></code>;
+then the resulting pgen files were reformatted to <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen v1.2</a> with <code class="docutils literal notranslate"><span class="pre">plink2</span> <span class="pre">--recode</span> <span class="pre">bgen-1.2</span> <span class="pre">bits=8</span></code>.</p>
+</div>
+<div class="section" id="phenotype-modeling">
+<h3>Phenotype Modeling<a class="headerlink" href="#phenotype-modeling" title="Permalink to this headline">¶</a></h3>
+<p>Phenotype and covariate data from IMS v10, along with indicator variables reporting
+genotyping platform batch and <code class="docutils literal notranslate"><span class="pre">Other</span> <span class="pre">Asian</span></code> raw ancestry calls from <a class="reference external" href="https://github.com/ncbi/graf">graf</a>,
+were processed and formatted into model matrix files. Continuous traits were
+inverse normal transformed within ancestry group, stratified by sex. Categorical
+traits were processed into individual binary contrasts between a single reference
+group (category 0, with the largest number of subjects); any non-reference group
+with fewer than 10 subjects was combined into a single meta-group based on
+the PLCO analysis plan document guidelines. All categorical covariates were similarly
+processed, and turned into binary covariates to maintain compatibility with
+analysis tools without direct support for qualitative covariates.</p>
+</div>
+<div class="section" id="primary-analysis-with-bolt-lmm">
+<h3>Primary Analysis with BOLT-LMM<a class="headerlink" href="#primary-analysis-with-bolt-lmm" title="Permalink to this headline">¶</a></h3>
+<p>For each platform/ancestry combination with at least 3000 subjects, chip subsets
+corresponding to these data were lifted from GRCh37 to GRCh38 with <a class="reference external" href="http://hgdownload.soe.ucsc.edu/admin/exe/">liftOver</a>.
+Linear mixed model association with <a class="reference external" href="https://alkesgroup.broadinstitute.org/BOLT-LMM">BOLT-LMM</a> was run with the following parameters:</p>
+<ul class="simple">
+<li><p>–bgenFile {filename}</p></li>
+<li><p>–sampleFile {filename}</p></li>
+<li><p>–lmm</p></li>
+<li><p>–LDscoresFile {filename}</p></li>
+<li><p>–statsFile {filename}</p></li>
+<li><p>–statsFileBgenSnps {filename}</p></li>
+<li><p>–phenoFile {filename}</p></li>
+<li><p>–phenoCol {column name}</p></li>
+<li><p>–covarFile {filename}</p></li>
+<li><p>–qCovarCol {covariate list}</p></li>
+<li><p>–LDscoresMatchBp</p></li>
+<li><p>–geneticMapFile {filename}</p></li>
+</ul>
+</div>
+<div class="section" id="primary-analysis-with-saige">
+<h3>Primary Analysis with SAIGE<a class="headerlink" href="#primary-analysis-with-saige" title="Permalink to this headline">¶</a></h3>
+<p>For each platform/ancestry combination with at least 1000 subjects and 30 cases
+for a given model matrix, chip subsets corresponding to these data were lifted
+from GRCh37 to GRCh38 with <a class="reference external" href="http://hgdownload.soe.ucsc.edu/admin/exe/">liftOver</a>. Logistic mixed model association with <a class="reference external" href="https://github.com/weizhouUMICH/SAIGE">SAIGE</a>
+was run in two passes with the following functions and settings.</p>
+<p>For round one:</p>
+<ul class="simple">
+<li><p>SAIGE::fitNULLGLMM</p></li>
+<li><p>plinkFile {file prefix}</p></li>
+<li><p>phenoFile {filename}</p></li>
+<li><p>phenoCol {column name}</p></li>
+<li><p>sampleIDColinphenoFile {column name}</p></li>
+<li><p>covarColList {covariate list}</p></li>
+<li><p>nThreads 4</p></li>
+<li><p>traitType “binary”</p></li>
+<li><p>outputPrefix {file prefix}</p></li>
+<li><p>IsSparseKin TRUE</p></li>
+<li><p>relatednessCutoff 0.05</p></li>
+</ul>
+<p>For round two:</p>
+<ul class="simple">
+<li><p>SAIGE::SPAGMMATtest</p></li>
+<li><p>bgenFile {filename}</p></li>
+<li><p>bgenFileIndex {filename}</p></li>
+<li><p>vcfField DS</p></li>
+<li><p>chrom {chromosome}</p></li>
+<li><p>minMAF 0.01</p></li>
+<li><p>GMMATmodelFile {filename}</p></li>
+<li><p>sampleFile {filename}</p></li>
+<li><p>minMAC 1</p></li>
+<li><p>varianceRatioFile {filename}</p></li>
+<li><p>SAIGEOutputFile {filename}</p></li>
+<li><p>IsOutputAFinCaseCtrl TRUE</p></li>
+<li><p>sparseSigmaFile {filename}</p></li>
+</ul>
+</div>
+<div class="section" id="primary-analysis-postprocessing">
+<h3>Primary Analysis Postprocessing<a class="headerlink" href="#primary-analysis-postprocessing" title="Permalink to this headline">¶</a></h3>
+<p>After each analysis, the native result format was converted to the file
+format agreed upon with CBIIT. Allele frequencies from raw results were updated
+to approximate TOPMed reference frequencies estimated from test imputations
+of 1000 Genomes subjects from each supercontinent versus the TOPMed 5b reference panel.</p>
+</div>
+<div class="section" id="meta-analysis">
+<h3>Meta-Analysis<a class="headerlink" href="#meta-analysis" title="Permalink to this headline">¶</a></h3>
+<p>For each continuous and binary phenotype, platform subsets of the same <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry group
+were meta-analyzed together with <a class="reference external" href="https://genome.sph.umich.edu/wiki/METAL">metal</a> with heterogeneity analysis.</p>
+<p>For categorical phenotypes, each ancestry group was meta-analyzed across platforms as
+listed above. Then, each of the (N-1) binary comparisons against the same reference
+group were combined using a Bonferroni correction on the minimum p-value per variant,
+correcting for (N-1) tests. This p-value is biased by minimum p-value selection,
+and should be replaced in future iterations of this analysis.</p>
+</div>
+<div class="section" id="ld-score-regression">
+<h3>LD Score Regression<a class="headerlink" href="#ld-score-regression" title="Permalink to this headline">¶</a></h3>
+<p>Results files from each analysis were processed to contain
+signed summary statistics. These files were then processed with the <a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a>
+helper script <code class="docutils literal notranslate"><span class="pre">munge_sumstats.py</span></code> using the following parameters:</p>
+<ul class="simple">
+<li><p>–signed-sumstats STAT,0</p></li>
+<li><p>–out {filename}</p></li>
+<li><p>–a1-inc</p></li>
+<li><p>–frq Freq_Tested_Allele_in_TOPMed</p></li>
+<li><p>–N-col N</p></li>
+<li><p>–a1 Tested_Allele</p></li>
+<li><p>–a2 Other_Allele</p></li>
+<li><p>–snp SNP</p></li>
+<li><p>–sumstats {filename}</p></li>
+<li><p>–p P</p></li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">plco-analysis</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Preprocessing.html">Preprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Trait%20Configuration.html">Trait Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Primary%20Analysis.html">Primary Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Meta-Analysis.html">Meta-Analysis</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Postprocessing.html">Postprocessing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Globus%20Distribution.html">Globus Distribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="User%20Vignette.html">User Vignette</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Advanced%20Dev%20Notes.html">Advanced Dev Notes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Methods Summary</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#preface">Preface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preprocessing">Preprocessing</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#relatedness-estimation">Relatedness Estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ancestry-estimation">Ancestry Estimation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#chip-cleaning-by-ancestry-group">Chip Cleaning by Ancestry Group</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ld-score-regression-reference-files">LD Score Regression Reference Files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#bgen-v1-2-imputed-data-conversion">BGEN v1.2 Imputed Data Conversion</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#phenotype-modeling">Phenotype Modeling</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#primary-analysis-with-bolt-lmm">Primary Analysis with BOLT-LMM</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#primary-analysis-with-saige">Primary Analysis with SAIGE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#primary-analysis-postprocessing">Primary Analysis Postprocessing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#meta-analysis">Meta-Analysis</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ld-score-regression">LD Score Regression</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="Advanced%20Dev%20Notes.html" title="previous chapter">Advanced Dev Notes</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Cameron Palmer.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.4.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/Methods Summary.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
