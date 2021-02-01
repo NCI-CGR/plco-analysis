@@ -16,7 +16,6 @@ dependencies:
   - r-ggplot2
   - r-rcolorbrewer
   - r-cairo
-  - r-stringi
 # custom recipes from CGR's conda channel
   - annotate_frequency
   - annotate_rsids_from_linker
