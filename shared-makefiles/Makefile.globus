@@ -29,7 +29,7 @@ all: $(ALL_TARGETS) $(subst .tsv.gz,.tsv.gz.checksum,$(ALL_TARGETS))
 ##        standards and potentially futureproof
 COMMA:=,
 $(OUTPUT_DIR)/%.tsv.gz.checksum$(TRACKING_SUCCESS_SUFFIX): $$(subst .checksum,,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),md5sum -b $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's$(COMMA)$(OUTPUT_DIR)/$(COMMA)$(COMMA)' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),md5sum -b $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's$(COMMA)$(OUTPUT_DIR)/$(COMMA)$(COMMA)' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## this rule is a minor nightmare, because there's no guarantee what files are going to be present for any particular analysis, regardless of the request
 ## patterns:
@@ -39,9 +39,9 @@ $(OUTPUT_DIR)/%.tsv.gz.checksum$(TRACKING_SUCCESS_SUFFIX): $$(subst .checksum,,$
 ##        for reasons, leave it to the merge software to figure out what is what
 $(OUTPUT_DIR)/%.tsv.gz$(TRACKING_SUCCESS_SUFFIX): $$(shell find $$(RESULTS_DIR) -maxdepth 4 -path "*/$$(firstword $$(subst ., ,$$(notdir $$@)))*/*/$$(lastword $$(subst ., ,$$(subst .tsv.gz$(TRACKING_SUCCESS_SUFFIX),,$$(notdir $$@))))/*.$$(lastword $$(subst ., ,$$(subst .tsv.gz$(TRACKING_SUCCESS_SUFFIX),,$$(notdir $$@)))).tsv.gz" -print) | $$(dir $$@)
 	if [[ -d "$(RESULTS_DIR)/$(firstword $(subst ., ,$(notdir $@)))_female" ]] ; then \
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MERGE_FILES_FOR_GLOBUS) $^ $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) yes) ; \
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MERGE_FILES_FOR_GLOBUS) $^ $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) yes) ; \
 	else \
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MERGE_FILES_FOR_GLOBUS) $^ $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) no) ; \
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(MERGE_FILES_FOR_GLOBUS) $^ $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) no) ; \
 	fi
 
 $(sort $(dir $(ALL_TARGETS))):
