@@ -3,6 +3,7 @@ dependencies:
   - ldsc-rebuild
   - bolt-lmm-genetic-map-hg38
   - liftover-v369
+  - ucsc-hg19tohg38
   - plink
   - qsub_job_monitor
   - boost-cpp=1.70
