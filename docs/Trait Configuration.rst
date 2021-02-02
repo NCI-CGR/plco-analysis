@@ -49,7 +49,9 @@ Mandatory Settings
 * ``algorithm``: at least one software tool that should be run for this trait. This is how
   linear or logistic or polytomous regression is selected for a trait, so be sure to choose
   correctly! As of v2.0.0, supported methods are: ``boltlmm`` (continuous traits), ``fastgwa``
-  (continuous traits), and ``saige`` (binary or categorical/ordinal traits)
+  (continuous traits), and ``saige`` (binary or categorical/ordinal traits); note that ``fastgwa``
+  analyses were removed from primary "Atlas" analysis some months ago, and the pipeline has not
+  been exhaustively tested since
 
 
 .. note::
