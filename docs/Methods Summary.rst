@@ -91,8 +91,8 @@ Phenotype Modeling
 Phenotype and covariate data from IMS v10, along with indicator variables reporting
 genotyping platform batch and ``Other Asian`` raw ancestry calls from `graf`_,
 were processed and formatted into model matrix files. Continuous traits were
-inverse normal transformed within ancestry group, stratified by sex. Categorical
-traits were processed into individual binary contrasts between a single reference
+inverse normal transformed within ancestry group, stratified by sex, with random resolution of ties.
+Categorical traits were processed into individual binary contrasts between a single reference
 group (category 0, with the largest number of subjects); any non-reference group
 with fewer than 10 subjects was combined into a single meta-group based on
 the PLCO analysis plan document guidelines. All categorical covariates were similarly
