@@ -108,18 +108,18 @@ analysis tools without direct support for qualitative covariates.</p>
 corresponding to these data were lifted from GRCh37 to GRCh38 with <a class="reference external" href="http://hgdownload.soe.ucsc.edu/admin/exe/">liftOver</a>.
 Linear mixed model association with <a class="reference external" href="https://alkesgroup.broadinstitute.org/BOLT-LMM">BOLT-LMM</a> was run with the following parameters:</p>
 <ul class="simple">
-<li><p>–bgenFile {filename}</p></li>
-<li><p>–sampleFile {filename}</p></li>
-<li><p>–lmm</p></li>
-<li><p>–LDscoresFile {filename}</p></li>
-<li><p>–statsFile {filename}</p></li>
-<li><p>–statsFileBgenSnps {filename}</p></li>
-<li><p>–phenoFile {filename}</p></li>
-<li><p>–phenoCol {column name}</p></li>
-<li><p>–covarFile {filename}</p></li>
-<li><p>–qCovarCol {covariate list}</p></li>
-<li><p>–LDscoresMatchBp</p></li>
-<li><p>–geneticMapFile {filename}</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--bgenFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--sampleFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--lmm</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--LDscoresFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--statsFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--statsFileBgenSnps</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--phenoFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--phenoCol</span> <span class="pre">{column</span> <span class="pre">name}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--covarFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--qCovarCol</span> <span class="pre">{covariate</span> <span class="pre">list}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--LDscoresMatchBp</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--geneticMapFile</span> <span class="pre">{filename}</span></code></p></li>
 </ul>
 </div>
 <div class="section" id="primary-analysis-with-saige">
@@ -130,33 +130,33 @@ from GRCh37 to GRCh38 with <a class="reference external" href="http://hgdownload
 was run in two passes with the following functions and settings.</p>
 <p>For round one:</p>
 <ul class="simple">
-<li><p>SAIGE::fitNULLGLMM</p></li>
-<li><p>plinkFile {file prefix}</p></li>
-<li><p>phenoFile {filename}</p></li>
-<li><p>phenoCol {column name}</p></li>
-<li><p>sampleIDColinphenoFile {column name}</p></li>
-<li><p>covarColList {covariate list}</p></li>
-<li><p>nThreads 4</p></li>
-<li><p>traitType “binary”</p></li>
-<li><p>outputPrefix {file prefix}</p></li>
-<li><p>IsSparseKin TRUE</p></li>
-<li><p>relatednessCutoff 0.05</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SAIGE::fitNULLGLMM</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plinkFile</span> <span class="pre">{file</span> <span class="pre">prefix}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phenoFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phenoCol</span> <span class="pre">{column</span> <span class="pre">name}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sampleIDColinphenoFile</span> <span class="pre">{column</span> <span class="pre">name}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">covarColList</span> <span class="pre">{covariate</span> <span class="pre">list}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nThreads</span> <span class="pre">4</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">traitType</span> <span class="pre">&quot;binary&quot;</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">outputPrefix</span> <span class="pre">{file</span> <span class="pre">prefix}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IsSparseKin</span> <span class="pre">TRUE</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">relatednessCutoff</span> <span class="pre">0.05</span></code></p></li>
 </ul>
 <p>For round two:</p>
 <ul class="simple">
-<li><p>SAIGE::SPAGMMATtest</p></li>
-<li><p>bgenFile {filename}</p></li>
-<li><p>bgenFileIndex {filename}</p></li>
-<li><p>vcfField DS</p></li>
-<li><p>chrom {chromosome}</p></li>
-<li><p>minMAF 0.01</p></li>
-<li><p>GMMATmodelFile {filename}</p></li>
-<li><p>sampleFile {filename}</p></li>
-<li><p>minMAC 1</p></li>
-<li><p>varianceRatioFile {filename}</p></li>
-<li><p>SAIGEOutputFile {filename}</p></li>
-<li><p>IsOutputAFinCaseCtrl TRUE</p></li>
-<li><p>sparseSigmaFile {filename}</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SAIGE::SPAGMMATtest</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bgenFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bgenFileIndex</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vcfField</span> <span class="pre">DS</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chrom</span> <span class="pre">{chromosome}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">minMAF</span> <span class="pre">0.01</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">GMMATmodelFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sampleFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">minMAC</span> <span class="pre">1</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">varianceRatioFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SAIGEOutputFile</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IsOutputAFinCaseCtrl</span> <span class="pre">TRUE</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sparseSigmaFile</span> <span class="pre">{filename}</span></code></p></li>
 </ul>
 </div>
 <div class="section" id="primary-analysis-postprocessing">
@@ -182,16 +182,16 @@ and should be replaced in future iterations of this analysis.</p>
 signed summary statistics. These files were then processed with the <a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a>
 helper script <code class="docutils literal notranslate"><span class="pre">munge_sumstats.py</span></code> using the following parameters:</p>
 <ul class="simple">
-<li><p>–signed-sumstats STAT,0</p></li>
-<li><p>–out {filename}</p></li>
-<li><p>–a1-inc</p></li>
-<li><p>–frq Freq_Tested_Allele_in_TOPMed</p></li>
-<li><p>–N-col N</p></li>
-<li><p>–a1 Tested_Allele</p></li>
-<li><p>–a2 Other_Allele</p></li>
-<li><p>–snp SNP</p></li>
-<li><p>–sumstats {filename}</p></li>
-<li><p>–p P</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--signed-sumstats</span> <span class="pre">STAT,0</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--out</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--a1-inc</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--frq</span> <span class="pre">Freq_Tested_Allele_in_TOPMed</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--N-col</span> <span class="pre">N</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--a1</span> <span class="pre">Tested_Allele</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--a2</span> <span class="pre">Other_Allele</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--snp</span> <span class="pre">SNP</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--sumstats</span> <span class="pre">{filename}</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--p</span> <span class="pre">P</span></code></p></li>
 </ul>
 </div>
 </div>
