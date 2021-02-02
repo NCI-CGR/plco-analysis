@@ -6,6 +6,7 @@ dependencies:
   - ucsc-hg19tohg38
   - plink
   - qsub_job_monitor
+  - sbatch_job_monitor
   - boost-cpp=1.70
   - r-data.table
   - r-r.utils
