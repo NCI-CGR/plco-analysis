@@ -20,7 +20,7 @@ ALL_OUTPUT := $(subst .tsv,.ldsc.log$(TRACKING_SUCCESS_SUFFIX),$(SAIGE_TARGETS) 
 ## assumes ldsc pipeline has run to completion
 LD_CHR := $(LDSC_OUTPUT_DIR)/eur_w_ld_chr/
 LD_CHR_GRCh38 := $(subst w_ld_chr/,w_ld_chr_GRCh38/,$(LD_CHR))
-LD_TARGETS := $(patsubst %,$(LD_CHR_GRCh38)%.l2.M_5_50,$(CHRS))
+LD_TARGETS := $(patsubst %,$(LD_CHR_GRCh38)%.l2.M_5_50$(TRACKING_SUCCESS_SUFFIX),$(CHRS))
 
 ## final output target with summary information for all analyses in one place
 LDSCORE_SUMMARY := $(RESULTS_DIR)/ldscore_summary.tsv$(TRACKING_SUCCESS_SUFFIX)
@@ -162,7 +162,7 @@ $(LD_CHR_GRCh38)%.lifted.bed$(TRACKING_SUCCESS_SUFFIX): $(LD_CHR_GRCh38)%.input.
 ##    input:  {ldsc_data_GRCh38}
 ## Notes: take old build ldsc data and convert it to hacked bed format for liftOver
 $(LD_CHR_GRCh38)%.input.bed$(TRACKING_SUCCESS_SUFFIX): $$(subst $$(LD_CHR_GRCh38),$$(LD_CHR),$$(subst .input.bed$$(TRACKING_SUCCESS_SUFFIX),.l2.ldscore.gz,$$@)) | $$(dir $$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$$@),gunzip -c $< | awk 'NR > 1 {print "chr"$$1"\t"$$3-1"\t"$$3"\t"$$2":"$$5":"$$6}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk 'NR > 1 {print "chr"$$1"\t"$$3-1"\t"$$3"\t"$$2":"$$5":"$$6}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {ldsc_data_GRCh38}

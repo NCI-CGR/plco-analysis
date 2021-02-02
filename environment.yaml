@@ -29,4 +29,5 @@ dependencies:
   - qsub_job_monitor
   - r-construct.model.matrix
   - r-gwasqcplots
+  - sbatch_job_monitor
   - ucsc-hg19tohg38
