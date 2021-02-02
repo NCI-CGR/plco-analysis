@@ -103,18 +103,18 @@ For each platform/ancestry combination with at least 3000 subjects, chip subsets
 corresponding to these data were lifted from GRCh37 to GRCh38 with `liftOver`_.
 Linear mixed model association with `BOLT-LMM`_ was run with the following parameters:
 
-* --bgenFile {filename}
-* --sampleFile {filename}
-* --lmm
-* --LDscoresFile {filename}
-* --statsFile {filename}
-* --statsFileBgenSnps {filename}
-* --phenoFile {filename}
-* --phenoCol {column name}
-* --covarFile {filename}
-* --qCovarCol {covariate list}
-* --LDscoresMatchBp
-* --geneticMapFile {filename}
+* ``--bgenFile {filename}``
+* ``--sampleFile {filename}``
+* ``--lmm``
+* ``--LDscoresFile {filename}``
+* ``--statsFile {filename}``
+* ``--statsFileBgenSnps {filename}``
+* ``--phenoFile {filename}``
+* ``--phenoCol {column name}``
+* ``--covarFile {filename}``
+* ``--qCovarCol {covariate list}``
+* ``--LDscoresMatchBp``
+* ``--geneticMapFile {filename}``
 
 .. _`liftover`: http://hgdownload.soe.ucsc.edu/admin/exe/
 
@@ -128,33 +128,33 @@ was run in two passes with the following functions and settings.
 
 For round one:
 
-* SAIGE::fitNULLGLMM
-* plinkFile {file prefix}
-* phenoFile {filename}
-* phenoCol {column name}
-* sampleIDColinphenoFile {column name}
-* covarColList {covariate list}
-* nThreads 4
-* traitType "binary"
-* outputPrefix {file prefix}
-* IsSparseKin TRUE
-* relatednessCutoff 0.05
+* ``SAIGE::fitNULLGLMM``
+* ``plinkFile {file prefix}``
+* ``phenoFile {filename}``
+* ``phenoCol {column name}``
+* ``sampleIDColinphenoFile {column name}``
+* ``covarColList {covariate list}``
+* ``nThreads 4``
+* ``traitType "binary"``
+* ``outputPrefix {file prefix}``
+* ``IsSparseKin TRUE``
+* ``relatednessCutoff 0.05``
 
 For round two:
 
-* SAIGE::SPAGMMATtest
-* bgenFile {filename}
-* bgenFileIndex {filename}
-* vcfField DS
-* chrom {chromosome}
-* minMAF 0.01
-* GMMATmodelFile {filename}
-* sampleFile {filename}
-* minMAC 1
-* varianceRatioFile {filename}
-* SAIGEOutputFile {filename}
-* IsOutputAFinCaseCtrl TRUE
-* sparseSigmaFile {filename}
+* ``SAIGE::SPAGMMATtest``
+* ``bgenFile {filename}``
+* ``bgenFileIndex {filename}``
+* ``vcfField DS``
+* ``chrom {chromosome}``
+* ``minMAF 0.01``
+* ``GMMATmodelFile {filename}``
+* ``sampleFile {filename}``
+* ``minMAC 1``
+* ``varianceRatioFile {filename}``
+* ``SAIGEOutputFile {filename}``
+* ``IsOutputAFinCaseCtrl TRUE``
+* ``sparseSigmaFile {filename}``
   
 .. _`SAIGE`: https://github.com/weizhouUMICH/SAIGE
 
@@ -189,14 +189,14 @@ Results files from each analysis were processed to contain
 signed summary statistics. These files were then processed with the `ldsc`_
 helper script ``munge_sumstats.py`` using the following parameters:
 
-* --signed-sumstats STAT,0
-* --out {filename}
-* --a1-inc
-* --frq Freq_Tested_Allele_in_TOPMed
-* --N-col N
-* --a1 Tested_Allele
-* --a2 Other_Allele
-* --snp SNP
-* --sumstats {filename}
-* --p P
+* ``--signed-sumstats STAT,0``
+* ``--out {filename}``
+* ``--a1-inc``
+* ``--frq Freq_Tested_Allele_in_TOPMed``
+* ``--N-col N``
+* ``--a1 Tested_Allele``
+* ``--a2 Other_Allele``
+* ``--snp SNP``
+* ``--sumstats {filename}``
+* ``--p P``
 

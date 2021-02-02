@@ -28,7 +28,7 @@ all: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(patsubst %,%.relatedness.txt,$(POP
 ## so this uses plink to update whatever IDs are present to rsIDs and only keep the IDs that are present in the GRAF backend files.
 ## not also that this ~~assumes both GRAF and chips are in hg19~~
 %_rsids.bed$(TRACKING_SUCCESS_SUFFIX): $(CHIPS)/PLCO_%.bed $(CHIPS)/PLCO_%.bim $(CHIPS)/PLCO_%.fam GRAF.extract$(TRACKING_SUCCESS_SUFFIX) GRAF.update_names$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bed $< --bim $(word 2,$^) --fam $(word 3,$^) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 4,$^)) --update-name $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bed $< --bim $(word 2,$^) --fam $(word 3,$^) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 4,$^)) --update-name $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: GRAF.extract$(TRACKING_SUCCESS_SUFFIX)
@@ -49,14 +49,14 @@ GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
 ##    input:  {CHIP}.fpg$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this is really the primary output of this pipeline
 %.relatedness.txt$(TRACKING_SUCCESS_SUFFIX): %.fpg$(TRACKING_SUCCESS_SUFFIX)
-	-$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	-$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
 ##    output: {CHIP}.fpg$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CHIP}_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
 %.fpg$(TRACKING_SUCCESS_SUFFIX): %_rsids.bed$(TRACKING_SUCCESS_SUFFIX)
-	-$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
+	-$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## test set to run after completion

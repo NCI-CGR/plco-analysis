@@ -43,7 +43,7 @@ endef
 ## Notes: change chr:pos:ref:alt labels to rsids if requested in relevant config file tracker
 %.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX): $(ANNOTATE_RSID) $(RSID_LINKER_FILE) %.sorted.tsv$(TRACKING_SUCCESS_SUFFIX) $$(shell find $$(dir $$@) -name "*$(ID_MODE_TRACKER_SUFFIX)" -print | head -1)
 	$(eval ID_MODE := $(call get_tracker_parameter,$(word 4,$^)))
-	$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) && touch $@,$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)))
+	$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) && touch $@,$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)))
 
 
 ## patterns:
@@ -51,7 +51,7 @@ endef
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.categorical-combined.tsv$(TRACKING_SUCCESS_SUFFIX)
 $(subst .tsv,.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX),$(CATEGORICAL_TARGETS)): $(ANNOTATE_RSID) $(RSID_LINKER_FILE) $$(subst .final-ids.tsv,.categorical-combined.tsv,$$@) $$(shell find $$(dir $$@) -name "*$(ID_MODE_TRACKER_SUFFIX)" -print | head -1)
 	$(eval ID_MODE := $(call get_tracker_parameter,$(word 4,$^)))
-	$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) && touch $@,$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)))
+	$(if $(filter $(CHRPOS_MODE),$(ID_MODE)),ln -fs $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) && touch $@,$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.categorical-combined.tsv$(TRACKING_SUCCESS_SUFFIX)
@@ -59,7 +59,7 @@ $(subst .tsv,.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX),$(CATEGORICAL_TARGETS)): $
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/comparison#/*model_matrix
 ## TODO: implement this connection for comparison, along with another, to link up with the final-ids rule
 %.categorical-combined.tsv$(TRACKING_SUCCESS_SUFFIX): $$(addsuffix /$$(subst .categorical-combined.tsv,.sorted.tsv,$$(notdir $$@)),$$(shell find $$(dir $$@) -name "comparison*" -print)) $$(shell find $$(dir $$@)comparison* -name "*.model_matrix" -print)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(COMBINE_CATEGORICAL_RUNS) $(filter %.sorted.tsv,$(subst $(TRACKING_SUCCESS_SUFFIX),,$^)) $(filter %.model_matrix,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(COMBINE_CATEGORICAL_RUNS) $(filter %.sorted.tsv,$(subst $(TRACKING_SUCCESS_SUFFIX),,$^)) $(filter %.model_matrix,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.sorted.tsv$(TRACKING_SUCCESS_SUFFIX)
@@ -67,7 +67,7 @@ $(subst .tsv,.final-ids.tsv$(TRACKING_SUCCESS_SUFFIX),$(CATEGORICAL_TARGETS)): $
 ## Notes: METAL hashes variants in an unfortunate fashion, so resort everything
 COMMA:=,
 %.sorted.tsv$(TRACKING_SUCCESS_SUFFIX): %.tsv$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),sort -k 1$(COMMA)1g -k 2$(COMMA)2g $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -o $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),sort -k 1$(COMMA)1g -k 2$(COMMA)2g $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -o $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.tsv$(TRACKING_SUCCESS_SUFFIX)
@@ -83,7 +83,7 @@ $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)): $$(subst .tsv,1.raw.tsv,
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.par$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this simply wraps the call to metal itself. configuration happens with the par file rule
 %.raw.tsv$(TRACKING_SUCCESS_SUFFIX): %.par$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler_specify_queue_time,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(METAL) < $(subst $(TRACKING_SUCCESS_SUFFIX),,$<),bigmem.q,4:30:00)
+	$(call sub_handler_specify_queue_time,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(METAL) < $(subst $(TRACKING_SUCCESS_SUFFIX),,$<),$(HUGE_QUEUE),$(SHORT_TIME))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.par$(TRACKING_SUCCESS_SUFFIX)

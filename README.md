@@ -13,10 +13,10 @@ that can be modularly added, either with Make pipelines or tools in other langua
 
 ### Installation Instructions
 
-See installation instructions [here](https://plco-analysis.readthedocs.io/en/latest/Installation.html)
+See installation instructions [on readthedocs](https://plco-analysis.readthedocs.io/en/latest/Installation.html)
 
 ### Development Schedule
-##### v1.0 (approximately corresponding to PLCO Atlas tranche 1 release)
+##### v2.0 (platform-independent build for PLCO Atlas tranche 2)
 - [x] BOLT-LMM support
 - [x] fastGWA support
 - [x] SAIGE support (binary traits)
@@ -40,13 +40,13 @@ See installation instructions [here](https://plco-analysis.readthedocs.io/en/lat
 - [x] heuristic testing to support above
 - [x] hunt down last untracked auxiliary files
 - [x] complete (straightforward and documented) platform independence with conda
-- [ ] documentation: R-style vignette for generalized usage
+- [x] documentation: R-style vignette for generalized usage
 - [x] this README
 
-##### v2.0 (approximately corresponding with the end of PLCO Atlas)
+##### v3.0 (approximately corresponding with the end of PLCO Atlas)
 - [ ] polmm/ordinal phenotype support
 - [ ] top-level parameter exposure for analysis tools
-- [ ] slurm support
+- [ ] validated slurm support
 - [ ] scalable testing with per-test dependency specification
 - [ ] force post-primary analysis tools to ignore analysis results absent from config
 - [ ] heuristic testing to support above
@@ -54,7 +54,7 @@ See installation instructions [here](https://plco-analysis.readthedocs.io/en/lat
 - [ ] documentation: doxygen support
 - [ ] this README
 
-##### v3.0 (the Confluence build)
+##### v4.0 (the Confluence build)
 - [ ] config-level parameter exposure for analysis tools
 - [ ] integration of external meta-analysis files
 - [ ] distributed meta-analysis best practice QC measures 
