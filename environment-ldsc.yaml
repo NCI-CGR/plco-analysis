@@ -7,6 +7,7 @@ dependencies:
   - plink
   - qsub_job_monitor
   - boost-cpp=1.70
+  - r-data.table
   - git
   - git-lfs
 
