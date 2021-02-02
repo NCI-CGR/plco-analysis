@@ -83,7 +83,7 @@ $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)): $$(subst .tsv,1.raw.tsv,
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.par$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this simply wraps the call to metal itself. configuration happens with the par file rule
 %.raw.tsv$(TRACKING_SUCCESS_SUFFIX): %.par$(TRACKING_SUCCESS_SUFFIX)
-	$(call sub_handler_specify_queue_time,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(METAL) < $(subst $(TRACKING_SUCCESS_SUFFIX),,$<),bigmem.q,4:30:00)
+	$(call sub_handler_specify_queue_time,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(METAL) < $(subst $(TRACKING_SUCCESS_SUFFIX),,$<),$(HUGE_QUEUE),$(SHORT_TIME))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{METHOD}1.par$(TRACKING_SUCCESS_SUFFIX)

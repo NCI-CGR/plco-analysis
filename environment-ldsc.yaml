@@ -8,6 +8,7 @@ dependencies:
   - qsub_job_monitor
   - boost-cpp=1.70
   - r-data.table
+  - r-r.utils
   - git
   - git-lfs
 
