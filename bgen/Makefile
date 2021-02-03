@@ -2,7 +2,7 @@
 ## convert post-imputation-QC MIS files to nonredundant subject bgen 1.2 for downstream analysis
 
 export
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 UNIQUE_PLATFORMS := $(subst _,/,$(filter-out Omni5,$(PLATFORMS)))
 

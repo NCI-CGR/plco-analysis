@@ -1,7 +1,7 @@
 ## Cameron Palmer, 01 July 2020
 ## workflow for post-analysis QC plotting
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 

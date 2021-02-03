@@ -1,7 +1,7 @@
 ## Cameron Palmer, 19 May 2020
 ## Generate genetic relatedness matrices for FASTGWA from cleaned ancestry-split genotype data
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 .DELETE_ON_ERROR:
 .SECONDARY:
 .SECONDEXPANSION:

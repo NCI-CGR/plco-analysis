@@ -1,7 +1,7 @@
 ## Cameron Palmer, 21 May 2020
 ## Compute relatedness estimates for each platform with GRAF
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 .PHONY: all
 .DELETE_ON_ERROR:
 .SECONDEXPANSION:

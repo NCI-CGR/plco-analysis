@@ -2,7 +2,7 @@
 ## handle dispatch of check jobs for other pipelines in this shared space
 
 export
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 .DELETE_ON_ERROR:
 .SECONDEXPANSION:

@@ -1,7 +1,7 @@
 ## Cameron Palmer, 19 May 2020
 ## Run fastGWA
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 GENOTYPE_DIR := $(CLEANED_CHIP_OUTPUT_DIR)
 IMPUTED_DIR := $(BGEN_OUTPUT_DIR)

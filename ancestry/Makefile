@@ -1,7 +1,7 @@
 ## Cameron Palmer, 21 May 2020
 ## Compute GRAF ancestry estimates for each chip
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 ## location of GRAF relatedness estimation output
 ## NB: this assumes the relatedness pipeline has already been run. Dependency controlled at top level directory.
