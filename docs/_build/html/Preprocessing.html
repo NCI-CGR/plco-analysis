@@ -42,10 +42,10 @@ on a given chip or imputation build. You do not need to run this multiple times 
 <div class="section" id="relatedness">
 <span id="relatedness-pipeline"></span><h2>Relatedness<a class="headerlink" href="#relatedness" title="Permalink to this headline">¶</a></h2>
 <p>Relatedness estimation is primarily required as an intermediate in the ancestry estimation process using <a class="reference external" href="https://github.com/ncbi/graf">graf</a>. The files are stored
-and can be used for other QC reasons of course; see <strong>relatedness/PLCO_{chip_name}.relatedness.txt</strong> for relevant output files in standard
+and can be used for other QC reasons of course; see <code class="docutils literal notranslate"><span class="pre">relatedness/PLCO_{chip_name}.relatedness.txt</span></code> for relevant output files in standard
 graf format.</p>
 <ul class="simple">
-<li><p>Usage: <strong>make relatedness</strong></p></li>
+<li><p>Usage: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">relatedness</span></code></p></li>
 <li><p>Dependencies:</p>
 <ul>
 <li><p>chip freeze</p></li>
@@ -66,10 +66,10 @@ misunderstandings about the formatting of the input chip data.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p><a class="reference external" href="https://github.com/ncbi/graf">graf</a> is mildly frustrating to use: it has some non-compliant behaviors. Notably, its exit codes are not standard,
-so it doesn’t exit <cite>0</cite> on success. Always check the output log from <a class="reference external" href="https://github.com/ncbi/graf">graf</a> before proceeding! And note that the overall
-<cite>make</cite> run will have some “exit code ignored” warnings due to this behavior.</p>
+so it doesn’t exit <code class="docutils literal notranslate"><span class="pre">0</span></code> on success. Always check the output log from <a class="reference external" href="https://github.com/ncbi/graf">graf</a> before proceeding! And note that the overall
+<code class="docutils literal notranslate"><span class="pre">make</span></code> run will have some “exit code ignored” warnings due to this behavior.</p>
 <p>Additionally, <a class="reference external" href="https://github.com/ncbi/graf">graf</a> complains when the output files it tries to create already exist. So, if you’re running <a class="reference external" href="https://github.com/ncbi/graf">graf</a> in an
-existing directory, you will likely need to purge intermediates (or just kill the “relatedness/” directory and check it out again)
+existing directory, you will likely need to purge intermediates (or just kill the <code class="docutils literal notranslate"><span class="pre">relatedness/</span></code> directory and check it out again)
 before rerunning. However, this is an early step that doesn’t expect to be rerun frequently. It can definitely be patched to
 work better; or you can use the version in the upstream QC pipeline that’s much better.</p>
 </div>
@@ -77,13 +77,13 @@ work better; or you can use the version in the upstream QC pipeline that’s muc
 <div class="section" id="ancestry-estimation">
 <span id="ancestry-pipeline"></span><h2>Ancestry Estimation<a class="headerlink" href="#ancestry-estimation" title="Permalink to this headline">¶</a></h2>
 <p>Ancestry estimation is required for chip processing and various sanity checks. As with relatedness, this is computed with <a class="reference external" href="https://github.com/ncbi/graf">graf</a>. The files
-are stored and can be used for various QC purposes; see <strong>ancestry/PLCO_{chip_name}.graf_estimates.txt</strong>.</p>
+are stored and can be used for various QC purposes; see <code class="docutils literal notranslate"><span class="pre">ancestry/PLCO_{chip_name}.graf_estimates.txt</span></code>.</p>
 <p>Note that the final ancestry calls listed above are modified according to the consensus instructions of the “Atlas” analysis group.
-Subjects from the default “African” <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry are merged into the “African American” label to more consistently represent
-the sampling distribution of the PLCO project. Subjects from the default “Other Asian or Pacific Islander” <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry are merged
-into the “East Asian” label according to the instructions of collaborators.</p>
+Subjects from the default <code class="docutils literal notranslate"><span class="pre">African</span></code> <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry are merged into the <code class="docutils literal notranslate"><span class="pre">African</span> <span class="pre">American</span></code> label to more consistently represent
+the sampling distribution of the PLCO project. Subjects from the default <code class="docutils literal notranslate"><span class="pre">Other</span> <span class="pre">Asian</span> <span class="pre">or</span> <span class="pre">Pacific</span> <span class="pre">Islander</span></code> <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry are merged
+into the <code class="docutils literal notranslate"><span class="pre">East</span> <span class="pre">Asian</span></code> label according to the instructions of collaborators.</p>
 <ul class="simple">
-<li><p>Usage: <strong>make ancestry</strong></p></li>
+<li><p>Usage: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ancestry</span></code></p></li>
 <li><p>Dependencies:</p>
 <ul>
 <li><p><a class="reference internal" href="#relatedness-pipeline">relatedness pipeline</a></p></li>
@@ -124,7 +124,7 @@ processing steps</p></li>
 <p>Note that some of these files and calculations, such as <a class="reference external" href="https://www.cog-genomics.org/plink/1.9/basic_stats#ibc">heterozygosity outliers</a> and <a class="reference external" href="https://www.cog-genomics.org/plink/1.9/ibd">IBS/IBD estimates</a>, are not directly
 used by the pipeline in its current form but were useful in the processing of the PLCO chip freeze, and are included for posterity.</p>
 <ul class="simple">
-<li><p>Usage: <strong>make cleaned-chips-by-ancestry</strong></p></li>
+<li><p>Usage: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">cleaned-chips-by-ancestry</span></code></p></li>
 <li><p>Dependencies:</p>
 <ul>
 <li><p><a class="reference internal" href="#ancestry-pipeline">ancestry pipeline</a></p></li>
@@ -150,12 +150,12 @@ method is implemented here. if there’s interest, this might be the place to do
 <div class="topic">
 <p class="topic-title">Debugging</p>
 <p>This pipeline extensively uses <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> for filtering and QC operations. <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a>’s memory allocation is limited to 16G
-in <strong>Makefile.config</strong>. That’s a completely <em>ad hoc</em> bit of nonsense that may need to be changed depending on your
+in <code class="docutils literal notranslate"><span class="pre">Makefile.config</span></code>. That’s a completely <em>ad hoc</em> bit of nonsense that may need to be changed depending on your
 individual project’s parameters.</p>
 <p>The pipeline is designed to allow different combinations of platform/ancestry to not exist. That seems to work well,
 but some issues may pop up if <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> finds something it doesn’t like in a small dataset.</p>
-<p>The IBS/IBD calculation with <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> <strong>–genome</strong> is somewhat quirkly set up. For datasets above a fixed (configurable)
-threshold of number of subjects, the IBS/IBD calculation is split into chunks with <strong>–parallel</strong> and then glued back
+<p>The IBS/IBD calculation with <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> <code class="docutils literal notranslate"><span class="pre">--genome</span></code> is somewhat quirkly set up. For datasets above a fixed (configurable)
+threshold of number of subjects, the IBS/IBD calculation is split into chunks with <code class="docutils literal notranslate"><span class="pre">--parallel</span></code> and then glued back
 together in a separate rule. These various thresholds were selected to make PLCO/GSA/Europeans run reasonably efficiently.
 For much larger chips, you may need to fiddle with the thresholds and number of quasiparallelized jobs to make things
 go ok.</p>
@@ -176,7 +176,7 @@ Thus, based on the tools requested during the initial “Atlas” testing phase,
 analysis format for all tools. Imputed data files for each platform/ancestry combination are generated once per dataset,
 and then used as fixed input for all association testing.</p>
 <ul class="simple">
-<li><p>Usage: <strong>make bgen</strong></p></li>
+<li><p>Usage: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">bgen</span></code></p></li>
 <li><p>Dependencies:</p>
 <ul>
 <li><p>imputed data freeze</p></li>
@@ -189,8 +189,8 @@ and then used as fixed input for all association testing.</p>
 <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> input, then there’s no reason to run this pipeline and waste a ton of hard drive space</p></li>
 <li><p>the <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> format in use here is v1.2, based on <a class="reference external" href="https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html">bolt-lmm</a> documentation and other software support suggesting that
 that’s the most efficient version accepted by all current tools. this may need to be changed in the future</p></li>
-<li><p>the <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> reformatting process is conducted using <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a>. the resultant <strong>*.sample</strong> files are slightly malformatted,
-and so an additional step fixes the included <strong>NA</strong> values by setting them to <strong>0</strong>. this could well be changed in
+<li><p>the <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> reformatting process is conducted using <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a>. the resultant <code class="docutils literal notranslate"><span class="pre">*.sample</span></code> files are slightly malformatted,
+and so an additional step fixes the included <code class="docutils literal notranslate"><span class="pre">NA</span></code> values by setting them to <code class="docutils literal notranslate"><span class="pre">0</span></code>. this could well be changed in
 a future version depending on upstream behavior</p></li>
 </ul>
 </li>
@@ -198,7 +198,7 @@ a future version depending on upstream behavior</p></li>
 <div class="topic">
 <p class="topic-title">Debugging</p>
 <p><a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen</a> support in conversion tools is pretty limited. I’ve ended up using <a class="reference external" href="https://www.cog-genomics.org/plink/">plink</a> for VCF-&gt;BGEN conversion in two steps,
-even bearing in mind the apparent bug in output <strong>*.sample</strong> format files created with it. But I could very much see
+even bearing in mind the apparent bug in output <code class="docutils literal notranslate"><span class="pre">*.sample</span></code> format files created with it. But I could very much see
 the possibility of needing a different adapter program in the future depending on one’s needs and any format discrepancies
 I’ve not found, and it would have the benefit of potentially removing an extra rule/intermediate file from this pipeline.</p>
 </div>
@@ -208,7 +208,7 @@ I’ve not found, and it would have the benefit of potentially removing an extra
 <p>Certain pipelines (see below) use derived information from the <a class="reference external" href="https://www.internationalgenome.org">1000 Genomes Project</a>. This is (always?) split
 by supercontinent.</p>
 <ul class="simple">
-<li><p>Usage: <strong>make 1KG_files</strong></p></li>
+<li><p>Usage: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">1KG_files</span></code></p></li>
 <li><p>Dependencies:</p>
 <ul>
 <li><p>a functional internet connection</p></li>
@@ -217,7 +217,7 @@ by supercontinent.</p>
 <li><p>Assumptions:</p>
 <ul>
 <li><p>the 1000 Genomes files downloaded are frozen at a particular latest release according to the configuration information
-in <strong>Makefile.config</strong>. that can obviously be changed if you want</p></li>
+in <code class="docutils literal notranslate"><span class="pre">Makefile.config</span></code>. that can obviously be changed if you want</p></li>
 <li><p>most target installations should actually have some sort of copy of the 1000 Genomes data present already somewhere
 on their filesystem; however, this pipeline is not designed to support that as-is. it should be pretty easy to modify
 if you really want</p></li>
@@ -236,7 +236,7 @@ I don’t think it should ever come up again, but do run the <cite>1KG_files-che
 reference data are provided in these packages (at least at time of initial download), that information only
 covered European subjects, and more generalized data were/are needed.</p>
 <ul class="simple">
-<li><p>Usage: <strong>make ldsc</strong></p></li>
+<li><p>Usage: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">ldsc</span></code></p></li>
 <li><p>Dependencies:</p>
 <ul>
 <li><p><a class="reference internal" href="#genomes-pipeline">1000 Genomes pipeline</a></p></li>
@@ -250,8 +250,8 @@ actually run <a class="reference external" href="https://github.com/bulik/ldsc">
 some sort of weird versioning issue. regardless, this pipeline just hacks the result into submission. that results
 in some discrepancies from the stock reference files, but there’s no indication of exactly which subjects/variants
 were used for those files, so that’s not unexpected. basically: ymmv</p></li>
-<li><p>default built-in files include an African American (<strong>AFRAMR</strong>) meta-group for appropriate subjects. note however
-that “African American” as a human genetics group label is a very heterogeneous group, so there’s no guarantee
+<li><p>default built-in files include an African American (<code class="docutils literal notranslate"><span class="pre">AFRAMR</span></code>) meta-group for appropriate subjects. note however
+that <code class="docutils literal notranslate"><span class="pre">African</span> <span class="pre">American</span></code> as a human genetics group label is a very heterogeneous group, so there’s no guarantee
 that this reference group will be appropriate for a given set of African American study subjects</p></li>
 </ul>
 </li>

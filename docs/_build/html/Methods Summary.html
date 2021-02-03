@@ -47,12 +47,12 @@ elsewhere.</p>
 <p>Genotype data from the five PLCO platforms were updated to match
 the variant IDs present in the <a class="reference external" href="https://github.com/ncbi/graf">graf</a> reference dataset <code class="docutils literal notranslate"><span class="pre">G1000GpGeno</span></code>.
 Each chip dataset in turn was converted to <a class="reference external" href="https://github.com/ncbi/graf">graf</a> fpg format and used
-to estimate within-platform subject relatedness with <cite>graf -geno</cite>.</p>
+to estimate within-platform subject relatedness with <code class="docutils literal notranslate"><span class="pre">graf</span> <span class="pre">-geno</span></code>.</p>
 </div>
 <div class="section" id="ancestry-estimation">
 <h3>Ancestry Estimation<a class="headerlink" href="#ancestry-estimation" title="Permalink to this headline">¶</a></h3>
 <p>Genotype data from relatedness estimation were used to estimate
-subject ancestry with <cite>graf -pop</cite> and <a class="reference external" href="https://github.com/ncbi/graf">graf</a> <cite>PlotPopulations.pl</cite>.
+subject ancestry with <code class="docutils literal notranslate"><span class="pre">graf</span> <span class="pre">-pop</span></code> and <a class="reference external" href="https://github.com/ncbi/graf">graf</a> <code class="docutils literal notranslate"><span class="pre">PlotPopulations.pl</span></code>.
 As ancestry estimation was conducted separately for each platform,
 several subjects with borderline ancestry calls had discordant ancestry
 calls between platforms. In these instances, the ancestry call was resolved
@@ -89,13 +89,16 @@ imputed data, so all imputed genotypes were converted to this format with <a cla
 passes. The data were first converted to <code class="docutils literal notranslate"><span class="pre">pgen</span></code> format with <code class="docutils literal notranslate"><span class="pre">plink2</span> <span class="pre">--vcf</span> <span class="pre">{file}</span> <span class="pre">dosage=HDS</span> <span class="pre">--id-delim</span> <span class="pre">_</span> <span class="pre">--make-pgen</span> <span class="pre">erase-phase</span></code>;
 then the resulting pgen files were reformatted to <a class="reference external" href="https://www.well.ox.ac.uk/~gav/bgen_format/">bgen v1.2</a> with <code class="docutils literal notranslate"><span class="pre">plink2</span> <span class="pre">--recode</span> <span class="pre">bgen-1.2</span> <span class="pre">bits=8</span></code>.</p>
 </div>
+</div>
+<div class="section" id="primary-analysis">
+<h2>Primary Analysis<a class="headerlink" href="#primary-analysis" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="phenotype-modeling">
 <h3>Phenotype Modeling<a class="headerlink" href="#phenotype-modeling" title="Permalink to this headline">¶</a></h3>
 <p>Phenotype and covariate data from IMS v10, along with indicator variables reporting
 genotyping platform batch and <code class="docutils literal notranslate"><span class="pre">Other</span> <span class="pre">Asian</span></code> raw ancestry calls from <a class="reference external" href="https://github.com/ncbi/graf">graf</a>,
 were processed and formatted into model matrix files. Continuous traits were
-inverse normal transformed within ancestry group, stratified by sex. Categorical
-traits were processed into individual binary contrasts between a single reference
+inverse normal transformed within ancestry group, stratified by sex, with random resolution of ties.
+Categorical traits were processed into individual binary contrasts between a single reference
 group (category 0, with the largest number of subjects); any non-reference group
 with fewer than 10 subjects was combined into a single meta-group based on
 the PLCO analysis plan document guidelines. All categorical covariates were similarly
@@ -166,8 +169,9 @@ format agreed upon with CBIIT. Allele frequencies from raw results were updated
 to approximate TOPMed reference frequencies estimated from test imputations
 of 1000 Genomes subjects from each supercontinent versus the TOPMed 5b reference panel.</p>
 </div>
+</div>
 <div class="section" id="meta-analysis">
-<h3>Meta-Analysis<a class="headerlink" href="#meta-analysis" title="Permalink to this headline">¶</a></h3>
+<h2>Meta-Analysis<a class="headerlink" href="#meta-analysis" title="Permalink to this headline">¶</a></h2>
 <p>For each continuous and binary phenotype, platform subsets of the same <a class="reference external" href="https://github.com/ncbi/graf">graf</a> ancestry group
 were meta-analyzed together with <a class="reference external" href="https://genome.sph.umich.edu/wiki/METAL">metal</a> with heterogeneity analysis.</p>
 <p>For categorical phenotypes, each ancestry group was meta-analyzed across platforms as
@@ -177,7 +181,7 @@ correcting for (N-1) tests. This p-value is biased by minimum p-value selection,
 and should be replaced in future iterations of this analysis.</p>
 </div>
 <div class="section" id="ld-score-regression">
-<h3>LD Score Regression<a class="headerlink" href="#ld-score-regression" title="Permalink to this headline">¶</a></h3>
+<h2>LD Score Regression<a class="headerlink" href="#ld-score-regression" title="Permalink to this headline">¶</a></h2>
 <p>Results files from each analysis were processed to contain
 signed summary statistics. These files were then processed with the <a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a>
 helper script <code class="docutils literal notranslate"><span class="pre">munge_sumstats.py</span></code> using the following parameters:</p>
@@ -193,7 +197,9 @@ helper script <code class="docutils literal notranslate"><span class="pre">munge
 <li><p><code class="docutils literal notranslate"><span class="pre">--sumstats</span> <span class="pre">{filename}</span></code></p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">--p</span> <span class="pre">P</span></code></p></li>
 </ul>
-</div>
+<p>Finally, the resulting processed files were used to estimate LD score regression
+intercepts with <a class="reference external" href="https://github.com/bulik/ldsc">ldsc</a> script <code class="docutils literal notranslate"><span class="pre">ldsc.py</span></code> against reference LD scores from the
+matched supercontinent.</p>
 </div>
 </div>
 
@@ -233,14 +239,17 @@ helper script <code class="docutils literal notranslate"><span class="pre">munge
 <li class="toctree-l3"><a class="reference internal" href="#chip-cleaning-by-ancestry-group">Chip Cleaning by Ancestry Group</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ld-score-regression-reference-files">LD Score Regression Reference Files</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#bgen-v1-2-imputed-data-conversion">BGEN v1.2 Imputed Data Conversion</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#primary-analysis">Primary Analysis</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#phenotype-modeling">Phenotype Modeling</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#primary-analysis-with-bolt-lmm">Primary Analysis with BOLT-LMM</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#primary-analysis-with-saige">Primary Analysis with SAIGE</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#primary-analysis-postprocessing">Primary Analysis Postprocessing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#meta-analysis">Meta-Analysis</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#ld-score-regression">LD Score Regression</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="#meta-analysis">Meta-Analysis</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ld-score-regression">LD Score Regression</a></li>
 </ul>
 </li>
 </ul>

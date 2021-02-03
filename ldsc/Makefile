@@ -1,7 +1,7 @@
 ## Cameron Palmer, 03 June 2020
 ## Create ldscores files for BOLT
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 .PHONY: all reference_ld_scores
 .DELETE_ON_ERROR:

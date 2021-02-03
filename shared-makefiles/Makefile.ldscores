@@ -1,7 +1,7 @@
 ## Cameron Palmer, 28 June 2020
 ## run ldscore regression on all output analysis files
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)
 

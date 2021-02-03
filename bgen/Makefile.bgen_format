@@ -2,7 +2,7 @@
 ## Shared pipeline for each platform in turn, pulled in through an include from a dummy makefile controller.
 ## Note that this means that this is executed from within the {CHIP} directory, and output paths don't include that
 ## Ancestry is stored in "PROJECT_CODE"
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 RESOLVED_SUBJECT_LIST := $(UNIQUE_SUBJECT_LIST)
 

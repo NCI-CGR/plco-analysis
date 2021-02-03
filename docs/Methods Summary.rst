@@ -18,7 +18,7 @@ Relatedness Estimation
 Genotype data from the five PLCO platforms were updated to match
 the variant IDs present in the `graf`_ reference dataset ``G1000GpGeno``.
 Each chip dataset in turn was converted to `graf`_ fpg format and used
-to estimate within-platform subject relatedness with `graf -geno`.
+to estimate within-platform subject relatedness with ``graf -geno``.
 
 .. _graf: https://github.com/ncbi/graf
 
@@ -26,7 +26,7 @@ Ancestry Estimation
 ~~~~~~~~~~~~~~~~~~~
 
 Genotype data from relatedness estimation were used to estimate
-subject ancestry with `graf -pop` and `graf`_ `PlotPopulations.pl`.
+subject ancestry with ``graf -pop`` and `graf`_ ``PlotPopulations.pl``.
 As ancestry estimation was conducted separately for each platform,
 several subjects with borderline ancestry calls had discordant ancestry
 calls between platforms. In these instances, the ancestry call was resolved
@@ -82,14 +82,17 @@ then the resulting pgen files were reformatted to `bgen v1.2`_ with ``plink2 --r
 .. _`plink 2`: https://www.cog-genomics.org/plink/2.0/
 
 
+Primary Analysis
+----------------
+
 Phenotype Modeling
 ~~~~~~~~~~~~~~~~~~
 
 Phenotype and covariate data from IMS v10, along with indicator variables reporting
 genotyping platform batch and ``Other Asian`` raw ancestry calls from `graf`_,
 were processed and formatted into model matrix files. Continuous traits were
-inverse normal transformed within ancestry group, stratified by sex. Categorical
-traits were processed into individual binary contrasts between a single reference
+inverse normal transformed within ancestry group, stratified by sex, with random resolution of ties.
+Categorical traits were processed into individual binary contrasts between a single reference
 group (category 0, with the largest number of subjects); any non-reference group
 with fewer than 10 subjects was combined into a single meta-group based on
 the PLCO analysis plan document guidelines. All categorical covariates were similarly
@@ -168,7 +171,7 @@ of 1000 Genomes subjects from each supercontinent versus the TOPMed 5b reference
 
 
 Meta-Analysis
-~~~~~~~~~~~~~
+-------------
 
 For each continuous and binary phenotype, platform subsets of the same `graf`_ ancestry group
 were meta-analyzed together with `metal`_ with heterogeneity analysis.
@@ -183,7 +186,7 @@ and should be replaced in future iterations of this analysis.
 
 
 LD Score Regression
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 Results files from each analysis were processed to contain
 signed summary statistics. These files were then processed with the `ldsc`_
@@ -200,3 +203,7 @@ helper script ``munge_sumstats.py`` using the following parameters:
 * ``--sumstats {filename}``
 * ``--p P``
 
+
+Finally, the resulting processed files were used to estimate LD score regression
+intercepts with `ldsc`_ script ``ldsc.py`` against reference LD scores from the
+matched supercontinent.

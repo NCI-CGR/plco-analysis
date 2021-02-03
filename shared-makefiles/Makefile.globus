@@ -1,7 +1,7 @@
 ## Cameron Palmer, 14 July 2020
 ## prepare files for use with the NCI/DCEG Atlas website
 ##    basically, merge everything under a single phenotype into a single output file (per algorithm)
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 CONFIG_DIR := $(CONFIG_INPUT_DIR)
 RESULTS_DIR := $(RESULT_OUTPUT_DIR)

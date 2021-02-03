@@ -1,7 +1,7 @@
 ## Cameron Palmer, 08 June 2020
 ## run meta-analysis on completed association results
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 ALL_FIND_TARGETS := $(shell find $(RESULT_OUTPUT_DIR) \( -name "*$(shell echo "$(SUPPORTED_TARGETS)" | tr '[\:upper\:]' '[\:lower\:]' | sed 's/ /.rawids.tsv" -o -name "*/g').rawids.tsv" \) -print)
 ALL_TARGETS := $(sort $(dir $(ALL_FIND_TARGETS)))
