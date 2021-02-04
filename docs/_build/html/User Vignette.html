@@ -135,6 +135,21 @@ you need to add them to your custom phenotype file too</p></li>
 <li><p>After that, you should be able to run all remaining pipelines as usual; you can continue to override <code class="docutils literal notranslate"><span class="pre">$(PHENOTYPE_FILENAME)</span></code> if you like, but it won’t have any impact either way</p></li>
 </ul>
 </div>
+<div class="section" id="run-meta-analysis-of-software-xxx-while-software-yyy-is-running">
+<h2>Run Meta-Analysis of Software XXX While Software YYY is Running<a class="headerlink" href="#run-meta-analysis-of-software-xxx-while-software-yyy-is-running" title="Permalink to this headline">¶</a></h2>
+<p>As mentioned in the <a class="reference internal" href="Meta-Analysis.html#meta-analysis-pipeline"><span class="std std-ref">Meta-Analysis</span></a>, <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefile.metal`</span> <span class="pre">is</span> <span class="pre">a</span> <span class="pre">very</span> <span class="pre">aggressive</span> <span class="pre">pipeline</span> <span class="pre">that</span> <span class="pre">will</span>
+<span class="pre">pick</span> <span class="pre">up</span> <span class="pre">any</span> <span class="pre">delicious-looking</span> <span class="pre">file</span> <span class="pre">in</span> <span class="pre">your</span> <span class="pre">``$(RESULT_OUTPUT_DIR)</span></code> and chew on it. This is not compatible with running
+while primary analyses are still going.</p>
+<p>However, if, for example, BOLT-LMM has finished, but SAIGE is still running, you can deploy meta-analysis on the results
+of one program only. The shortcut for this is:</p>
+<p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">meta-boltlmm</span></code></p>
+<p>Replace <code class="docutils literal notranslate"><span class="pre">boltlmm</span></code> with your software of choice.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>These shortcuts are encoded in the top-level <code class="docutils literal notranslate"><span class="pre">Makefile</span></code> and need to be manually added for new software packages,
+should those ever be added to the primary analysis modules.</p>
+</div>
+</div>
 </div>
 
 
@@ -167,6 +182,7 @@ you need to add them to your custom phenotype file too</p></li>
 <li class="toctree-l2"><a class="reference internal" href="#a-complete-run-end-to-end">A Complete Run, End to End</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#run-a-subset-of-analyses-only">Run a Subset of Analyses Only</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#run-your-own-boutique-traits">Run Your Own Boutique Traits</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-meta-analysis-of-software-xxx-while-software-yyy-is-running">Run Meta-Analysis of Software XXX While Software YYY is Running</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="Advanced%20Dev%20Notes.html">Advanced Dev Notes</a></li>

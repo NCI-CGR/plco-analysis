@@ -25,7 +25,7 @@ QC Plotting
 The pipeline ``shared-makefiles/Makefile.plotting`` creates
 QQ and Manhattan plots for any existing output files ``.tsv.gz``
 under ``$(RESULT_OUTPUT_DIR)``. This follows the same logic
-as the `meta-analysis pipeline`_, in that it aggressively detects
+as the :ref:`meta-analysis pipeline`, in that it aggressively detects
 whatever happens to be present, without going through the phenotype
 model configuration files. This has the benefit of allowing some
 analyses to be missing, due to sample size limitations in most

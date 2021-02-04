@@ -104,3 +104,22 @@ all the imputed data in this pipeline.
 
 * After that, you should be able to run all remaining pipelines as usual; you can continue to override ``$(PHENOTYPE_FILENAME)`` if you like, but it won't have any impact either way
 
+
+Run Meta-Analysis of Software XXX While Software YYY is Running
+---------------------------------------------------------------
+
+As mentioned in the :ref:`meta-analysis pipeline`, ``shared-makefiles/Makefile.metal` is a very aggressive pipeline that will
+pick up any delicious-looking file in your ``$(RESULT_OUTPUT_DIR)`` and chew on it. This is not compatible with running
+while primary analyses are still going.
+
+However, if, for example, BOLT-LMM has finished, but SAIGE is still running, you can deploy meta-analysis on the results
+of one program only. The shortcut for this is:
+
+``make meta-boltlmm``
+
+Replace ``boltlmm`` with your software of choice.
+
+.. note::
+
+   These shortcuts are encoded in the top-level ``Makefile`` and need to be manually added for new software packages,
+   should those ever be added to the primary analysis modules.
