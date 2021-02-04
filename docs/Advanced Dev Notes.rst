@@ -1,3 +1,5 @@
+.. _`advanced developer notes`:
+
 Advanced Dev Notes
 ==================
 
