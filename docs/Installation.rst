@@ -112,7 +112,7 @@ Now, navigate somewhere on your system where you want to install a copy of the p
 .. warning::
 
    If you do not have ``git-lfs`` installed correctly, this clone operation will fail with messages regarding ``lfs`` not operating
-   correctly.
+   correctly. 
 
 .. warning::
 
@@ -122,6 +122,10 @@ Now, navigate somewhere on your system where you want to install a copy of the p
    Among other possible solutions, the bandwidth limit is evidently refreshed monthly, so if you hit the cap, you can just wait.
    But also, please don't try to clone multiple copies of this pipeline; once you have a copy, you can make other copies on a local
    system with **cp -R**.
+   
+.. warning::
+
+   If you put your results under results in the installation directory, the pipeline expects the install directory name to be plco-analysis and will parse the directory accordingly. Please **do not** change the installation directory name at this momement or you may encounter unexpected outcomes.  
 
 Now, navigate into the pipeline directory:
 
