@@ -1,7 +1,7 @@
 ## Cameron Palmer, 21 May 2020
 ## Compute GRAF ancestry estimates for each chip
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 ## location of GRAF relatedness estimation output
 ## NB: this assumes the relatedness pipeline has already been run. Dependency controlled at top level directory.
@@ -46,7 +46,7 @@ Oncoarray.graf_estimates.modified.txt$(TRACKING_SUCCESS_SUFFIX): $$(subst .modif
 ##    output: {CHIP}.graf_estimates.raw.txt$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CHIP}.graf_pop$(TRACKING_SUCCESS_SUFFIX)
 %.graf_estimates.raw.txt$(TRACKING_SUCCESS_SUFFIX): %.graf_pop$(TRACKING_SUCCESS_SUFFIX)
-	-$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_POP) $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	-$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_POP) $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
@@ -54,7 +54,7 @@ Oncoarray.graf_estimates.modified.txt$(TRACKING_SUCCESS_SUFFIX): $$(subst .modif
 ##    input:  {PROJECT_BASE_DIR}/relatedness/{CHIP}.fpg
 ## Notes: input is the output of the relatedness pipeline, which needs to complete before this pipeline is run.
 %.graf_pop$(TRACKING_SUCCESS_SUFFIX): $(REL_DIR)/%.fpg
-	-$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $< -pop $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	-$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $< -pop $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## test set to run after completion

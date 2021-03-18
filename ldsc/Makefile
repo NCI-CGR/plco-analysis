@@ -1,7 +1,7 @@
 ## Cameron Palmer, 03 June 2020
 ## Create ldscores files for BOLT
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 .PHONY: all reference_ld_scores
 .DELETE_ON_ERROR:
@@ -30,14 +30,14 @@ eur_w_ld_chr.tar.bz2$(TRACKING_SUCCESS_SUFFIX):
 ##    input:  LDSCORE.1000G_{POP}.l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: modify header for apparent compatibility with BOLT
 $(ALL_TARGETS): $$(subst -reformatted.gz,.gz,$$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's/L2/LDSCORE/' | gzip -c > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sed 's/L2/LDSCORE/' | gzip -c > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: LDSCORE.1000G_{POP}.l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  1KG_{POP}.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: run LDSC on a selected 1KG ancestry group
 $(subst -reformatted.gz,.gz,$(ALL_TARGETS)): 1KG_$$(word 2,$$(subst 1000G_, ,$$(subst .l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX),,$$@))).bed$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(LDSC) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --maf $(MAF_THRESHOLD) --l2 --ld-wind-cm 1 --out $(subst .l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX),,$@) > $(subst .l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX),.log,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(LDSC) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --maf $(MAF_THRESHOLD) --l2 --ld-wind-cm 1 --out $(subst .l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX),,$@) > $(subst .l2.ldscore.gz$(TRACKING_SUCCESS_SUFFIX),.log,$@))
 
 ## patterns:
 ##    output: 1KG_AFRAMR.bed$(TRACKING_SUCCESS_SUFFIX)
@@ -45,7 +45,7 @@ $(subst -reformatted.gz,.gz,$(ALL_TARGETS)): 1KG_$$(word 2,$$(subst 1000G_, ,$$(
 ##    input:  1KG_EUR.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: construct African American pseudo dataset by merging African and European supercontinental subjects
 1KG_AFRAMR.bed$(TRACKING_SUCCESS_SUFFIX): 1KG_AFR.bed$(TRACKING_SUCCESS_SUFFIX) 1KG_EUR.bed$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --bmerge $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --bmerge $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: 1KG_ALL.bed$(TRACKING_SUCCESS_SUFFIX)
@@ -53,7 +53,7 @@ $(subst -reformatted.gz,.gz,$(ALL_TARGETS)): 1KG_$$(word 2,$$(subst 1000G_, ,$$(
 ##    input:  1KG_ALL.merge_list$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: construct "ALL" supergroup by merging the results of the five supercontinents
 1KG_ALL.bed$(TRACKING_SUCCESS_SUFFIX): 1KG_EUR.bed$(TRACKING_SUCCESS_SUFFIX) 1KG_ALL.merge_list$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --merge-list $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --merge-list $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: 1KG_ALL.merge_list$(TRACKING_SUCCESS_SUFFIX)
@@ -71,7 +71,7 @@ $(subst -reformatted.gz,.gz,$(ALL_TARGETS)): 1KG_$$(word 2,$$(subst 1000G_, ,$$(
 ##    input:  1KG_{POP}.merge_list$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: for populations other than ALL or AFRAMR, merge chromosomes into a single genome-wide dataset
 $(patsubst %,1KG_%.bed$(TRACKING_SUCCESS_SUFFIX),$(1KG_POPS)): $$(subst .bed,.chr1_nodups.bed,$$@) $$(subst .bed,.merge_list,$$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --merge-list $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --merge-list $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: 1KG_{POP}.merge_list$(TRACKING_SUCCESS_SUFFIX)
@@ -88,14 +88,14 @@ $(patsubst %,1KG_%.merge_list$(TRACKING_SUCCESS_SUFFIX),$(1KG_POPS)): $$(patsubs
 ##    input:  1KG_{POP}.chr{CHR}_updated-ids.exclude$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: remove multiallelic sites before downstream merging
 1KG_%_nodups.bed$(TRACKING_SUCCESS_SUFFIX): 1KG_%.bed$(TRACKING_SUCCESS_SUFFIX) 1KG_%_updated-ids.bim$(TRACKING_SUCCESS_SUFFIX) 1KG_%_updated-ids.exclude$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bed $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) --bim $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --fam $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.fam,$<) --exclude $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bed $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) --bim $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --fam $(subst .bed$(TRACKING_SUCCESS_SUFFIX),.fam,$<) --exclude $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: 1KG_{POP}.chr{CHR}_updated-ids.exclude$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  1KG_{POP}.chr{CHR}_updated-ids.bim$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: flag multiallelic sites for removal before downstream merging
 1KG_%_updated-ids.exclude$(TRACKING_SUCCESS_SUFFIX): 1KG_%_updated-ids.bim$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print $$1":"$$4}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sort | uniq -d | grep -wf - $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk '{print $$2}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk '{print $$1":"$$4}' $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | sort | uniq -d | grep -wf - $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk '{print $$2}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: 1KG_{POP}.chr{CHR}_updated-ids.bim$(TRACKING_SUCCESS_SUFFIX)
@@ -111,7 +111,7 @@ $(patsubst %,1KG_%.merge_list$(TRACKING_SUCCESS_SUFFIX),$(1KG_POPS)): $$(patsubs
 ##    input:  genetic_map_chr{CHR}.txt$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: parse 1000 Genomes vcf data for a chromosome, extract subjects from desired ancestry, write to plink bed/bim/fam
 1KG_%.bed$(TRACKING_SUCCESS_SUFFIX): $$(KG_GENOTYPES_PREFIX)$$(subst chr,,$$(word 2,$$(subst ., ,$$@)))$(KG_GENOTYPES_SUFFIX) $$(word 1,$$(subst 1KG_,,$$(subst .chr, ,$$@))).samples.plinkformat.tsv$(TRACKING_SUCCESS_SUFFIX) genetic_map_chr$$(subst chr,,$$(word 2,$$(subst ., ,$$@))).txt$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --vcf $< --double-id --vcf-half-call m --keep $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --cm-map $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$(subst .chr, ,$(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --vcf $< --double-id --vcf-half-call m --keep $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --cm-map $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) $(word 2,$(subst .chr, ,$(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {POP}.samples.plinkformat.tsv$(TRACKING_SUCCESS_SUFFIX)

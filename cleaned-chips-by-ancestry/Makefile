@@ -1,7 +1,7 @@
 ## Cameron Palmer, 21 May 2020
 ## Secondary entry point for chip cleaning; dispatches each ancestry separately
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 export
 STUDIES := $(sort $(foreach platform,$(PLATFORMS),$(firstword $(subst _, ,$(platform)))))
 

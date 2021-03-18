@@ -50,7 +50,7 @@ Integration with Clusters
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``make`` has no integrated support for cluster job submission. These pipelines have their calls wrapped
-in two simple utility functions which either dispatch jobs via a ``qsub`` interface (for cgems), or run
+in two simple utility functions which either dispatch jobs via a ``qsub`` interface (for cgems/ccad), or run
 the job in the main process but log the results with tracking files. This is a total mess. Other languages
 obviously offer actual support, so further development should make use of that. For extension of the current
 pipelines, support for ``slurm`` in particular needs to get patched into an appropriate interface/monitor program.
@@ -273,7 +273,7 @@ quit.
 Desync is annoying but again, the qsub monitoring software has a series of retries to attempt
 to allow for some amount of desync. The waiting times for this behavior are configurable, so
 if you have issues, you can make the monitor (controlled in a macro in ``Makefile.config``)
-wait longer or retry more times to adapt. As it's configured, I've not had any issues with cgems
+wait longer or retry more times to adapt. As it's configured, I've not had any issues with cgems/ccad
 in months.
 
 Zombie jobs are obnoxious because it's difficult to be certain when it's happening. I am aware

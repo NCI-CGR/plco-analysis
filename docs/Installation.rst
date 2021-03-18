@@ -23,10 +23,10 @@ Short Version (for experts)
 *  If needed, install git and git-lfs, and activate git-lfs
 *  Clone the `analysis pipeline repository`_
 *  Navigate into the repository directory
-*  Add the `CGR conda channel`_ to your **.condarc**
-*  Create the conda_ environments specified by **environment.yaml** and **environment-ldsc.yaml**
+*  Add the `CGR conda channel`_ to your ``.condarc``
+*  Create the conda_ environments specified by ``environment.yaml`` and ``environment-ldsc.yaml``
 *  Activate the environments (ldsc for ``ldsc`` and ``ldscores`` pipeline; the other for everything else)
-*  Update **Makefile.config** to point to your copies of the following:
+*  Update ``Makefile.config`` to point to your copies of the following:
 
    *  PLCO chip freeze
    *  PLCO imputed data freeze
@@ -112,7 +112,7 @@ Now, navigate somewhere on your system where you want to install a copy of the p
 .. warning::
 
    If you do not have ``git-lfs`` installed correctly, this clone operation will fail with messages regarding ``lfs`` not operating
-   correctly.
+   correctly. 
 
 .. warning::
 
@@ -122,6 +122,10 @@ Now, navigate somewhere on your system where you want to install a copy of the p
    Among other possible solutions, the bandwidth limit is evidently refreshed monthly, so if you hit the cap, you can just wait.
    But also, please don't try to clone multiple copies of this pipeline; once you have a copy, you can make other copies on a local
    system with **cp -R**.
+   
+.. warning::
+
+   If you put your results under results in the installation directory, the pipeline expects the install directory name to be plco-analysis and will parse the directory accordingly. Please **do not** change the installation directory name at this momement or you may encounter unexpected outcomes.  
 
 Now, navigate into the pipeline directory:
 

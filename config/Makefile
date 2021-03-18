@@ -2,7 +2,7 @@
 ## dispatch config check
 
 export
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 .DELETE_ON_ERROR:
 .SECONDEXPANSION:

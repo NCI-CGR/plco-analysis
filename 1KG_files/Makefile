@@ -1,4 +1,4 @@
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 .PHONY: all clean
 all: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(KG_MANIFEST) $(patsubst %,$(KG_GENOTYPES_PREFIX)%$(KG_GENOTYPES_SUFFIX),$(CHRS)) $(patsubst %,$(KG_GENOTYPES_PREFIX)%$(KG_GENOTYPES_SUFFIX).tbi,$(CHRS)) $(patsubst %,$(KG_GENOTYPES_PREFIX)%$(KG_GENOTYPES_SUFFIX).md5sum,$(CHRS)) $(patsubst %,$(KG_GENOTYPES_PREFIX)%$(KG_GENOTYPES_SUFFIX).tbi.md5sum,$(CHRS)))
