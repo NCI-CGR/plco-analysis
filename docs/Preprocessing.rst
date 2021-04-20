@@ -13,10 +13,10 @@ Relatedness
 ~~~~~~~~~~~
 
 Relatedness estimation is primarily required as an intermediate in the ancestry estimation process using graf_. The files are stored
-and can be used for other QC reasons of course; see **relatedness/PLCO_{chip_name}.relatedness.txt** for relevant output files in standard
+and can be used for other QC reasons of course; see ``relatedness/PLCO_{chip_name}.relatedness.txt`` for relevant output files in standard
 graf format.
 
-*  Usage: **make relatedness**
+*  Usage: ``make relatedness``
 *  Dependencies:
 
    *  chip freeze
@@ -38,11 +38,11 @@ graf format.
 .. warning::
 
    graf_ is mildly frustrating to use: it has some non-compliant behaviors. Notably, its exit codes are not standard,
-   so it doesn't exit `0` on success. Always check the output log from graf_ before proceeding! And note that the overall
-   `make` run will have some "exit code ignored" warnings due to this behavior.
+   so it doesn't exit ``0`` on success. Always check the output log from graf_ before proceeding! And note that the overall
+   ``make`` run will have some "exit code ignored" warnings due to this behavior.
    
    Additionally, graf_ complains when the output files it tries to create already exist. So, if you're running graf_ in an
-   existing directory, you will likely need to purge intermediates (or just kill the "relatedness/" directory and check it out again)
+   existing directory, you will likely need to purge intermediates (or just kill the ``relatedness/`` directory and check it out again)
    before rerunning. However, this is an early step that doesn't expect to be rerun frequently. It can definitely be patched to
    work better; or you can use the version in the upstream QC pipeline that's much better.
 
@@ -52,14 +52,14 @@ Ancestry Estimation
 ~~~~~~~~~~~~~~~~~~~
 
 Ancestry estimation is required for chip processing and various sanity checks. As with relatedness, this is computed with graf_. The files
-are stored and can be used for various QC purposes; see **ancestry/PLCO_{chip_name}.graf_estimates.txt**.
+are stored and can be used for various QC purposes; see ``ancestry/PLCO_{chip_name}.graf_estimates.txt``.
 
 Note that the final ancestry calls listed above are modified according to the consensus instructions of the "Atlas" analysis group.
-Subjects from the default "African" graf_ ancestry are merged into the "African American" label to more consistently represent
-the sampling distribution of the PLCO project. Subjects from the default "Other Asian or Pacific Islander" graf_ ancestry are merged
-into the "East Asian" label according to the instructions of collaborators.
+Subjects from the default ``African`` graf_ ancestry are merged into the ``African American`` label to more consistently represent
+the sampling distribution of the PLCO project. Subjects from the default ``Other Asian or Pacific Islander`` graf_ ancestry are merged
+into the ``East Asian`` label according to the instructions of collaborators.
 
-*  Usage: **make ancestry**
+*  Usage: ``make ancestry``
 *  Dependencies:
 
    *  `relatedness pipeline`_
@@ -106,7 +106,7 @@ used by the pipeline in its current form but were useful in the processing of th
 
 .. _`IBS/IBD estimates`: https://www.cog-genomics.org/plink/1.9/ibd
 
-*  Usage: **make cleaned-chips-by-ancestry**
+*  Usage: ``make cleaned-chips-by-ancestry``
 *  Dependencies:
 
    *  `ancestry pipeline`_
@@ -130,14 +130,14 @@ used by the pipeline in its current form but were useful in the processing of th
 .. topic:: Debugging
    
    This pipeline extensively uses plink_ for filtering and QC operations. plink_'s memory allocation is limited to 16G
-   in **Makefile.config**. That's a completely *ad hoc* bit of nonsense that may need to be changed depending on your
+   in ``Makefile.config``. That's a completely *ad hoc* bit of nonsense that may need to be changed depending on your
    individual project's parameters.
    
    The pipeline is designed to allow different combinations of platform/ancestry to not exist. That seems to work well,
    but some issues may pop up if plink_ finds something it doesn't like in a small dataset.
    
-   The IBS/IBD calculation with plink_ **--genome** is somewhat quirkly set up. For datasets above a fixed (configurable)
-   threshold of number of subjects, the IBS/IBD calculation is split into chunks with **--parallel** and then glued back
+   The IBS/IBD calculation with plink_ ``--genome`` is somewhat quirkly set up. For datasets above a fixed (configurable)
+   threshold of number of subjects, the IBS/IBD calculation is split into chunks with ``--parallel`` and then glued back
    together in a separate rule. These various thresholds were selected to make PLCO/GSA/Europeans run reasonably efficiently.
    For much larger chips, you may need to fiddle with the thresholds and number of quasiparallelized jobs to make things
    go ok.
@@ -174,7 +174,7 @@ and then used as fixed input for all association testing.
 
 .. _bolt-lmm: https://alkesgroup.broadinstitute.org/BOLT-LMM/BOLT-LMM_manual.html
 
-* Usage: **make bgen**
+* Usage: ``make bgen``
 * Dependencies:
 
   *  imputed data freeze
@@ -186,14 +186,14 @@ and then used as fixed input for all association testing.
      bgen_ input, then there's no reason to run this pipeline and waste a ton of hard drive space
   *  the bgen_ format in use here is v1.2, based on bolt-lmm_ documentation and other software support suggesting that
      that's the most efficient version accepted by all current tools. this may need to be changed in the future
-  *  the bgen_ reformatting process is conducted using plink_. the resultant ***.sample** files are slightly malformatted,
-     and so an additional step fixes the included **NA** values by setting them to **0**. this could well be changed in
+  *  the bgen_ reformatting process is conducted using plink_. the resultant ``*.sample`` files are slightly malformatted,
+     and so an additional step fixes the included ``NA`` values by setting them to ``0``. this could well be changed in
      a future version depending on upstream behavior
 
 .. topic:: Debugging
    
    bgen_ support in conversion tools is pretty limited. I've ended up using plink_ for VCF->BGEN conversion in two steps,
-   even bearing in mind the apparent bug in output ***.sample** format files created with it. But I could very much see
+   even bearing in mind the apparent bug in output ``*.sample`` format files created with it. But I could very much see
    the possibility of needing a different adapter program in the future depending on one's needs and any format discrepancies
    I've not found, and it would have the benefit of potentially removing an extra rule/intermediate file from this pipeline.
 
@@ -208,7 +208,7 @@ by supercontinent.
 
 .. _`1000 Genomes Project`: https://www.internationalgenome.org
 
-* Usage: **make 1KG_files**
+* Usage: ``make 1KG_files``
 * Dependencies:
 
   * a functional internet connection
@@ -216,7 +216,7 @@ by supercontinent.
 * Assumptions:
 
   *  the 1000 Genomes files downloaded are frozen at a particular latest release according to the configuration information
-     in **Makefile.config**. that can obviously be changed if you want
+     in ``Makefile.config``. that can obviously be changed if you want
   *  most target installations should actually have some sort of copy of the 1000 Genomes data present already somewhere
      on their filesystem; however, this pipeline is not designed to support that as-is. it should be pretty easy to modify
      if you really want
@@ -237,7 +237,7 @@ covered European subjects, and more generalized data were/are needed.
 
 .. _ldsc: https://github.com/bulik/ldsc
 
-*  Usage: **make ldsc**
+*  Usage: ``make ldsc``
 
 *  Dependencies:
 
@@ -251,6 +251,6 @@ covered European subjects, and more generalized data were/are needed.
       some sort of weird versioning issue. regardless, this pipeline just hacks the result into submission. that results
       in some discrepancies from the stock reference files, but there's no indication of exactly which subjects/variants
       were used for those files, so that's not unexpected. basically: ymmv
-   *  default built-in files include an African American (**AFRAMR**) meta-group for appropriate subjects. note however
-      that "African American" as a human genetics group label is a very heterogeneous group, so there's no guarantee
+   *  default built-in files include an African American (``AFRAMR``) meta-group for appropriate subjects. note however
+      that ``African American`` as a human genetics group label is a very heterogeneous group, so there's no guarantee
       that this reference group will be appropriate for a given set of African American study subjects

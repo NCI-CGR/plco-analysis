@@ -1,7 +1,7 @@
 ## Cameron Palmer, 19 May 2020
 ## Generate genetic relatedness matrices for FASTGWA from cleaned ancestry-split genotype data
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 .DELETE_ON_ERROR:
 .SECONDARY:
 .SECONDEXPANSION:
@@ -25,7 +25,7 @@ all: $(VALID_OUTPUTS)
 ##    input:  fastgwa-grm/{ANCESTRY}/{CHIP}.grm.N.bin$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: round 2, make an existing GRM sparse
 %-sp.grm.sp$(TRACKING_SUCCESS_SUFFIX): %.grm.bin$(TRACKING_SUCCESS_SUFFIX) %.grm.id$(TRACKING_SUCCESS_SUFFIX) %.grm.N.bin$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GCTA) --grm $(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),,$<) --make-bK-sparse 0.05 --out $(subst .grm.sp$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GCTA) --grm $(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),,$<) --make-bK-sparse 0.05 --out $(subst .grm.sp$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 
 ## patterns:
@@ -54,7 +54,7 @@ $(subst -sp.grm.sp,.grm.bin,$(VALID_OUTPUTS)): $$(patsubst %,$$(subst .grm.bin$(
 ##    input:  cleaned-chips/{ANCESTRY}/{CHIP}.step6.bed
 ## Notes: round 1, break dataset into chunks and create GRMs within chunks
 $(foreach output,$(VALID_OUTPUTS),$(patsubst %,$(subst -sp.grm.sp$(TRACKING_SUCCESS_SUFFIX),,$(output)).part_$(N_SPLITS)_%.grm.bin$(TRACKING_SUCCESS_SUFFIX),$(SPLIT_SEQ))): $$(word 1,$$(subst $$(OUTPUT_DIR),$$(INPUT_DIR),$$(subst .part_$$(N_SPLITS), ,$$@))).step6.bed | $$(dir $$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GCTA) --bfile $(subst .bed,,$<) --make-grm-part $(N_SPLITS) $(word 2,$(subst .part_$(N_SPLITS)_, ,$(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),,$@))) --thread-num $(N_THREADS) --out $(word 1,$(subst .part_$(N_SPLITS)_, ,$(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),,$@))))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GCTA) --bfile $(subst .bed,,$<) --make-grm-part $(N_SPLITS) $(word 2,$(subst .part_$(N_SPLITS)_, ,$(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),,$@))) --thread-num $(N_THREADS) --out $(word 1,$(subst .part_$(N_SPLITS)_, ,$(subst .grm.bin$(TRACKING_SUCCESS_SUFFIX),,$@))))
 
 ## patterns:
 ##    output: fastgwa-grm/{ANCESTRY}/

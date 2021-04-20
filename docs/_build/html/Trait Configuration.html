@@ -34,6 +34,96 @@
             
   <div class="section" id="trait-configuration">
 <span id="configuration-guide"></span><h1>Trait Configuration<a class="headerlink" href="#trait-configuration" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
+<p>This guide will briefly cover the configuration options available
+for individual association models in this pipeline. This information
+is only valid as of v2.0.0 and will likely be changed in the future.</p>
+<p>Note that in most cases, a new analysis can be easily derived from the
+model specification of a previous analysis. So please see the existing,
+validated <a class="reference external" href="https://github.com/NCI-CGR/plco-analysis/tree/default/config">configuration files</a> in the pipeline repository for examples
+of how you might create simple association models for your traits.</p>
+</div>
+<div class="section" id="a-quick-overview-of-yaml">
+<h2>A Quick Overview of YAML<a class="headerlink" href="#a-quick-overview-of-yaml" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://yaml.org/spec/1.2/spec.html">YAML format</a> is a common configuration format in various applications. If you’re not familiar
+with it, there’s a lot to know, but it’ll be easiest to simply copy the format from existing
+<a class="reference external" href="https://github.com/NCI-CGR/plco-analysis/tree/default/config">configuration files</a>. The one thing you absolutely must know: the leading whitespace in yaml
+files are actually <strong>spaces, not tabs</strong>. If you put tabs instead, and sometimes text editors
+get ambitious and do this on their own, you will get YAML compliance errors from the pipeline,
+which does actually enforce YAML 1.2 compliance. If you’re ever confused by format issues in yaml
+files, check for tabs!</p>
+</div>
+<div class="section" id="mandatory-settings">
+<h2>Mandatory Settings<a class="headerlink" href="#mandatory-settings" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">analysis_prefix</span></code>: a single string entry, with dashes or underscores, that will provide
+the unique folder name under <code class="docutils literal notranslate"><span class="pre">$(RESULTS_OUTPUT_DIR)</span></code> for this analysis model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chips</span></code>: the list of <strong>imputed datasets</strong> that should be run in this analysis. For
+PLCO, the valid settings are: <code class="docutils literal notranslate"><span class="pre">OmniX</span></code>; <code class="docutils literal notranslate"><span class="pre">Omni25</span></code>; <code class="docutils literal notranslate"><span class="pre">Oncoarray</span></code>; <code class="docutils literal notranslate"><span class="pre">GSA_batch1</span></code>;
+<code class="docutils literal notranslate"><span class="pre">GSA_batch2</span></code>; <code class="docutils literal notranslate"><span class="pre">GSA_batch3</span></code>; <code class="docutils literal notranslate"><span class="pre">GSA_batch4</span></code>; <code class="docutils literal notranslate"><span class="pre">GSA_batch5</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">phenotype</span></code>: a single entry from the header of <code class="docutils literal notranslate"><span class="pre">$(PHENOTYPE_FILENAME)</span></code>, corresponding
+to the variable that will be used as the outcome in the association model</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ancestries</span></code>: at least one GRAF ancestry to be analyzed. Whitespace in the default
+GRAF ancestry names should be replaced with underscores. Valid settings are: <code class="docutils literal notranslate"><span class="pre">European</span></code>;
+<code class="docutils literal notranslate"><span class="pre">East_Asian</span></code>; <code class="docutils literal notranslate"><span class="pre">African_American</span></code>; <code class="docutils literal notranslate"><span class="pre">Hispanic1</span></code>; <code class="docutils literal notranslate"><span class="pre">Hispanic2</span></code>; <code class="docutils literal notranslate"><span class="pre">South_Asian</span></code>; <code class="docutils literal notranslate"><span class="pre">Other</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">algorithm</span></code>: at least one software tool that should be run for this trait. This is how
+linear or logistic or polytomous regression is selected for a trait, so be sure to choose
+correctly! As of v2.0.0, supported methods are: <code class="docutils literal notranslate"><span class="pre">boltlmm</span></code> (continuous traits), <code class="docutils literal notranslate"><span class="pre">fastgwa</span></code>
+(continuous traits), and <code class="docutils literal notranslate"><span class="pre">saige</span></code> (binary or categorical/ordinal traits); note that <code class="docutils literal notranslate"><span class="pre">fastgwa</span></code>
+analyses were removed from primary “Atlas” analysis some months ago, and the pipeline has not
+been exhaustively tested since</p></li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Trait configuration goes through pretty extensive preprocessing with <a class="reference external" href="https://github.com/NCI-CGR/construct.model.matrix">construct.model.matrix</a>
+and <a class="reference external" href="https://github.com/NCI-CGR/initialize_output_directories">initialize_output_directories</a>. During that process, combinations of chips/ancestries/phenotypes
+that are invalid are automatically removed from consideration. The result is that you may
+simply specify as many chips and ancestries as you want, and combinations of those settings
+that do not meet minimum criteria (typically sample size or case count) are dropped without error.
+This makes trait configuration significantly easier for the “Atlas” than it would be otherwise;
+though please be careful to check that you see the final results that you expect to have
+available when all is said and done.</p>
+</div>
+</div>
+<div class="section" id="optional-settings">
+<h2>Optional Settings<a class="headerlink" href="#optional-settings" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">covariates</span></code>: set of entries from the header of <code class="docutils literal notranslate"><span class="pre">$(PHENOTYPE_FILENAME)</span></code>, corresponding
+to variables to be <em>potentially</em> included in the association model. Also accepted
+are the special values <code class="docutils literal notranslate"><span class="pre">PC#</span></code>, where <code class="docutils literal notranslate"><span class="pre">#</span></code> is the number of the principal component
+you want added to the model. The acceptable PC numbers are determined by <code class="docutils literal notranslate"><span class="pre">$(SMARTPCA_N_PCS)</span></code>.
+Variables will be processed and dropped according to the preprocessing done by
+<a class="reference external" href="https://github.com/NCI-CGR/construct.model.matrix">construct.model.matrix</a>. Notably, indicator variables not present in a particular
+platform/ancestry combination will automatically be dropped, so the union of all batch
+variables can be specified here. Though optional, you’ll almost certainly want to at
+least specify 10 PCs here.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">id_mode</span></code>: one of <code class="docutils literal notranslate"><span class="pre">chrpos</span></code> (default) or <code class="docutils literal notranslate"><span class="pre">rsid</span></code>. Controls the format of variant
+IDs in the final output files. <code class="docutils literal notranslate"><span class="pre">rsid</span></code> is requested for “Atlas” results.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">frequency_mode</span></code>: one of <code class="docutils literal notranslate"><span class="pre">reference</span></code> (default) or <code class="docutils literal notranslate"><span class="pre">subject</span></code>. Controls the source
+of variant allele frequency data in the final output files. <code class="docutils literal notranslate"><span class="pre">reference</span></code> is requested
+for “Atlas” results, and is suitable for public release of association results.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sex-specific</span></code>: one of <code class="docutils literal notranslate"><span class="pre">combined</span></code> (default), <code class="docutils literal notranslate"><span class="pre">female</span></code>, or <code class="docutils literal notranslate"><span class="pre">male</span></code>. Controls
+automatic restriction of analyzed subjects on all platforms to the requested subset
+of subjects. Subject sex is determined from <code class="docutils literal notranslate"><span class="pre">$(PHENOTYPE_FILENAME)</span></code> column <code class="docutils literal notranslate"><span class="pre">sex</span></code>.
+Note that phenotypes that are restricted to a single sex already within <code class="docutils literal notranslate"><span class="pre">$(PHENOTYPE_FILENAME)</span></code>
+(e.g. breast cancer, prostate cancer) should be run with this set to <code class="docutils literal notranslate"><span class="pre">combined</span></code>.
+For postprocessing pipelines, if you want data combined across sex-specific and combined
+analyses for a trait, you should append <code class="docutils literal notranslate"><span class="pre">_female</span></code> or <code class="docutils literal notranslate"><span class="pre">_male</span></code>, as appropriate,
+to the entry <code class="docutils literal notranslate"><span class="pre">analysis_prefix</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">control_inclusion</span></code>: a set of variables and levels of those variables that should be
+used for selecting valid controls for binary trait analyses. Subjects not matching
+these criteria will automatically be dropped from the association model. The intended
+purpose of this option was to specify <code class="docutils literal notranslate"><span class="pre">clean_control:</span> <span class="pre">1</span></code> for all binary traits in
+the “Atlas”. See <a class="reference external" href="https://github.com/NCI-CGR/plco-analysis/blob/default/config/colo_cancer.config.yaml">this binary trait configuration file</a> for an example.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">control_exclusion</span></code>: a set of variables and levels of those variables that should be
+used for removing invalid controls for binary trait analyses. Subjects matching
+these criteria will automatically be dropped from the association model. The intended
+purpose of this option was to specify <code class="docutils literal notranslate"><span class="pre">bq_hyster_f_b:</span> <span class="pre">1</span></code> as an exclusion criterion
+for controls for endometrial cancer association; see <a class="reference external" href="https://github.com/NCI-CGR/plco-analysis/blob/default/config/endo_cancer.config.yaml">the corresponding configuration file</a>
+for an example.</p></li>
+</ul>
+</div>
 </div>
 
 
@@ -57,13 +147,20 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Preprocessing.html">Preprocessing</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Trait Configuration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Trait Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#a-quick-overview-of-yaml">A Quick Overview of YAML</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mandatory-settings">Mandatory Settings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#optional-settings">Optional Settings</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="Primary%20Analysis.html">Primary Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Meta-Analysis.html">Meta-Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Postprocessing.html">Postprocessing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Globus%20Distribution.html">Globus Distribution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="User%20Vignette.html">User Vignette</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Advanced%20Dev%20Notes.html">Advanced Dev Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Methods%20Summary.html">Methods Summary</a></li>
 </ul>
 
 <div class="relations">

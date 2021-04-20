@@ -2,6 +2,7 @@
 ## Primary entry point for PLCO analysis pipeline
 ## 
 include Makefile.config
+MAKEFILE_CONFIG_LOCATION := $(shell pwd)/Makefile.config
 export
 .SECONDEXPANSION:
 .PHONY: all $(SUPPORTED_METHODS) bgen meta metal meta-analysis metaanalysis cleaned-chips-by-ancestry ancestry relatedness ldsc 1KG_files fastgwa-grm ldscores plotting flat-dosages globus

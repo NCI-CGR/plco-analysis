@@ -14,6 +14,7 @@
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Methods Summary" href="Methods%20Summary.html" />
     <link rel="prev" title="User Vignette" href="User%20Vignette.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -70,7 +71,7 @@ can be a bit of a mess to find given how many files are emitted.</p>
 <div class="section" id="integration-with-clusters">
 <h3>Integration with Clusters<a class="headerlink" href="#integration-with-clusters" title="Permalink to this headline">¶</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">make</span></code> has no integrated support for cluster job submission. These pipelines have their calls wrapped
-in two simple utility functions which either dispatch jobs via a <code class="docutils literal notranslate"><span class="pre">qsub</span></code> interface (for cgems), or run
+in two simple utility functions which either dispatch jobs via a <code class="docutils literal notranslate"><span class="pre">qsub</span></code> interface (for cgems/ccad), or run
 the job in the main process but log the results with tracking files. This is a total mess. Other languages
 obviously offer actual support, so further development should make use of that. For extension of the current
 pipelines, support for <code class="docutils literal notranslate"><span class="pre">slurm</span></code> in particular needs to get patched into an appropriate interface/monitor program.</p>
@@ -303,7 +304,7 @@ quit.</p>
 <p>Desync is annoying but again, the qsub monitoring software has a series of retries to attempt
 to allow for some amount of desync. The waiting times for this behavior are configurable, so
 if you have issues, you can make the monitor (controlled in a macro in <code class="docutils literal notranslate"><span class="pre">Makefile.config</span></code>)
-wait longer or retry more times to adapt. As it’s configured, I’ve not had any issues with cgems
+wait longer or retry more times to adapt. As it’s configured, I’ve not had any issues with cgems/ccad
 in months.</p>
 <p>Zombie jobs are obnoxious because it’s difficult to be certain when it’s happening. I am aware
 that some pipelines at CGR deal with this by permitting a maximum amount of time between output
@@ -399,6 +400,7 @@ of dataset corruption.</p>
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="Methods%20Summary.html">Methods Summary</a></li>
 </ul>
 
 <div class="relations">
@@ -406,6 +408,7 @@ of dataset corruption.</p>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="User%20Vignette.html" title="previous chapter">User Vignette</a></li>
+      <li>Next: <a href="Methods%20Summary.html" title="next chapter">Methods Summary</a></li>
   </ul></li>
 </ul>
 </div>

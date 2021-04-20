@@ -2,7 +2,7 @@
 ## Shared pipeline for each platform in turn, pulled in through an include from a dummy makefile controller.
 ## Note that this means that this is executed from within the {CHIP} directory, and output paths don't include that
 ## Ancestry is stored in "PROJECT_CODE"
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 RESOLVED_SUBJECT_LIST := $(UNIQUE_SUBJECT_LIST)
 
@@ -45,7 +45,7 @@ $(filter %-noNAs.sample$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)): $$(subst -noN
 ##    input:  {ANCESTRY}/
 ## Notes: read pgen files with haplotype dosages into plink, emit bgen 1.2 dosages.
 $(filter %.bgen$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)): $$(subst .bgen$(TRACKING_SUCCESS_SUFFIX),.pgen$(TRACKING_SUCCESS_SUFFIX),$$@) $(firstword $(subst /, ,$(PROJECT_CODE))).unique.prioritized.keep$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK2) --pfile $(subst .pgen$(TRACKING_SUCCESS_SUFFIX),,$<) --keep $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --recode bgen-1.2 bits=8 --out $(subst .bgen$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK2) --pfile $(subst .pgen$(TRACKING_SUCCESS_SUFFIX),,$<) --keep $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --recode bgen-1.2 bits=8 --out $(subst .bgen$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {ANCESTRY}/chr{CHR}-filtered.pgen$(TRACKING_SUCCESS_SUFFIX)
@@ -55,14 +55,14 @@ $(filter %.bgen$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS)): $$(subst .bgen$(TRACK
 ## this has already been handled upstream, but note that this step would remove genotype probabilities. also note that this has to be a separate
 ## step from the bgen write step because erase-phase is apparently specific to --make-pgen
 $(subst .bgen$(TRACKING_SUCCESS_SUFFIX),.pgen$(TRACKING_SUCCESS_SUFFIX),$(filter %.bgen$(TRACKING_SUCCESS_SUFFIX),$(ALL_TARGETS))): $$(FILTERED_IMPUTED_DIR)/$$(PROJECT_CODE)/$$(subst .pgen$(TRACKING_SUCCESS_SUFFIX),.dose.vcf.gz,$$@) | $$(dir $$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK2) --vcf $< dosage=HDS --id-delim _ --make-pgen erase-phase --out $(subst .pgen$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK2) --vcf $< dosage=HDS --id-delim _ --make-pgen erase-phase --out $(subst .pgen$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {ANCESTRY}/chr{CHR}-filtered.bgen.bgi$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {ANCESTRY}/chr{CHR}-filtered.bgen$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: use bgenix to index the bgen file for use with downstream applications. -clobber required for pipeline reruns.
 %.bgi$(TRACKING_SUCCESS_SUFFIX): %$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(BGENIX) -g $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -index -clobber)
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(BGENIX) -g $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -index -clobber)
 
 ## patterns:
 ##    output: {ANCESTRY}/

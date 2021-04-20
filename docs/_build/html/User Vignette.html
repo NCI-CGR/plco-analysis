@@ -82,7 +82,7 @@ for more instructions</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">plotting</span></code></p></li>
 </ul>
 </li>
-<li><p><strong>Check the results of ``make ldscores`` and ``make plotting`` before proceeding</strong></p>
+<li><p><strong>Check the results of “make ldscores” and “make plotting” before proceeding</strong></p>
 <ul>
 <li><p>LD score regression results should be in <code class="docutils literal notranslate"><span class="pre">$(RESULTS_OUTPUT_DIR)/ldscore_summary.tsv</span></code></p></li>
 <li><p>QC plots are all <code class="docutils literal notranslate"><span class="pre">.jpg</span></code> files under $(RESULTS_OUTPUT_DIR)</p></li>
@@ -102,6 +102,37 @@ for more instructions</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">globus</span> <span class="pre">[OUTPUT_DIR=path/to/globus/RELEASE_DIR]</span></code></p></li>
 </ul>
 </li>
+</ul>
+</div>
+<div class="section" id="run-a-subset-of-analyses-only">
+<h2>Run a Subset of Analyses Only<a class="headerlink" href="#run-a-subset-of-analyses-only" title="Permalink to this headline">¶</a></h2>
+<p>The pipeline detects what primary analyses should be run by checking which rule is run (<code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">boltlmm</span></code>, <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">saige</span></code>),
+extracting the models specified in <code class="docutils literal notranslate"><span class="pre">$(CONFIG_INPUT_DIR)/*config.yaml</span></code> that have an <code class="docutils literal notranslate"><span class="pre">algorithm</span></code> entry matching the rule,
+and then pruning out combinations of platform/ancestry that have insufficiently many subjects for that software.
+The pipeline will check <em>all</em> valid configurations fitting those criteria. So if you just want to run one thing only,
+but you have a bunch of other valid configuration files sitting around, you need to get creative.</p>
+<p>We will assume for this vignette that you’ve already run any necessary preprocessing steps; if not, do that first!</p>
+<ul class="simple">
+<li><p>Make a new config directory, somewhere. Let’s call it <code class="docutils literal notranslate"><span class="pre">config_new</span></code></p></li>
+<li><p>Optional: make a new results directory; if you don’t do this and other analyses are present in <code class="docutils literal notranslate"><span class="pre">$(RESULT_OUTPUT_DIR)</span></code>,
+they will be considered by the meta-analysis pipeline for updating; whether or not this is acceptable depends.</p></li>
+<li><p>Run your favorite primary analysis, updating the config (and optionally results) directories: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">boltlmm</span> <span class="pre">CONFIG_INPUT_DIR=/path/to/config_new</span> <span class="pre">[RESULT_OUTPUT_DIR=/path/to/results_new</span></code></p></li>
+<li><p>Run meta-analysis, ldscore regression, and QC plotting as usual, overriding <code class="docutils literal notranslate"><span class="pre">$(RESULT_OUTPUT_DIR)</span></code> if needed: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">meta</span> <span class="pre">[RESULT_OUTPUT_DIR=/path/to/results_new]</span></code>, etc.</p></li>
+<li><p>If desired, run globus packaging: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">globus</span> <span class="pre">CONFIG_INPUT_DIR=/path/to/config_new</span> <span class="pre">[RESULT_OUTPUT_DIR=/path/to/results_new]</span></code></p></li>
+</ul>
+</div>
+<div class="section" id="run-your-own-boutique-traits">
+<h2>Run Your Own Boutique Traits<a class="headerlink" href="#run-your-own-boutique-traits" title="Permalink to this headline">¶</a></h2>
+<p>Let’s imagine you’re an enterprising champion of analysis and think: wow, these basic traits are super boring,
+but I’ve got 14 custom, delicate, gorgeous traits I’ve custom-built in SAS and I want to run them against
+all the imputed data in this pipeline.</p>
+<ul class="simple">
+<li><p>Format your phenotypes like the default phenotypes in <code class="docutils literal notranslate"><span class="pre">$(PHENOTYPE_FILENAME)</span></code>: plaintext, tab-delimited, a subject ID column named <code class="docutils literal notranslate"><span class="pre">$(PHENOTYPE_ID_COLNAME)</span></code></p></li>
+<li><p>Create a configuration file (in <code class="docutils literal notranslate"><span class="pre">$(CONFIG_INPUT_DIR)</span></code>, which as usual you can override if you like) that has as its <code class="docutils literal notranslate"><span class="pre">phenotype</span></code> entry the column name you’ve made for yourself</p></li>
+<li><p>Add other model parameters. Note that, except for principal components, <strong>the pipeline can only see variables in your new phenotype file</strong>. So if you want covariates,
+you need to add them to your custom phenotype file too</p></li>
+<li><p>Launch the relevant pipeline, as indicated in the <code class="docutils literal notranslate"><span class="pre">algorithm</span></code> section of your configuration file: <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">saige</span> <span class="pre">PHENOTYPE_FILENAME=/path/to/your_file.tsv</span></code></p></li>
+<li><p>After that, you should be able to run all remaining pipelines as usual; you can continue to override <code class="docutils literal notranslate"><span class="pre">$(PHENOTYPE_FILENAME)</span></code> if you like, but it won’t have any impact either way</p></li>
 </ul>
 </div>
 </div>
@@ -134,9 +165,12 @@ for more instructions</p></li>
 <li class="toctree-l1"><a class="reference internal" href="Globus%20Distribution.html">Globus Distribution</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">User Vignette</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#a-complete-run-end-to-end">A Complete Run, End to End</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-a-subset-of-analyses-only">Run a Subset of Analyses Only</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-your-own-boutique-traits">Run Your Own Boutique Traits</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="Advanced%20Dev%20Notes.html">Advanced Dev Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Methods%20Summary.html">Methods Summary</a></li>
 </ul>
 
 <div class="relations">

@@ -3,7 +3,7 @@
 ## Note that this means that this is executed from within the {ANCESTRY} directory, and output paths don't include that
 ## Ancestry is stored in "POPULATION_NAME"
 
-include $(PROJECT_BASE_DIR)/Makefile.config
+include $(MAKEFILE_CONFIG_LOCATION)
 
 .PHONY: all all_chips
 .SECONDARY:
@@ -39,7 +39,7 @@ all_chips: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(patsubst %,%.step5.ibs-norma
 ##    input:  {CHIP}.fpg$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this duplicates content from the relatedness pipeline
 %.graf_relatedness.txt$(TRACKING_SUCCESS_SUFFIX): %.fpg$(TRACKING_SUCCESS_SUFFIX)
-	-$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	-$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -geno $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
@@ -47,7 +47,7 @@ all_chips: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(patsubst %,%.step5.ibs-norma
 ##    input:  {CHIP}.rsids.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this duplicates content from the relatedness pipeline
 %.fpg$(TRACKING_SUCCESS_SUFFIX): %.rsids.bed$(TRACKING_SUCCESS_SUFFIX)
-	-$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
+	-$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(GRAF_EXECUTABLE) -exfp $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) -out $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) -type 4)
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@
 
 ## patterns:
@@ -57,7 +57,7 @@ all_chips: $(addsuffix $(TRACKING_SUCCESS_SUFFIX),$(patsubst %,%.step5.ibs-norma
 ##    input:  GRAF.update_names$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: this duplicates content from the relatedness pipeline
 %.rsids.bed$(TRACKING_SUCCESS_SUFFIX): %.nohet.autosomes.bed$(TRACKING_SUCCESS_SUFFIX) GRAF.extract$(TRACKING_SUCCESS_SUFFIX) GRAF.update_names$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --update-name $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --update-name $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 3,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: GRAF.extract$(TRACKING_SUCCESS_SUFFIX)
@@ -82,7 +82,7 @@ GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
 ## Notes: this applies the heterozygosity filter from step4. Note that in practice in the cleaned dataset, the remove
 ## file typically contains no people as it was used to flag iteratively removed subjects upstream
 %.nohet.autosomes.bed$(TRACKING_SUCCESS_SUFFIX): %.step1.maf.geno.hwe.bed$(TRACKING_SUCCESS_SUFFIX) %.step4.het.remove$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --remove $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --autosome --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --remove $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --autosome --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.ancestry.keep$(TRACKING_SUCCESS_SUFFIX)
@@ -97,21 +97,21 @@ GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
 ##    input:  {CHIP}.ancestry.keep$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: get subjects from this platform of the currently processed ancestry
 %.step0.ancestry.bed$(TRACKING_SUCCESS_SUFFIX): $(FINAL_CHIP_DATA)/PLCO_%.bed %.ancestry.keep$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed,,$<) --keep $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed,,$<) --keep $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.step1.maf.geno.hwe.bed$(TRACKING_SUCCESS_SUFFIX) (and bim, and fam)
 ##    input:  {CHIP}.step0.ancestry.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: apply MAF, HWE, genotype missingness filters. Pretty stringent relative to CGR defaults; likely too stringent for admixed pops
 %.step1.maf.geno.hwe.bed$(TRACKING_SUCCESS_SUFFIX): %.step0.ancestry.bed$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --maf 0.01 --geno 0.02 --hwe 0.001 --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --maf 0.01 --geno 0.02 --hwe 0.001 --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.step2.pruning.prune.in$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CHIP}.step1.maf.geno.hwe.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: compute variant inclusion list from first pass LD pruning
 %.step2.pruning.prune.in$(TRACKING_SUCCESS_SUFFIX): %.step1.maf.geno.hwe.bed$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --indep 50 5 2 --out $(subst .prune.in$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --indep 50 5 2 --out $(subst .prune.in$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.step2.pruning.bed$(TRACKING_SUCCESS_SUFFIX) (and bim, and fam)
@@ -119,14 +119,14 @@ GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
 ##    input:  {CHIP}.step2.pruning.prune.in$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: apply variant inclusion list from first pass LD pruning
 %.step2.pruning.bed$(TRACKING_SUCCESS_SUFFIX): %.step1.maf.geno.hwe.bed$(TRACKING_SUCCESS_SUFFIX) $$(subst .bed,.prune.in,$$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.step3.pruning.prune.in$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CHIP}.step2.pruning.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: compute variant inclusion list from second pass LD pruning
 %.step3.pruning.prune.in$(TRACKING_SUCCESS_SUFFIX): %.step2.pruning.bed$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --indep-pairwise 50 5 0.2 --out $(subst .prune.in$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --indep-pairwise 50 5 0.2 --out $(subst .prune.in$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.step3.pruning.bed$(TRACKING_SUCCESS_SUFFIX) (and bim, and fam)
@@ -134,14 +134,14 @@ GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
 ##    input:  {CHIP}.step3.pruning.prune.in$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: apply variant inclusion list from second pass LD pruning
 %.step3.pruning.bed$(TRACKING_SUCCESS_SUFFIX): %.step2.pruning.bed$(TRACKING_SUCCESS_SUFFIX) $$(subst .bed,.prune.in,$$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --extract $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.step4.het$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CHIP}.step3.pruning.bed$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: compute heterozygosity F statistics on LD pruned data
 %.step4.het$(TRACKING_SUCCESS_SUFFIX): %.step3.pruning.bed$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --het --out $(subst .het$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --het --out $(subst .het$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.step4.het.remove$(TRACKING_SUCCESS_SUFFIX)
@@ -157,14 +157,14 @@ GRAF.update_names$(TRACKING_SUCCESS_SUFFIX): $(GRAF_1KG_VARIANT_BIMFILE)
 ##    input:  {CHIP}.step4.het.remove$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: generates rules for quasiparallelized plink --genome for each platform and split. Yes, this is hideous.
 $(foreach platform,$(STUDIES),$(foreach subset,$(shell seq 1 $(GENOME_GZ_JOB_SPLIT)),$(platform).step5.ibs-split.genome.$(subset).gz$(TRACKING_SUCCESS_SUFFIX))): $$(word 1,$$(subst .step5, ,$$@)).step3.pruning.bed$(TRACKING_SUCCESS_SUFFIX) $$(word 1,$$(subst .step5, ,$$@)).step4.het.remove$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --remove $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --genome gz --min $(PIHAT_MIN) --parallel $(word 2,$(subst .genome., ,$(subst .gz$(TRACKING_SUCCESS_SUFFIX),,$@))) $(GENOME_GZ_JOB_SPLIT) --out $(word 1,$(subst .ibs-split, ,$@)).ibs-split)
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --remove $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --genome gz --min $(PIHAT_MIN) --parallel $(word 2,$(subst .genome., ,$(subst .gz$(TRACKING_SUCCESS_SUFFIX),,$@))) $(GENOME_GZ_JOB_SPLIT) --out $(word 1,$(subst .ibs-split, ,$@)).ibs-split)
 
 ## patterns:
 ##    output: {CHIP}.step5.ibs-split.genome.gz$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CHIP}.step5.ibs-split.genome.{EACH-SPLIT-NUMBER}.gz$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: merging function for combining quasiparallelized --genome runs. also effectively controls which studies have this applied to them
 $(patsubst %,%.step5.ibs-split.genome.gz$(TRACKING_SUCCESS_SUFFIX),$(LARGE_STUDIES)): $$(patsubst %,$$(subst .gz$(TRACKING_SUCCESS_SUFFIX),,$$@).%.gz$(TRACKING_SUCCESS_SUFFIX),$$(shell seq 1 $(GENOME_GZ_JOB_SPLIT)))
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | gzip -c > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$^) | gzip -c > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.step5.ibs-normal.genome.gz$(TRACKING_SUCCESS_SUFFIX)
@@ -172,14 +172,14 @@ $(patsubst %,%.step5.ibs-split.genome.gz$(TRACKING_SUCCESS_SUFFIX),$(LARGE_STUDI
 ##    input:  {CHIP}.step4.het.remove$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: controller function for non-parallelized plink --genome for sufficiently small datasets
 %.step5.ibs-normal.genome.gz$(TRACKING_SUCCESS_SUFFIX): %.step3.pruning.bed$(TRACKING_SUCCESS_SUFFIX) %.step4.het.remove$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --remove $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --genome gz --min $(PIHAT_MIN) --out $(subst .genome.gz$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --remove $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --genome gz --min $(PIHAT_MIN) --out $(subst .genome.gz$(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: {CHIP}.step7.evec$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  {CHIP}.pca.par$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: run eigenstrat smartpca fastmode
 %.step7.evec$(TRACKING_SUCCESS_SUFFIX): %.pca.par$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(SMARTPCA) -p $(subst $(TRACKING_SUCCESS_SUFFIX),,$<))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(SMARTPCA) -p $(subst $(TRACKING_SUCCESS_SUFFIX),,$<))
 
 ## patterns:
 ##    output: {CHIP}.pca.par$(TRACKING_SUCCESS_SUFFIX)
@@ -219,4 +219,4 @@ $(patsubst %,%.step5.ibs-split.genome.gz$(TRACKING_SUCCESS_SUFFIX),$(LARGE_STUDI
 ##    input:  {CHIP}.step4.het.remove$(TRACKING_SUCCESS_SUFFIX)
 ## Notes: remove heterozygosity outliers and prepare for smartpca.
 %.step6.bed$(TRACKING_SUCCESS_SUFFIX): %.step3.pruning.bed$(TRACKING_SUCCESS_SUFFIX) %.step4.het.remove$(TRACKING_SUCCESS_SUFFIX)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --remove $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),$(PLINK19) --bfile $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$<) --remove $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) --make-bed --out $(subst .bed$(TRACKING_SUCCESS_SUFFIX),,$@))
