@@ -138,10 +138,10 @@ do
 	fi
 	## may optionally include a single "transformation:" entry
 	transformation_present=$(yaml_check_exists transformation)
-	## the transformation line has very limited support, currently only for "post.split.INT" for continuous traits, or default "none"
+	## the transformation line has very limited support, currently only for "InverseNormal" for continuous traits (currently it's default to be compatible with old configs), or "none"
 	if [[ "$transformation_present" ]] ; then
 	    transformation_requested=$(yaml transformation)
-	    if [[ "`echo $transformation_requested | awk '$1 == \"none\" || $1 == \"post.split.INT\"' | wc -l`" -eq "1" ]] ; then
+	    if [[ "`echo $transformation_requested | awk '$1 == \"none\" || $1 == \"InverseNormal\"' | wc -l`" -eq "1" ]] ; then
 		transformation_valid=1
 	    fi
 	fi
