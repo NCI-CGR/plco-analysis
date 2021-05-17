@@ -50,7 +50,7 @@ COMMA:=,
 ## Notes: final dependency is optional file of rsid->gene correspondence for known signal plotting. It will be ignored if not present
 $(META_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$@) $$(shell ls -l $$(KNOWN_SIGNALS_INPUT_DIR) | awk '$$$$9 == "$$(subst _female,,$$(subst _male,,$$(call extract_phenotype,$$@))).txt" {print "$$(KNOWN_SIGNALS_INPUT_DIR)/"$$$$9}')
 	if [[ "$(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) | awk '{print $$1}')" -gt "1" ]] ; then \
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@) $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(word 3,$^)) ; \
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@) $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(CLEANED_CHIP_OUTPUT_DIR) $(ANCESTRY_OUTPUT_DIR) $(PHENOTYPE_ID_COLNAME) $(subst  ,$(COMMA),$(sort $(foreach platform,$(PLATFORMS),$(firstword $(subst _, ,$(platform)))))) $(word 3,$^)) ; \
 	else \
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
@@ -59,7 +59,7 @@ $(META_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.plot_ready$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.tsv.gz
 $(subst .manhattan.jpg,.plot_ready,$(META_TARGETS)): $$(subst .plot_ready$(TRACKING_SUCCESS_SUFFIX),.tsv.gz,$$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk 'BEGIN {pcol=1} ; NR == 1 {print "CHR\tPOS\tSNP\tP" ; for ( i = 1; i <= NF; i++ ) {if ($$i == "P" || $$i == "P_CONSENSUS") {pcol=i}}} ; NR > 1 {loc = index($$3, ":") ; loc > 0 && $$3 ~ /rs/ ? id = substr($$3, 1, loc - 1) : id = $$3 ; print $$1"\t"$$2"\t"id"\t"$$pcol}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk 'BEGIN {pcol=1} ; NR == 1 {print "CHR\tPOS\tSNP\tP" ; for ( i = 1; i <= NF; i++ ) {if ($$i == "P" || $$i == "P_CONSENSUS") {pcol=i}}} ; NR > 1 {loc = index($$3, ":") ; loc > 0 && $$3 ~ /rs/ ? id = substr($$3, 1, loc - 1) : id = $$3 ; print $$1"\t"$$2"\t"id"\t"$$pcol}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.heterogeneity.manhattan.jpg$(TRACKING_SUCCESS_SUFFIX)
@@ -69,7 +69,7 @@ $(subst .manhattan.jpg,.plot_ready,$(META_TARGETS)): $$(subst .plot_ready$(TRACK
 ## Notes: final dependency is optional file of rsid->gene correspondence for known signal plotting. It will be ignored if not present
 $(HETEROGENEITY_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$@) $$(shell ls -l $$(KNOWN_SIGNALS_INPUT_DIR) | awk '$$$$9 == "$$(subst _female,,$$(subst _male,,$$(call extract_phenotype,$$@))).txt" {print "$$(KNOWN_SIGNALS_INPUT_DIR)/"$$$$9}')
 	if [[ "$(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) | awk '{print $$1}')" -gt "1" ]] ; then \
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/heterogeneity $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(word 3,$^)) ; \
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/heterogeneity $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(CLEANED_CHIP_OUTPUT_DIR) $(ANCESTRY_OUTPUT_DIR) $(PHENOTYPE_ID_COLNAME) $(subst  ,$(COMMA),$(sort $(foreach platform,$(PLATFORMS),$(firstword $(subst _, ,$(platform)))))) $(word 3,$^)) ; \
 	else \
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
@@ -78,7 +78,7 @@ $(HETEROGENEITY_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.heterogeneity.plot_ready$(TRACKING_SUCCESS_SUFFIX)
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{METHOD}.tsv.gz
 $(subst .heterogeneity.manhattan.jpg,.heterogeneity.plot_ready,$(HETEROGENEITY_TARGETS)): $$(subst .heterogeneity.plot_ready$(TRACKING_SUCCESS_SUFFIX),.tsv.gz,$$@)
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk 'BEGIN {pcol=1} ; NR == 1 {print "CHR\tPOS\tSNP\tP" ; for ( i = 1; i <= NF; i++ ) {if ($$i == "PHet") {pcol=i}}} ; NR > 1 {loc = index($$3, ":") ; loc > 0 && $$3 ~ /rs/ ? id = substr($$3, 1, loc - 1) : id = $$3 ; print $$1"\t"$$2"\t"id"\t"$$pcol}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $(subst $(TRACKING_SUCCESS_SUFFIX),,$<) | awk 'BEGIN {pcol=1} ; NR == 1 {print "CHR\tPOS\tSNP\tP" ; for ( i = 1; i <= NF; i++ ) {if ($$i == "PHet") {pcol=i}}} ; NR > 1 {loc = index($$3, ":") ; loc > 0 && $$3 ~ /rs/ ? id = substr($$3, 1, loc - 1) : id = $$3 ; print $$1"\t"$$2"\t"id"\t"$$pcol}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{CHIP}.{method}.manhattan.jpg$(TRACKING_SUCCESS_SUFFIX)
@@ -88,7 +88,7 @@ $(subst .heterogeneity.manhattan.jpg,.heterogeneity.plot_ready,$(HETEROGENEITY_T
 ## Notes: final dependency is optional file of rsid->gene correspondence for known signal plotting. It will be ignored if not present
 $(NOT_META_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_ready,$$@) $$(shell ls -l $$(KNOWN_SIGNALS_INPUT_DIR) | awk '$$$$9 == "$$(subst _female,,$$(subst _male,,$$(call extract_phenotype,$$@))).txt" {print "$$(KNOWN_SIGNALS_INPUT_DIR)/"$$$$9}')
 	if [[ "$(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) | awk '{print $$1}')" -gt "1" ]] ; then \
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/$(call extract_chip,$@) $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(word 3,$^)) ; \
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),Rscript $< $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)) $(call extract_phenotype,$@)/$(call extract_ancestry,$@)/$(call extract_method,$@)/$(call extract_chip,$@) $(subst .manhattan.jpg$(TRACKING_SUCCESS_SUFFIX),,$@) $(CLEANED_CHIP_OUTPUT_DIR) $(ANCESTRY_OUTPUT_DIR) $(PHENOTYPE_ID_COLNAME) $(subst  ,$(COMMA),$(sort $(foreach platform,$(PLATFORMS),$(firstword $(subst _, ,$(platform)))))) $(word 3,$^)) ; \
 	else \
 	rm $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
@@ -97,4 +97,4 @@ $(NOT_META_TARGETS): $(MANHATTAN_PLOT_SCRIPT) $$(subst .manhattan.jpg,.plot_read
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{ANCESTRY}.{CHIP}.{method}.plot_ready
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.{method}.tsv.gz
 $(subst .manhattan.jpg,.plot_ready,$(NOT_META_TARGETS)): $$(dir $$@)$$(call extract_phenotype,$$@).$$(word 3,$$(subst ., ,$$@)).$$(shell echo "$$(call extract_method,$$@)" | tr '[\:upper\:]' '[\:lower\:]').tsv.gz
-	$(call qsub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk '{loc = index($$3, ":") ; loc > 0 && $$3 ~ /rs/ ? id = substr($$3, 1, loc - 1) : id = $$3 ; print $$1"\t"$$2"\t"id"\t"$$9}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
+	$(call sub_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),gunzip -c $< | awk '{loc = index($$3, ":") ; loc > 0 && $$3 ~ /rs/ ? id = substr($$3, 1, loc - 1) : id = $$3 ; print $$1"\t"$$2"\t"id"\t"$$9}' | sed 's/chr//' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tPVAL"} ; NR > 1' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
