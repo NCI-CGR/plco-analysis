@@ -1,4 +1,4 @@
-## Cameron Palmer, 22 May 2020
+## Cameron Palmer, Wendy Wong
 ## workflow for BOLT-LMM analyses
 
 include $(MAKEFILE_CONFIG_LOCATION)
@@ -101,7 +101,7 @@ endef
 %.boltlmm.nofreq.tsv$(TRACKING_SUCCESS_SUFFIX): $$(foreach chr,$$(CHRS),%.chr$$(chr).boltlmm$(TRACKING_SUCCESS_SUFFIX)) %.boltlmm$(FREQUENCY_MODE_TRACKER_SUFFIX) %.boltlmm.model_matrix$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
 	$(eval SUBJECT_FREQUENCIES := $(call get_tracked_parameter,$(filter %$(FREQUENCY_MODE_TRACKER_SUFFIX),$^)))
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(filter-out %.model_matrix$(TRACKING_SUCCESS_SUFFIX) %$(FREQUENCY_MODE_TRACKER_SUFFIX),$(subst .boltlmm$(TRACKING_SUCCESS_SUFFIX),.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$9"\t"$$10"\t"$$11"\t$(strip $(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) | awk '{print $$1}'))"}' | awk 'NR == 1 ; NR > 1 {$$NF = $$NF - 1 ; print $$0}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
+	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),cat $(filter-out %.model_matrix$(TRACKING_SUCCESS_SUFFIX) %$(FREQUENCY_MODE_TRACKER_SUFFIX),$(subst .boltlmm$(TRACKING_SUCCESS_SUFFIX),.boltlmm,$^)) | awk '! /SNP\tCHR\tBP/ && ! ($$10 ~ /nan/)' | sed 's/ /\t/g' | awk 'NR == 1 {print "CHR\tPOS\tSNP\tTested_Allele\tOther_Allele\tFreq_Tested_Allele_in_TOPMed\tBETA\tSE\tP\tN"} ; {print $$2"\t"$$3"\t"$$1"\t"$$5"\t"$$6"\t$(if $(filter $(SUBJECT_MODE),$(SUBJECT_FREQUENCIES)),"$$7",NA)\t"$$9"\t"$$10"\t"$$11"\t$(strip $(shell wc -l $(subst $(TRACKING_SUCCESS_SUFFIX),,$(lastword $^)) | awk '{print $$1}'))"}' | awk  -v OFS='\t' 'NR == 1 ; NR > 1 {$$NF = $$NF - 1 ;  if ($$1==23) {$$1="X"};   print $$0}' > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@)) ; \
 	else \
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
@@ -167,11 +167,11 @@ $(foreach result,$(ANALYSIS_RESULTS_BOLTLMM),$(patsubst %,$(subst .boltlmm,,$(re
 
 ## patterns:
 ##    output: results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/{PHENOTYPE}.{CHIP}.boltlmm.samples$(TRACKING_SUCCESS_SUFFIX)
-##    input:  {IMPUTED_DATA}/{CHIP}/{ANCESTRY}/chr22-filtered-noNAs.sample
+##    input:  {IMPUTED_DATA}/{CHIP}/{ANCESTRY}/chr?-filtered-noNAs.sample
 ##    input:  results/{PHENOTYPE}/{ANCESTRY}/{METHOD}/
 ## Notes: final subject list for actual imputed data. used for compatibility with SAIGE shared code. some applications
 ## to ensure synchronization between chip and imputed data are no longer necessary in final PLCO dataset
-%.boltlmm.samples$(TRACKING_SUCCESS_SUFFIX): $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(word 2,$$(subst ., ,$$(notdir $$@))))/$$(lastword $$(subst /, ,$$(subst BOLTLMM,,$$(dir $$@))))/chr22-filtered-noNAs.sample | $$(dir $$@)
+%.boltlmm.samples$(TRACKING_SUCCESS_SUFFIX): $$(IMPUTED_DIR)/$$(subst GSA_,GSA/,$$(word 2,$$(subst ., ,$$(notdir $$@))))/$$(lastword $$(subst /, ,$$(subst BOLTLMM,,$$(dir $$@))))/chr$$(word 1, $(CHRS))-filtered-noNAs.sample | $$(dir $$@)
 	$(call log_handler,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@),awk 'NR > 2 {print $$1"_"$$1}' $< > $(subst $(TRACKING_SUCCESS_SUFFIX),,$@))
 
 ## patterns:
