@@ -118,6 +118,7 @@ Linear mixed model association with `BOLT-LMM`_ was run with the following param
 * ``--qCovarCol {covariate list}``
 * ``--LDscoresMatchBp``
 * ``--geneticMapFile {filename}``
+* ``--bgenMinMAF 0.01``
 
 .. _`liftover`: http://hgdownload.soe.ucsc.edu/admin/exe/
 
@@ -153,7 +154,7 @@ For round two:
 * ``minMAF 0.01``
 * ``GMMATmodelFile {filename}``
 * ``sampleFile {filename}``
-* ``minMAC 1``
+* ``minMAC 4.5``
 * ``varianceRatioFile {filename}``
 * ``SAIGEOutputFile {filename}``
 * ``IsOutputAFinCaseCtrl TRUE``
