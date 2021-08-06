@@ -10,8 +10,6 @@ CONFIG_DIR := $(CONFIG_INPUT_DIR)
 ANALYSIS_CONFIGS := $(shell ls $(CONFIG_DIR)/*config.yaml)
 ## empirical approximate minimum subject count (+1), specific to SAIGE
 MINIMUM_VALID_SUBJECT_COUNT := $(SAIGE_MINIMUM_VALID_SUBJECT_COUNT)
-## X par regions
-X_PAR := $(X_PAR_REGIONS)
 
 ANALYSIS_RESULTS_SAIGE := $(foreach config,$(ANALYSIS_CONFIGS),$(shell $(INITIALIZE_OUTPUT_DIRECTORIES) -e $(EXTENSION_CONFIG) -p $(config) -D $(PHENOTYPE_FILENAME) -I $(PHENOTYPE_ID_COLNAME) -b $(IMPUTED_DIR) -r $(RESULTS_DIR) -s saige -N $(MINIMUM_VALID_SUBJECT_COUNT) $(if $(findstring B,$(firstword -$(MAKEFLAGS))),-B,)))
 
@@ -128,7 +126,7 @@ endef
 ## but only run if the effective sample size is greater than some heuristic minimum.
 $(foreach result,$(ANALYSIS_RESULTS_SAIGE),$(patsubst %,$(subst .saige,,$(result)).chr%.saige$(TRACKING_SUCCESS_SUFFIX),$(CHRS))): $$(word 1,$$(subst .chr, ,$$@)).saige.round1$(TRACKING_SUCCESS_SUFFIX) $$(word 1,$$(subst .chr, ,$$@)).saige.model_matrix$(TRACKING_SUCCESS_SUFFIX) $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen $$(IMPUTED_DIR)/$$(call extract_chip,$$@,/)/$$(call extract_ancestry,$$@)/$$(word 3,$$(subst ., ,$$(notdir $$@)))-filtered.bgen.bgi $$(word 1,$$(subst .chr, ,$$@)).saige.samples$(TRACKING_SUCCESS_SUFFIX) | $$(dir $$@)
 	if [[ $(call check_model_matrix,$(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 2,$^)),$(MINIMUM_VALID_SUBJECT_COUNT),$(MINIMUM_VALID_CASE_COUNT)) ]] ; then \
-	$(call sub_handler_long,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@), singularity exec -B /DCEG $(SAIGE_SINGULARITY_FILEPATH)  Rscript $(SAIGE_ROUND_2_SCRIPT) $(word 3,$^) $(word 4,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),.rda,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),.varianceRatio.txt,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),.varianceRatio.txt_relatednessCutoff_$(SAIGE_ROUND_1_RELATEDNESS_CUTOFF)_1000_randomMarkersUsed.sparseSigma.mtx,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) chr$(lastword $(subst .chr, ,$(subst .saige$(TRACKING_SUCCESS_SUFFIX),,$@)))) $(X_PAR) ; \
+	$(call sub_handler_long,$(subst $(TRACKING_SUCCESS_SUFFIX),,$@), singularity exec -B /DCEG $(SAIGE_SINGULARITY_FILEPATH)  Rscript $(SAIGE_ROUND_2_SCRIPT) $(word 3,$^) $(word 4,$^) $(subst $(TRACKING_SUCCESS_SUFFIX),.rda,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),.varianceRatio.txt,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),.varianceRatio.txt_relatednessCutoff_$(SAIGE_ROUND_1_RELATEDNESS_CUTOFF)_1000_randomMarkersUsed.sparseSigma.mtx,$<) $(subst $(TRACKING_SUCCESS_SUFFIX),,$(word 5,$^)) $(subst $(TRACKING_SUCCESS_SUFFIX),,$@) chr$(lastword $(subst .chr, ,$(subst .saige$(TRACKING_SUCCESS_SUFFIX),,$@))) $(X_PAR_REGIONS)) ; \
 	else \
 	rm -f $(subst $(TRACKING_SUCCESS_SUFFIX),$(TRACKING_FAIL_SUFFIX),$@) && touch $@ ; \
 	fi
