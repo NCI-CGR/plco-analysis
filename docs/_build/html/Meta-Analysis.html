@@ -33,7 +33,46 @@
           <div class="body" role="main">
             
   <div class="section" id="meta-analysis">
-<h1>Meta-Analysis<a class="headerlink" href="#meta-analysis" title="Permalink to this headline">¶</a></h1>
+<span id="meta-analysis-pipeline"></span><h1>Meta-Analysis<a class="headerlink" href="#meta-analysis" title="Permalink to this headline">¶</a></h1>
+<p>Meta-analysis is conducted with <code class="docutils literal notranslate"><span class="pre">metal</span></code>. The process for determining
+meta-analysis targets is almost completely automated, so be careful! It
+is very aggressive.</p>
+<ul class="simple">
+<li><p>all directories under <code class="docutils literal notranslate"><span class="pre">$(RESULT_OUTPUT_DIR)</span></code> are scanned for
+<code class="docutils literal notranslate"><span class="pre">*.saige.rawids.tsv</span></code> or <code class="docutils literal notranslate"><span class="pre">*.boltlmm.rawids.tsv</span></code> files, which
+are used for meta-analysis input</p>
+<ul>
+<li><p>note the alphabetic case of <code class="docutils literal notranslate"><span class="pre">saige</span></code> and <code class="docutils literal notranslate"><span class="pre">boltlmm</span></code> above! that is
+actually how primary and meta-analysis files are distinguished: lowercase
+means primary, uppercase means meta. yes, this is ridiculous! feel free
+to patch in something smarter than this moving forward</p></li>
+<li><p>the <code class="docutils literal notranslate"><span class="pre">rawids.tsv</span></code> files are primary analysis intermediate files with
+<code class="docutils literal notranslate"><span class="pre">chr:pos:ref:alt</span></code> IDs. these intermediates are used to maintain variant
+uniqueness within the imputed datasets: using the rsID converted files,
+even with allele tags, creates redundancies. this behavior is documented
+in <a class="reference internal" href="Advanced%20Dev%20Notes.html#advanced-developer-notes"><span class="std std-ref">Advanced Dev Notes</span></a>.</p></li>
+</ul>
+</li>
+<li><p>meta-analysis is configured according to preset options in <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefile.metal</span></code>.
+please see the respective rule for creating <code class="docutils literal notranslate"><span class="pre">.par</span></code> files for fiddling with this behavior,
+or exposing parameters to user-space</p></li>
+<li><p>meta-analysis of these files requires large memory allocations; be aware of this
+when extending the pipeline to other clusters</p></li>
+<li><p>when meta-analysis is complete, similar postprocessing as during primary analysis
+is conducted, with the additional step of resorting variants</p>
+<ul>
+<li><p>the major exception here is for categorical/ordinal analysis with SAIGE.
+the logic branches here to meta-analyze within <code class="docutils literal notranslate"><span class="pre">comparison#/</span></code> subdirectories,
+and then apply the <em>ad hoc</em> minimum-p-value Bonferroni correction between
+comparisons. see <a class="reference internal" href="Primary%20Analysis.html#primary-analysis"><span class="std std-ref">Primary Analysis</span></a> for slightly more details lol</p></li>
+</ul>
+</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>If you extend this pipeline with other algorithms but do not respect the
+case-sensitive software name tag behavior, all downstream functionality will break.</p>
+</div>
 </div>
 
 

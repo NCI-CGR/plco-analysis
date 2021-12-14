@@ -33,7 +33,62 @@
           <div class="body" role="main">
             
   <div class="section" id="primary-analysis">
-<h1>Primary Analysis<a class="headerlink" href="#primary-analysis" title="Permalink to this headline">¶</a></h1>
+<span id="id1"></span><h1>Primary Analysis<a class="headerlink" href="#primary-analysis" title="Permalink to this headline">¶</a></h1>
+<p>The pipeline currently supports BOLT-LMM analysis for continuous (normally-distributed)
+traits and SAIGE for binary and categorical/ordinal traits. See <a class="reference internal" href="Advanced%20Dev%20Notes.html#advanced-developer-notes"><span class="std std-ref">Advanced Dev Notes</span></a>
+for information about adding additional pipelines, and for the standard input/output
+interface for primary analysis modules.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The minimum sample sizes described below are heuristic minima that seemed to correlate
+with interpretable output during PLCO “Atlas” tranche 1. These minima are absurdly low
+compared to the sample sizes both BOLT-LMM and SAIGE were tested on. All limits
+are approximate, and you <em>will</em> see analyses fail at larger sample sizes.</p>
+</div>
+<div class="section" id="bolt-lmm">
+<h2>BOLT-LMM<a class="headerlink" href="#bolt-lmm" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>select this method with <code class="docutils literal notranslate"><span class="pre">$(CONFIG_INPUT_DIR)/*config.yaml</span></code> setting <code class="docutils literal notranslate"><span class="pre">algorithm:</span> <span class="pre">boltlmm</span></code></p></li>
+<li><p>BOLT-LMM expects traits to be continuous</p>
+<ul>
+<li><p>continuous traits are inverse normal transformed with random tie resolution by <code class="docutils literal notranslate"><span class="pre">construct.model.matrix</span></code></p></li>
+</ul>
+</li>
+<li><p>minimum sample size for BOLT-LMM defaults to 3000 per platform/ancestry group</p>
+<ul>
+<li><p>this setting is controlled by <code class="docutils literal notranslate"><span class="pre">$(BOLTLMM_MINIMUM_VALID_SUBJECT_COUNT)</span></code></p></li>
+<li><p>the relatively high minimum sample size is due to the algorithm BOLT uses for heritability estimation</p></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="saige">
+<h2>SAIGE<a class="headerlink" href="#saige" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p>select this method with <code class="docutils literal notranslate"><span class="pre">$(CONFIG_INPUT_DIR)/*config.yaml</span></code> setting <code class="docutils literal notranslate"><span class="pre">algorithm:</span> <span class="pre">saige</span></code></p></li>
+<li><p>SAIGE expects traits to be binary or categorical/ordinal</p>
+<ul>
+<li><p>be warned: ordinal traits are treated as unordered categories</p></li>
+</ul>
+</li>
+<li><p>categorical/ordinal analyses are split into N-1 binary comparisons
+and merged with a Bonferroni correction on the minimum p-value per variant</p>
+<ul>
+<li><p>be warned: the Bonferroni on min-p operation is anticonservatively biased</p></li>
+</ul>
+</li>
+<li><p>minimum sample size for SAIGE defaults to 1000 per platform/ancestry group</p>
+<ul>
+<li><p>this setting is controlled by <code class="docutils literal notranslate"><span class="pre">$(SAIGE_MINIMUM_VALID_SUBJECT_COUNT)</span></code></p></li>
+</ul>
+</li>
+<li><p>SAIGE additionally has a minimum case count of 30 by default</p>
+<ul>
+<li><p>this setting is controlled by <code class="docutils literal notranslate"><span class="pre">$(MINIMUM_VALID_CASE_COUNT)</span></code></p></li>
+</ul>
+</li>
+</ul>
+</div>
 </div>
 
 
@@ -58,7 +113,11 @@
 <li class="toctree-l1"><a class="reference internal" href="Installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Preprocessing.html">Preprocessing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Trait%20Configuration.html">Trait Configuration</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Primary Analysis</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Primary Analysis</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#bolt-lmm">BOLT-LMM</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#saige">SAIGE</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="Meta-Analysis.html">Meta-Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Postprocessing.html">Postprocessing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Globus%20Distribution.html">Globus Distribution</a></li>

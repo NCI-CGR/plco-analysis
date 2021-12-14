@@ -34,6 +34,47 @@
             
   <div class="section" id="postprocessing">
 <h1>Postprocessing<a class="headerlink" href="#postprocessing" title="Permalink to this headline">¶</a></h1>
+<p>Downstream postprocessing, before globus distribution, comes
+in two separate, optional flavors.</p>
+<div class="section" id="ld-score-regression">
+<h2>LD Score Regression<a class="headerlink" href="#ld-score-regression" title="Permalink to this headline">¶</a></h2>
+<p>LD score regression is conducted with <code class="docutils literal notranslate"><span class="pre">ldsc</span></code>. <code class="docutils literal notranslate"><span class="pre">$(RESULT_OUTPUT_DIR)</span></code>
+is scanned for valid-looking output files, and when runs are complete,
+the results are aggregated and dumped into <code class="docutils literal notranslate"><span class="pre">$(RESULT_OUTPUT_DIR)/ldscore_summary.tsv</span></code>.</p>
+<p>The LD score regression pipeline was recently expanded to support
+individual comparison files from SAIGE for categorical/ordinal variable
+analysis. This support appears to be working but has not been thoroughly
+tested.</p>
+<p>Note that due to the readiness of backend LD files, this pipeline
+has only been run on European ancestry association results to date.</p>
+</div>
+<div class="section" id="qc-plotting">
+<h2>QC Plotting<a class="headerlink" href="#qc-plotting" title="Permalink to this headline">¶</a></h2>
+<p>The pipeline <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefile.plotting</span></code> creates
+QQ and Manhattan plots for any existing output files <code class="docutils literal notranslate"><span class="pre">.tsv.gz</span></code>
+under <code class="docutils literal notranslate"><span class="pre">$(RESULT_OUTPUT_DIR)</span></code>. This follows the same logic
+as the <a class="reference internal" href="Meta-Analysis.html#meta-analysis-pipeline"><span class="std std-ref">Meta-Analysis</span></a>, in that it aggressively detects
+whatever happens to be present, without going through the phenotype
+model configuration files. This has the benefit of allowing some
+analyses to be missing, due to sample size limitations in most
+cases. However, it makes it particularly dangerous to trust
+the output of this pipeline alone. Be sure the files that
+are not present are ones you’re ok with being absent!</p>
+<p>Note that the Manhattan plotter pulls in “known signals”
+from <code class="docutils literal notranslate"><span class="pre">$(KNOWN_SIGNALS_INPUT_DIR)</span></code> if available, matched
+by phenotype. These were originally files generated from
+either data collected by Sonja Berndt, or a database
+dump from the GWAS Catalog. There was originally some hope
+of automating that process, but that was never completed.
+However, if you have some known signals for some traits,
+feel free to dump them in there in the right format,
+and the plotter will try to annotate them.</p>
+<p>Sonja Berndt requested QC plots for heterogeneity from
+metal’s <code class="docutils literal notranslate"><span class="pre">ANALYZE</span> <span class="pre">HETEROGENEITY</span></code> command. Those plots
+are generated for all files. Note that the heterogeneity
+distribution is known to be extremely nonrandom and so
+deviations <em>other than excessive heterogeneity</em> are acceptable.</p>
+</div>
 </div>
 
 
@@ -60,7 +101,11 @@
 <li class="toctree-l1"><a class="reference internal" href="Trait%20Configuration.html">Trait Configuration</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Primary%20Analysis.html">Primary Analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Meta-Analysis.html">Meta-Analysis</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Postprocessing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Postprocessing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ld-score-regression">LD Score Regression</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#qc-plotting">QC Plotting</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="Globus%20Distribution.html">Globus Distribution</a></li>
 <li class="toctree-l1"><a class="reference internal" href="User%20Vignette.html">User Vignette</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Advanced%20Dev%20Notes.html">Advanced Dev Notes</a></li>

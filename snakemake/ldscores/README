@@ -1,0 +1,10 @@
+This Snakemake workflow will run the plco LDSC workflow and generate report for each of the summary statstics files
+
+The config_template.yaml file is provided.  
+$cp  config_template.yaml config.yaml
+and make changes to the config.yaml file. The workflow expects the config file config.yaml.
+
+The file with the list of GWAS summary files is also required. See config_template.yaml for more information.
+
+To run the pipeline locally (with snakemake installed, preferably as a conda environment):
+$snakemake --use-conda  -s Snakefile -j1

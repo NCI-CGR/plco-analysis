@@ -34,6 +34,40 @@
             
   <div class="section" id="globus-distribution">
 <h1>Globus Distribution<a class="headerlink" href="#globus-distribution" title="Permalink to this headline">¶</a></h1>
+<p>The plan for transfer of data to CBIIT involves posting files to
+a globus directory, to enable fast up/download for all parties.
+This functionality is governed by <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefile.globus</span></code>,
+and the enabled globus directory is <code class="docutils literal notranslate"><span class="pre">/CGF/GWAS/Scans/PLCO/builds/1/plco-analysis/globus</span></code>.
+The process is briefly overviewed below.</p>
+<ul class="simple">
+<li><p>Each iterative release to CBIIT is in a dated subdirectory of the <code class="docutils literal notranslate"><span class="pre">globus</span></code>
+directory. The date is set in <code class="docutils literal notranslate"><span class="pre">shared-makefiles/Makefile.globus</span></code> variable
+<code class="docutils literal notranslate"><span class="pre">$(OUTPUT_DIR)</span></code>. This has not been parametrized out, sorry.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">latest</span></code> link in the <code class="docutils literal notranslate"><span class="pre">globus</span></code> directory is also updated manually.</p></li>
+<li><p>Files are combined across analyses in different ancestries and sex-specific
+analyses of the same phenotype. This is determined as follows:</p>
+<ul>
+<li><p>for ancestry, directories in <code class="docutils literal notranslate"><span class="pre">$(RESULT_OUTPUT_DIR)/{phenotype}</span></code> are scanned</p></li>
+<li><p>for sex-specific/combined analyses, directories with the same phenotype name
+prefix in <code class="docutils literal notranslate"><span class="pre">$(RESULT_OUTPUT_DIR)</span></code> are scanned for variants with <code class="docutils literal notranslate"><span class="pre">_female</span></code>
+or <code class="docutils literal notranslate"><span class="pre">_male</span></code> suffixes. these suffixes are configured in <code class="docutils literal notranslate"><span class="pre">config/*config.yaml</span></code>;
+some of the <code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">check</span></code> calls scan to be sure these folders are present
+in the right combinations, but you should still be careful when configuring
+new “Atlas” analyses that you configure them completely</p></li>
+<li><p>data are merged across the aforementioned analyses by variant. this is at
+the request of CBIIT. this results in large instances of blockwise missingness
+where whole regions of variants have been QCed out of some ancestries but not
+others. this is evidently a desired behavior</p></li>
+<li><p>this has only been tested on <code class="docutils literal notranslate"><span class="pre">East_Asian</span></code> and <code class="docutils literal notranslate"><span class="pre">European</span></code> ancestries,
+and will need to be tested/extended when other ancestries are introduced</p></li>
+<li><p>for categorical/ordinal analyses, CBIIT once requested the results of individual
+<code class="docutils literal notranslate"><span class="pre">comparison#/</span></code> results to be able to display individual odds ratios and p-values.
+however, once I gave them those files, they chose not to do anything with them.
+as such, that kind of subset distribution is not automated, and there was not
+a pending plan to implement that</p></li>
+</ul>
+</li>
+</ul>
 </div>
 
 
