@@ -1,0 +1,9 @@
+ldsc_data_dir: #This is the directory containing reference files to ldsc 
+
+ldsc_results_dir: #This is the top directory for the ldsc outputs "/DCEG/Projects/CoherentLogic/PLCO/chrX/plco-analysis/results-combined/ldsc/"
+
+freq_column: #frequency column in the summary stat file 
+a1_column: #A1 column in the summary stat file  
+a2_column: #A2 column in the summary stat file 
+
+gwas_study_file: #This is a list of the summary stat files. It is expected that it is tab delimited and has 2 columns: studyID and file.

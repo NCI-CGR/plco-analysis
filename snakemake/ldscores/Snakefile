@@ -1,0 +1,92 @@
+configfile: "config.yaml"
+
+#Inputs
+#File path to list of gwas summary stats, it should have 2 columns, studyID, file
+GWAS_STUDY_FILE = config['gwas_study_file']
+
+#Columns in the summary stat file
+FREQ_COL = config['freq_column']
+A1_COL=config['a1_column']
+A2_COL=config['a2_column']
+
+#Outputs
+OUTPUTS_DIR=config['ldsc_results_dir'].rstrip("/")
+
+#LDSC Config
+LDSC_DATA_DIR = config['ldsc_data_dir'].rstrip("/")
+
+
+#read in the association test summary stats
+import os
+import pandas as pd
+
+#it should have 2 columns, studyID, file
+gwas_study_table = pd.read_csv(GWAS_STUDY_FILE, sep="\t", 
+                   header='infer', dtype=str)
+
+study_id_list=gwas_study_table['studyID']
+id2summaryStatFile=dict(zip(gwas_study_table['studyID'], gwas_study_table['file']))
+  
+rule all:
+    input:
+        OUTPUTS_DIR + '/all.ldsc.report' 
+    
+        
+rule prepare_sumstats_for_ldsc:
+    input:
+        gwas_summary_stat_file=lambda wc: id2summaryStatFile[wc.study_id]
+    output:
+        ldsc_summary_stat_input=temp(OUTPUTS_DIR + '/{study_id}/{study_id}.ldsc.ldsc-processed.tsv')
+    shell:
+        "./process_summary_stat_for_ldsc.sh {input} {output}"
+        
+rule munge_sumstats:
+    input:
+        ldsc_summary_stat_input=OUTPUTS_DIR + '/{study_id}/{study_id}.ldsc.ldsc-processed.tsv',  
+    output:
+        OUTPUTS_DIR + '/{study_id}/{study_id}.ldsc.sumstats.gz'
+    params:
+        study_id='{study_id}',
+        freq_col=FREQ_COL,
+        a1_col=A1_COL,
+        a2_col=A2_COL,
+        output_dir=OUTPUTS_DIR
+    conda:
+        "../../environment-ldsc.yaml"    
+    shell:
+        "munge_sumstats.py --signed-sumstats STAT,0 --out {params.output_dir}/{params.study_id}/{params.study_id}.ldsc --a1-inc --frq {params.freq_col} --N-col N --a1 {params.a1_col} --a2 {params.a2_col} --snp SNP --sumstats  {input.ldsc_summary_stat_input} --p P"
+    
+    
+rule ld_scores:
+    input:
+        ldsc_sumstats_file=OUTPUTS_DIR + '/{study_id}/{study_id}.ldsc.sumstats.gz',
+        ldsc_data_dir=LDSC_DATA_DIR
+    output:
+        ldsc_log_file=OUTPUTS_DIR + '/{study_id}/{study_id}.ldsc.log'
+    params:
+        study_id='{study_id}',
+        output_dir=OUTPUTS_DIR
+    conda:
+        "../../environment-ldsc.yaml"
+    shell:
+        "ldsc.py --h2 {input.ldsc_sumstats_file} --ref-ld-chr {input.ldsc_data_dir}/ --w-ld-chr {input.ldsc_data_dir}/ --out {params.output_dir}/{params.study_id}/{params.study_id}.ldsc"
+       
+    
+rule get_reports:
+    input:
+        ldsc_log_file=OUTPUTS_DIR + '/{study_id}/{study_id}.ldsc.log'
+    output:
+        OUTPUTS_DIR + '/{study_id}/{study_id}.ldsc.report'
+    params:
+        study_id='{study_id}'
+    shell:
+        "./extract_ldsc_log_file.sh {params.study_id} {input.ldsc_log_file} {output}"
+        
+rule combine_reports:
+    input:
+        expand(OUTPUTS_DIR + '/{study_id}/{study_id}.ldsc.report', study_id=study_id_list)
+    output:
+        OUTPUTS_DIR + '/all.ldsc.report' 
+    shell:
+        "cat {input} >{output}"
+    
